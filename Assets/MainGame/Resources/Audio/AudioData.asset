@@ -1,0 +1,24 @@
+%YAML 1.1
+%TAG !u! tag:unity3d.com,2011:
+--- !u!114 &11400000
+MonoBehaviour:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 0}
+  m_Enabled: 1
+  m_EditorHideFlags: 0
+  m_Script: {fileID: 11500000, guid: dfa76ff841d2566478791bf2d970c72c, type: 3}
+  m_Name: AudioData
+  m_EditorClassIdentifier: Assembly-CSharp::AudioData
+  menuMusic: {fileID: 0}
+  gameplayAmbience: {fileID: 0}
+  buttonHover: {fileID: 0}
+  buttonClick: {fileID: 0}
+  applySettings: {fileID: 0}
+  back: {fileID: 0}
+  flashlightToggle: {fileID: 0}
+  cameraShot: {fileID: 0}
+  keyPickup: {fileID: 0}
+  notePickup: {fileID: 0}

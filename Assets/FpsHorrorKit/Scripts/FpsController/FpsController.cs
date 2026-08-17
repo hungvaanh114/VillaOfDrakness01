@@ -7,6 +7,7 @@ namespace FpsHorrorKit
     [RequireComponent(typeof(CharacterController))]
     public class FpsController : MonoBehaviour
     {
+        public bool isCutScene = true;
         [Header("Movement Settings")]
         public float walkSpeed = 4.0f;
         public float sprintSpeed = 7.0f;
@@ -95,6 +96,7 @@ namespace FpsHorrorKit
 
         private void Update()
         {
+            if (isCutScene) return;
             GroundedCheck();
             HandleMovement();
             HandleGravity();
@@ -104,6 +106,7 @@ namespace FpsHorrorKit
 
         private void LateUpdate()
         {
+            if (isCutScene) return;
             HandleRotation();
 
             if (rightHandTarget != null && rightHandGrip != null)

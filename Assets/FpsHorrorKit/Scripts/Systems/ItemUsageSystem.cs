@@ -158,6 +158,7 @@ namespace FpsHorrorKit
                 if (itemLantern.isEnergyEnough)
                 {
                     _light.SetActive(!_light.activeSelf);
+                    AudioManager.Instance?.PlayFlashlightToggle();
                 }
             }
         }
@@ -208,6 +209,7 @@ namespace FpsHorrorKit
             if (itemCamera.hasItem && itemCamera.canUseItem && itemCamera.isEnergyEnough)
             {
                 PhotoCaptureSystem.Instance.CapturePhoto();
+                AudioManager.Instance?.PlayCameraShot();
             }
         }
     }
