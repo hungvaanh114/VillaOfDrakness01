@@ -1,0 +1,26 @@
+%YAML 1.1
+%TAG !u! tag:unity3d.com,2011:
+--- !u!114 &11400000
+MonoBehaviour:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 0}
+  m_Enabled: 1
+  m_EditorHideFlags: 0
+  m_Script: {fileID: 11500000, guid: 0fef4b99800eba0408a589592dd2d365, type: 3}
+  m_Name: Item_Battery
+  m_EditorClassIdentifier: Assembly-CSharp::FpsHorrorKit.ItemData
+  id: Item_Battery
+  itemName: "Pin \u0111\xE8n pin"
+  description: "M\u1ED9t vi\xEAn pin c\xF2n \u0111i\u1EC7n.\nC\xF3 th\u1EC3 d\xF9ng
+    \u0111\u1EC3 s\u1EA1c l\u1EA1i \u0111\xE8n pin."
+  icon: {fileID: 21300000, guid: eceb9a1287a385e45996650a25d3307b, type: 3}
+  itemType: 1
+  canStack: 1
+  maxStack: 8
+  canUse: 1
+  keyID: 
+  worldPrefab: {fileID: 8144201600624440538, guid: 5ddfa09b52cfd0c4bbd27508ddd33bd6, type: 3}
+  heldPrefab: {fileID: 8144201600624440538, guid: 5ddfa09b52cfd0c4bbd27508ddd33bd6, type: 3}

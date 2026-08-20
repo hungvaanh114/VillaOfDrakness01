@@ -1,0 +1,26 @@
+%YAML 1.1
+%TAG !u! tag:unity3d.com,2011:
+--- !u!114 &11400000
+MonoBehaviour:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 0}
+  m_Enabled: 1
+  m_EditorHideFlags: 0
+  m_Script: {fileID: 11500000, guid: 0fef4b99800eba0408a589592dd2d365, type: 3}
+  m_Name: Item_Flashlight
+  m_EditorClassIdentifier: Assembly-CSharp::FpsHorrorKit.ItemData
+  id: Item_Flashlight
+  itemName: "\u0110\xE8n pin"
+  description: "M\u1ED9t chi\u1EBFc \u0111\xE8n pin c\u1EA7m tay.\nV\u1EABn ho\u1EA1t
+    \u0111\u1ED9ng t\u1ED1t, c\xF3 th\u1EC3 soi s\xE1ng trong b\xF3ng t\u1ED1i."
+  icon: {fileID: 21300000, guid: 1b72fa82a055c344e96ec0b7f903f0b5, type: 3}
+  itemType: 0
+  canStack: 0
+  maxStack: 1
+  canUse: 1
+  keyID: 
+  worldPrefab: {fileID: 0}
+  heldPrefab: {fileID: 0}

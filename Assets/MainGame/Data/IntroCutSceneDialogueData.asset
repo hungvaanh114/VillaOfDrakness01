@@ -1,0 +1,49 @@
+%YAML 1.1
+%TAG !u! tag:unity3d.com,2011:
+--- !u!114 &11400000
+MonoBehaviour:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 0}
+  m_Enabled: 1
+  m_EditorHideFlags: 0
+  m_Script: {fileID: 11500000, guid: 4ca2dedf092c80d468e8aaccd3f5bdde, type: 3}
+  m_Name: IntroCutSceneDialogueData
+  m_EditorClassIdentifier: Assembly-CSharp::CutSceneDialogueData
+  lines:
+  - id: non
+    text: 
+    audioClip: {fileID: 0}
+    fallbackDuration: 0.5
+  - id: intro_dennoi
+    text: "Cu\u1ED1i c\xF9ng c\u0169ng \u0111\u1EBFn n\u01A1i r\u1ED3i. \u0110\u01B0\u1EDDng
+      l\xEAn \u0111\xE2y xa th\u1EADt.\n"
+    audioClip: {fileID: 0}
+    fallbackDuration: 3.2
+  - id: intro_banghieu
+    text: "Bi\u1EC7t th\u1EF1 \u0110\u1ED7 Gia... x\xE2y n\u0103m 1940. Ki\u1EBFn
+      tr\xFAc s\u01B0 ng\u01B0\u1EDDi Ph\xE1p c\xF9ng \xF4ng \u0110\u1ED7 V\u0103n
+      Minh d\u1EF1ng n\xEAn c\u0103n bi\u1EC7t th\u1EF1 bi\u1EC7t l\u1EADp n\xE0y."
+    audioClip: {fileID: 0}
+    fallbackDuration: 6
+  - id: intro_detai
+    text: "\u0110\u1EC1 t\xE0i t\u1ED1t nghi\u1EC7p c\u1EE7a m\xECnh \u0111\xFAng
+      l\xE0 kh\xF4ng th\u1EC3 thi\u1EBFu ch\u1ED7 n\xE0y."
+    audioClip: {fileID: 0}
+    fallbackDuration: 3.4
+  - id: intro_chupanh
+    text: "Ch\u1EE5p v\xE0i t\u1EA5m, ph\xE1c m\u1EB7t ti\u1EC1n r\u1ED3i v\u1EC1
+      th\xF4i. M\xECnh kh\xF4ng d\xE1m \u1EDF \u0111\xE2y l\xE2u \u0111\xE2u."
+    audioClip: {fileID: 0}
+    fallbackDuration: 5
+  - id: intro_cuasomo
+    text: "\u1EE6a... c\u1EEDa s\u1ED5 ph\xF2ng \u0103n m\u1EDF s\u1EB5n h\u1EA3?"
+    audioClip: {fileID: 0}
+    fallbackDuration: 7.2
+  - id: intro_vaocuaso
+    text: "Th\xF4i v\xF4 \u0111\u01B0\u1EDDng n\xE0y v\u1EADy. Xin l\u1ED7i \xF4ng
+      \u0110\u1ED7... con kh\xF4ng c\xF3 \xFD m\u1EA1o ph\u1EA1m \u0111\xE2u."
+    audioClip: {fileID: 0}
+    fallbackDuration: 6.2

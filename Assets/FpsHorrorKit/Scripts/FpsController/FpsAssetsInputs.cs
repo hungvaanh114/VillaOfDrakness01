@@ -19,6 +19,7 @@ namespace FpsHorrorKit
         public bool useFlashlight;
         public bool useCamera;
         public bool fire;
+        public bool inventory;
 
         [Header("Item Usage Values")]
         public bool isPressed;
@@ -82,6 +83,10 @@ namespace FpsHorrorKit
         {
             UseCameraInput(value.isPressed);
         }
+        public void OnInventory(InputValue value)
+        {
+            InventoryInput(value.isPressed);
+        }
         public void OnKey1(InputValue value)
         {
             UseItem(1);
@@ -119,16 +124,31 @@ namespace FpsHorrorKit
         // Metotlar
         private void MoveInput(Vector2 moveInput) => move = moveInput;
         private void LookInput(Vector2 lookInput) => look = lookInput;
-        private void JumpInput(bool jumpInput) => jump = jumpInput;
+        private void JumpInput(bool jumpInput)
+        {
+            if (jumpInput)
+                jump = true;
+        }
         private void SprintInput(bool sprintInput) => sprint = sprintInput;
         private void FireInput(bool fireInput) => fire = fireInput;
         private void InteractInput(bool interactInput) => interact = interactInput;
         private void StopInteractInput(bool stopInteractInput) => stopInteract = stopInteractInput;
         private void UseFlashlightInput(bool useFlashlightInput) => useFlashlight = useFlashlightInput;
         private void UseCameraInput(bool useCameraInput) => useCamera = useCameraInput;
+        private void InventoryInput(bool inventoryInput) => inventory = inventoryInput;
 
         private void OnApplicationFocus(bool hasFocus)
         {
+            if (!hasFocus)
+                return;
+
+            if (global::GameController.Instance != null && global::GameController.Instance.ShouldKeepCursorVisibleForUI())
+            {
+                Cursor.lockState = CursorLockMode.None;
+                Cursor.visible = true;
+                return;
+            }
+
             SetCursorState(cursorLocked);
         }
 

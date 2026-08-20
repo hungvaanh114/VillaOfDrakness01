@@ -14,6 +14,7 @@ namespace FpsHorrorKit
         public float rotationSpeed = 1.0f;
         public float accelerationRate = 10.0f;
         public float decelerationRate = 10f;
+        public float cutSceneTurnSpeed = 180f;
 
         [Header("Jump Settings")]
         public float jumpHeight = 2f;
@@ -40,6 +41,13 @@ namespace FpsHorrorKit
         public float sprintBobAmp = 4f;
         public float sprintBobFreq = 3f;
 
+        [Header("Footstep Audio")]
+        [SerializeField] private float walkStepInterval = 0.55f;
+        [SerializeField] private float sprintStepInterval = 0.36f;
+        [SerializeField] private float footstepRayDistance = 1.8f;
+        [SerializeField] private LayerMask footstepSurfaceMask = ~0;
+        [SerializeField, Range(0f, 1f)] private float footstepVolume = 0.72f;
+
         [Header("Interact Settings")]
         public bool isInteracting = false;
 
@@ -50,6 +58,8 @@ namespace FpsHorrorKit
         private bool isGrounded;
         private float jumpCooldownTimer;
         private float cameraPitch;
+        private float footstepTimer;
+        private float cutSceneFootstepTimer;
 
         [Header("Flashlight Aim Settings")]
         public Transform flashlightPivot;
@@ -66,6 +76,12 @@ namespace FpsHorrorKit
         public LayerMask flashlightRayMask = ~0;
         public float flashlightPivotYAmount = 0.2f;
         public float flashlightPivotBackAmount = 0.2f;
+
+        [Header("Detached Character Attachments")]
+        public Transform detachedHairRoot;
+        public Transform detachedHairFollowTarget;
+        public Vector3 detachedHairLocalPosition = new Vector3(0f, -1.5624f, -0.0209f);
+        public Vector3 detachedHairLocalEulerAngles;
 
         [Header("Animation Settings")]
         public Animator playerAnimator;
@@ -92,28 +108,68 @@ namespace FpsHorrorKit
                 flashlightPivotStartY = flashlightPivot.localPosition.y;
                 flashlightPivotStartZ = flashlightPivot.localPosition.z;
             }
+
+            EnsureFlashlightLightReference();
         }
 
         private void Update()
         {
             if (isCutScene) return;
+            CaptureJumpInputFallback();
+            if (!CanUseCharacterController())
+                return;
+
             GroundedCheck();
             HandleMovement();
+            HandleFootsteps();
             HandleGravity();
             HandleJumping();
             HandleAnimation();
         }
 
+        private bool CanUseCharacterController()
+        {
+            if (characterController == null)
+                characterController = GetComponent<CharacterController>();
+
+            return characterController != null
+                && characterController.enabled
+                && characterController.gameObject.activeInHierarchy
+                && gameObject.activeInHierarchy;
+        }
+
         private void LateUpdate()
         {
-            if (isCutScene) return;
-            HandleRotation();
+            if (!isCutScene)
+                HandleRotation();
 
+            HandleFlashlightAim();
+            UpdateRightHandTarget();
+            UpdateDetachedHair();
+        }
+
+        private void UpdateRightHandTarget()
+        {
             if (rightHandTarget != null && rightHandGrip != null)
             {
                 rightHandTarget.position = rightHandGrip.position;
                 rightHandTarget.rotation = rightHandGrip.rotation;
             }
+        }
+
+        private void UpdateDetachedHair()
+        {
+            if (detachedHairRoot == null)
+                detachedHairRoot = FindChildByName(transform, "npc_haircut_a_02");
+            if (detachedHairFollowTarget == null && playerAnimator != null)
+                detachedHairFollowTarget = FindChildByName(playerAnimator.transform, "Neck");
+
+            if (detachedHairRoot == null || detachedHairFollowTarget == null)
+                return;
+
+            detachedHairRoot.SetPositionAndRotation(
+                detachedHairFollowTarget.TransformPoint(detachedHairLocalPosition),
+                detachedHairFollowTarget.rotation * Quaternion.Euler(detachedHairLocalEulerAngles));
         }
 
         private void HandleMovement()
@@ -153,6 +209,219 @@ namespace FpsHorrorKit
             characterController.Move(new Vector3(velocity.x, 0, velocity.z) * Time.deltaTime);
         }
 
+        private void HandleFootsteps()
+        {
+            if (_input == null || isInteracting || !isGrounded)
+            {
+                footstepTimer = 0f;
+                return;
+            }
+
+            bool hasMoveInput = _input.move.sqrMagnitude > 0.01f;
+            bool isActuallyMoving = new Vector2(velocity.x, velocity.z).sqrMagnitude > 0.05f;
+            if (!hasMoveInput || !isActuallyMoving)
+            {
+                footstepTimer = 0f;
+                return;
+            }
+
+            float interval = _input.sprint ? sprintStepInterval : walkStepInterval;
+            footstepTimer += Time.deltaTime;
+            if (footstepTimer < interval)
+                return;
+
+            footstepTimer = 0f;
+            PlayFootstepForCurrentSurface(_input.sprint);
+        }
+
+        private void PlayFootstepForCurrentSurface(bool isSprinting)
+        {
+            var audioManager = global::AudioManager.Instance;
+            if (audioManager == null)
+                return;
+
+            float volume = footstepVolume * (isSprinting ? 1f : 0.82f);
+            if (IsStandingOnWood())
+                audioManager.PlayWoodFootstep(volume);
+            else
+                audioManager.PlayGroundFootstep(volume);
+        }
+
+        private bool IsStandingOnWood()
+        {
+            if (!TryGetCurrentSurfaceHit(out RaycastHit hit))
+                return false;
+
+            if (hit.collider is TerrainCollider)
+                return false;
+
+            return ContainsWoodKeyword(hit.collider.name)
+                || ContainsWoodKeyword(GetHierarchyName(hit.collider.transform))
+                || ContainsWoodKeyword(GetRendererMaterialNames(hit.collider));
+        }
+
+        private bool TryGetCurrentSurfaceHit(out RaycastHit surfaceHit)
+        {
+            Vector3 origin = transform.position + Vector3.up * 0.25f;
+            int mask = footstepSurfaceMask.value == 0 ? Physics.DefaultRaycastLayers : footstepSurfaceMask.value;
+            RaycastHit[] hits = Physics.RaycastAll(origin, Vector3.down, footstepRayDistance, mask, QueryTriggerInteraction.Ignore);
+            System.Array.Sort(hits, (left, right) => left.distance.CompareTo(right.distance));
+
+            foreach (RaycastHit hit in hits)
+            {
+                if (hit.collider == null)
+                    continue;
+
+                var hitController = hit.collider.GetComponentInParent<FpsController>();
+                if (hitController == this)
+                    continue;
+
+                surfaceHit = hit;
+                return true;
+            }
+
+            surfaceHit = default;
+            return false;
+        }
+
+        private static bool ContainsWoodKeyword(string value)
+        {
+            if (string.IsNullOrEmpty(value))
+                return false;
+
+            value = value.ToLowerInvariant();
+            return value.Contains("wood")
+                || value.Contains("floor")
+                || value.Contains("plank")
+                || value.Contains("house")
+                || value.Contains("villa");
+        }
+
+        private static string GetHierarchyName(Transform target)
+        {
+            string path = string.Empty;
+            int depth = 0;
+
+            while (target != null && depth < 8)
+            {
+                path = string.IsNullOrEmpty(path) ? target.name : target.name + "/" + path;
+                target = target.parent;
+                depth++;
+            }
+
+            return path;
+        }
+
+        private static string GetRendererMaterialNames(Collider collider)
+        {
+            var renderer = collider.GetComponentInParent<Renderer>();
+            if (renderer == null)
+                return string.Empty;
+
+            string names = string.Empty;
+            foreach (Material material in renderer.sharedMaterials)
+            {
+                if (material == null)
+                    continue;
+
+                names += material.name + " ";
+            }
+
+            return names;
+        }
+
+        public void MoveCutScene(Vector3 worldDirection, float speed, bool faceMoveDirection = true, float turnSpeed = -1f)
+        {
+            if (characterController == null)
+                characterController = GetComponent<CharacterController>();
+
+            GroundedCheck();
+
+            var horizontalDirection = worldDirection;
+            horizontalDirection.y = 0f;
+            if (horizontalDirection.sqrMagnitude > 1f)
+                horizontalDirection.Normalize();
+
+            if (isGrounded && velocity.y < 0f)
+                velocity.y = -2f;
+
+            velocity.y += gravity * Time.deltaTime;
+            characterController.Move((horizontalDirection * speed + Vector3.up * velocity.y) * Time.deltaTime);
+
+            if (faceMoveDirection)
+                RotateCutSceneTowards(horizontalDirection, turnSpeed > 0f ? turnSpeed : cutSceneTurnSpeed);
+
+            HandleCutSceneFootsteps(horizontalDirection.sqrMagnitude > 0.01f, speed);
+            UpdateCutSceneAnimation(horizontalDirection.sqrMagnitude > 0.01f);
+        }
+
+        private void HandleCutSceneFootsteps(bool isMoving, float speed)
+        {
+            if (!isGrounded)
+            {
+                cutSceneFootstepTimer = 0f;
+                return;
+            }
+
+            if (!isMoving)
+            {
+                cutSceneFootstepTimer = 0f;
+                return;
+            }
+
+            bool isSprinting = speed > walkSpeed * 1.05f;
+            float interval = isSprinting ? sprintStepInterval : walkStepInterval;
+            cutSceneFootstepTimer += Time.deltaTime;
+            if (cutSceneFootstepTimer < interval)
+                return;
+
+            cutSceneFootstepTimer = 0f;
+            PlayFootstepForCurrentSurface(isSprinting);
+        }
+
+        public bool RotateCutSceneTowards(Vector3 worldDirection, float turnSpeed)
+        {
+            worldDirection.y = 0f;
+            if (worldDirection.sqrMagnitude <= 0.001f)
+                return true;
+
+            var targetRotation = Quaternion.LookRotation(worldDirection.normalized, Vector3.up);
+            transform.rotation = Quaternion.RotateTowards(transform.rotation, targetRotation, Mathf.Max(1f, turnSpeed) * Time.deltaTime);
+            return Quaternion.Angle(transform.rotation, targetRotation) <= 0.25f;
+        }
+
+        public void SetCutSceneCameraPitch(float pitch)
+        {
+            cameraPitch = Mathf.Clamp(pitch, minCameraPitch, maxCameraPitch);
+        }
+
+        public void StopCutSceneMovement()
+        {
+            velocity.x = 0f;
+            velocity.z = 0f;
+            cutSceneFootstepTimer = 0f;
+            UpdateCutSceneAnimation(false);
+        }
+
+        public void TeleportCutScene(Transform point)
+        {
+            if (point == null)
+                return;
+
+            if (characterController == null)
+                characterController = GetComponent<CharacterController>();
+
+            var wasEnabled = characterController != null && characterController.enabled;
+            if (characterController != null)
+                characterController.enabled = false;
+
+            transform.SetPositionAndRotation(point.position, point.rotation);
+            velocity = Vector3.zero;
+
+            if (characterController != null)
+                characterController.enabled = wasEnabled;
+        }
+
         private void HandleAnimation()
         {
             if (playerAnimator == null)
@@ -172,6 +441,15 @@ namespace FpsHorrorKit
             playerAnimator.SetFloat("speed", targetAnimationSpeed, animationDampTime, Time.deltaTime);
         }
 
+        private void UpdateCutSceneAnimation(bool isMoving)
+        {
+            if (playerAnimator == null)
+                return;
+
+            playerAnimator.SetBool("isRun", isMoving);
+            playerAnimator.SetFloat("speed", isMoving ? 0.35f : 0f, animationDampTime, Time.deltaTime);
+        }
+
         private void HandleRotation()
         {
             if (isInteracting)
@@ -183,9 +461,14 @@ namespace FpsHorrorKit
             cameraPitch = Mathf.Clamp(cameraPitch, minCameraPitch, maxCameraPitch);
 
             transform.Rotate(Vector3.up * lookInput.x * rotationSpeed);
+        }
 
+        private void HandleFlashlightAim()
+        {
             if (followTarget == null)
                 return;
+
+            EnsureFlashlightLightReference();
 
             Quaternion aimRotation = Quaternion.Euler(cameraPitch, transform.eulerAngles.y, 0f);
 
@@ -207,7 +490,7 @@ namespace FpsHorrorKit
 
             Vector3 hitPoint = rayOrigin + rayDirection * flashlightRayDistance;
 
-            if (Physics.Raycast(rayOrigin, rayDirection, out RaycastHit hit, flashlightRayDistance, flashlightRayMask, QueryTriggerInteraction.Ignore))
+            if (TryGetFlashlightHit(rayOrigin, rayDirection, out RaycastHit hit))
             {
                 hitPoint = hit.point;
 
@@ -240,10 +523,51 @@ namespace FpsHorrorKit
             }
         }
 
+        private bool TryGetFlashlightHit(Vector3 rayOrigin, Vector3 rayDirection, out RaycastHit closestHit)
+        {
+            RaycastHit[] hits = Physics.RaycastAll(rayOrigin, rayDirection, flashlightRayDistance, flashlightRayMask, QueryTriggerInteraction.Ignore);
+            System.Array.Sort(hits, (left, right) => left.distance.CompareTo(right.distance));
+
+            foreach (RaycastHit hit in hits)
+            {
+                if (ShouldIgnoreFlashlightAimHit(hit.collider))
+                    continue;
+
+                closestHit = hit;
+                return true;
+            }
+
+            closestHit = default;
+            return false;
+        }
+
+        private static bool ShouldIgnoreFlashlightAimHit(Collider hitCollider)
+        {
+            if (hitCollider == null)
+                return true;
+
+            return hitCollider.GetComponentInParent<ItemPickup>() != null
+                || hitCollider.GetComponentInParent<MusicSheetPickup>() != null;
+        }
+
+        private void EnsureFlashlightLightReference()
+        {
+            if (followTarget == null)
+                return;
+
+            if (flashlightLight != null && flashlightLight.name != "Spot Light_1")
+                return;
+
+            var spotLight = followTarget.Find("Spot Light");
+            if (spotLight != null)
+                flashlightLight = spotLight.GetComponent<Light>();
+        }
+
         private void GroundedCheck()
         {
             Vector3 spherePosition = new Vector3(transform.position.x, transform.position.y - groundedOffset, transform.position.z);
-            isGrounded = Physics.CheckSphere(spherePosition, groundedRadius, groundLayers, QueryTriggerInteraction.Ignore);
+            isGrounded = (characterController != null && characterController.isGrounded)
+                || Physics.CheckSphere(spherePosition, groundedRadius, groundLayers, QueryTriggerInteraction.Ignore);
         }
 
         private void HandleGravity()
@@ -270,12 +594,22 @@ namespace FpsHorrorKit
                 {
                     velocity.y = Mathf.Sqrt(jumpHeight * -2f * gravity);
                     jumpCooldownTimer = jumpCooldown;
+                    _input.jump = false;
                 }
             }
             else
             {
                 _input.jump = false;
             }
+        }
+
+        private void CaptureJumpInputFallback()
+        {
+            if (_input == null || Keyboard.current == null)
+                return;
+
+            if (Keyboard.current.spaceKey.wasPressedThisFrame)
+                _input.jump = true;
         }
 
         private void HeadBob()
@@ -300,6 +634,20 @@ namespace FpsHorrorKit
             else Gizmos.color = transparentRed;
 
             Gizmos.DrawSphere(new Vector3(transform.position.x, transform.position.y - groundedOffset, transform.position.z), groundedRadius);
+        }
+
+        private static Transform FindChildByName(Transform root, string childName)
+        {
+            if (root == null)
+                return null;
+
+            foreach (var child in root.GetComponentsInChildren<Transform>(true))
+            {
+                if (child.name == childName)
+                    return child;
+            }
+
+            return null;
         }
 
 

@@ -12,13 +12,56 @@ MonoBehaviour:
   m_Script: {fileID: 11500000, guid: dfa76ff841d2566478791bf2d970c72c, type: 3}
   m_Name: AudioData
   m_EditorClassIdentifier: Assembly-CSharp::AudioData
-  menuMusic: {fileID: 0}
-  gameplayAmbience: {fileID: 0}
-  buttonHover: {fileID: 0}
-  buttonClick: {fileID: 0}
-  applySettings: {fileID: 0}
-  back: {fileID: 0}
-  flashlightToggle: {fileID: 0}
-  cameraShot: {fileID: 0}
-  keyPickup: {fileID: 0}
-  notePickup: {fileID: 0}
+  menuMusic: {fileID: 8300000, guid: 9d646b1744dd91a4592b89d9625de322, type: 3}
+  introAmbience: {fileID: 8300000, guid: 2dc9a029d0f6a4d4f95eca9f86b410f2, type: 3}
+  gameplayAmbience: {fileID: 8300000, guid: fcf6276a13ac13e4aabcf0ecfdf2d3b2, type: 3}
+  ghostAmbience: {fileID: 8300000, guid: 175b325ec4eb7674491bcef498fd21db, type: 3}
+  chaseMusic: {fileID: 8300000, guid: e03bf5e746688b04487345ac827f5669, type: 3}
+  deathMusic: {fileID: 8300000, guid: afbb8b47caf19f04aaab86413d8bc459, type: 3}
+  buttonHover: {fileID: 8300000, guid: 21516114640167f48b2548f53bfed396, type: 3}
+  buttonClick: {fileID: 8300000, guid: 21516114640167f48b2548f53bfed396, type: 3}
+  applySettings: {fileID: 8300000, guid: 5f8783404fb034b4198678c79d7a5848, type: 3}
+  back: {fileID: 8300000, guid: 21516114640167f48b2548f53bfed396, type: 3}
+  flashlightToggle: {fileID: 8300000, guid: cf295f270d975a34b98bb78c4f3c97fa, type: 3}
+  cameraShot: {fileID: 8300000, guid: 672f5389d8d97a24085692dd1e494351, type: 3}
+  keyPickup: {fileID: 8300000, guid: 8c17a6180226bcc408326f891788adb2, type: 3}
+  notePickup: {fileID: 8300000, guid: b8361c095491b9b44b3a95411e1d6e1d, type: 3}
+  paperPickup: {fileID: 8300000, guid: 58845c63099b9204fa6a615ae9554878, type: 3}
+  genericInteract: {fileID: 8300000, guid: 0d384f898556b8a4099288246cf43319, type: 3}
+  doorLocked: {fileID: 8300000, guid: a323b22d1ada88743b149c6ec090038a, type: 3}
+  doorOpenSlow: {fileID: 8300000, guid: adf554832d4d64e49b6b736a9691d5ce, type: 3}
+  doorUnlock: {fileID: 8300000, guid: 25ed24a4df7c583469ba6a7ddf57cf9e, type: 3}
+  itemUnlock: {fileID: 8300000, guid: 727fb1361283fc549842ec39b71e9f52, type: 3}
+  musicBoxStartup: {fileID: 8300000, guid: bdecdb100e48b3f4a911f9bfad935a4e, type: 3}
+  pianoWrong: {fileID: 8300000, guid: cafeac1e291de0a44ae5d05f361b7f6a, type: 3}
+  sanityWarning: {fileID: 8300000, guid: 4894c20b9e97adf4c843d7f0a016a07d, type: 3}
+  ghostJumpscare: {fileID: 8300000, guid: c052b9de3347aca43a03715dbd5680dd, type: 3}
+  wellJumpscare: {fileID: 8300000, guid: 7b317219f13a5bd42ab12a6d6cfda83a, type: 3}
+  clothTearOff: {fileID: 8300000, guid: 994ed9127919f634fb2febbbbb85a196, type: 3}
+  dialogueAdvance: {fileID: 8300000, guid: 5f8783404fb034b4198678c79d7a5848, type: 3}
+  dialogueTextBlip: {fileID: 8300000, guid: f0a857e55e58e9843bf8899bb0defbe9, type: 3}
+  footstepGround:
+  - {fileID: 8300000, guid: 59475f08f41be774c8ef586017ec62fa, type: 3}
+  - {fileID: 8300000, guid: 27ef1862be8cd0641ad5794042add622, type: 3}
+  footstepWood:
+  - {fileID: 8300000, guid: e3b28286a3bc4494bb89e5495bee7907, type: 3}
+  - {fileID: 8300000, guid: 57b66fe98d22ea049a46508d1169d434, type: 3}
+  intro01: {fileID: 8300000, guid: 2984b2f022ec49c4d9d75922f086b35a, type: 3}
+  intro02: {fileID: 8300000, guid: 84961baadebdacf4db82d343d0330876, type: 3}
+  intro03: {fileID: 8300000, guid: 39f9b003547affd44bbfe72cb9fd0f8e, type: 3}
+  intro04: {fileID: 8300000, guid: 2745f8950d083d94da1d2013f446c5cd, type: 3}
+  intro05: {fileID: 8300000, guid: 7dfffbca7c0817f409a52b11de322aee, type: 3}
+  baLanTapeFull: {fileID: 8300000, guid: 3a556775b03f92c4f936e9cd2391aec8, type: 3}
+  maVuDaiPatrolFull: {fileID: 8300000, guid: c94026b01dba03544a69549c75b8b451, type: 3}
+  diaryReaction01: {fileID: 8300000, guid: 75b60e5dc474278429eb8a77893bc9c3, type: 3}
+  diaryReaction02: {fileID: 8300000, guid: ec3ce1c2672f9e54da4de3d89cfbba70, type: 3}
+  diaryReaction03: {fileID: 8300000, guid: 05cfa7f17eeee394e931de80d32b6dfa, type: 3}
+  mkHide01: {fileID: 8300000, guid: 513e5485ecd6a8a44a06b6dde5977f02, type: 3}
+  mkHide02: {fileID: 8300000, guid: 12f8ace4cebff4043ba2b9de5f92eea5, type: 3}
+  mkHide03: {fileID: 8300000, guid: 60e86b3b1e309b94b918b89bdacfc9cf, type: 3}
+  mkHide04: {fileID: 8300000, guid: fc75979be032af541b9b104113d03ee1, type: 3}
+  mkHide05: {fileID: 8300000, guid: 03432658b165742428fe9d6c85414a64, type: 3}
+  mkHide06: {fileID: 8300000, guid: dcf6e17dc16ea184eb47526cb7f2741e, type: 3}
+  mkDeath01: {fileID: 8300000, guid: 0c90878650bf42f4e83051cf1437d9c0, type: 3}
+  mkDeath02: {fileID: 8300000, guid: 3a9825107d5e9bf4b922754a35f95240, type: 3}
+  mkDeath03: {fileID: 8300000, guid: f219a60240013be4d8b37072716dfa41, type: 3}

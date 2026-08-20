@@ -1,4 +1,4 @@
-%YAML 1.1
+﻿%YAML 1.1
 %TAG !u! tag:unity3d.com,2011:
 --- !u!1 &1194907714802639209
 GameObject:
@@ -113,7 +113,7 @@ MonoBehaviour:
   m_Name: 
   m_EditorClassIdentifier: 
   itemLanternFuel: {fileID: 11400000, guid: 58b95b6a372691b4db53a917718d5ab6, type: 2}
-  interactText: 'Take lantern fuel [E]'
+  interactText: 'Nhặt pin đèn [E]'
 --- !u!1 &2386722831699344955
 GameObject:
   m_ObjectHideFlags: 0

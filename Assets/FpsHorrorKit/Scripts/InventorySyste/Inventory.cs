@@ -23,8 +23,14 @@ namespace FpsHorrorKit
         }
         private void Update()
         {
-            if (Input.GetKeyDown(KeyCode.I))
+            if (InventoryManager.Instance != null)
+                return;
+
+            if (Input.GetKeyDown(KeyCode.Tab))
             {
+                if (inventoryPanel == null)
+                    return;
+
                 inventoryPanel.SetActive(!inventoryPanel.activeSelf);
                 if (inventoryPanel.activeSelf)
                 {

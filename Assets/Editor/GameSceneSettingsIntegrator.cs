@@ -24,7 +24,7 @@ public static class GameSceneSettingsIntegrator
     {
         LoadAssets();
 
-        var canvas = Object.FindFirstObjectByType<Canvas>();
+        var canvas = MainGameEditorCanvasUtility.FindOrCreateScreenCanvas();
         if (canvas == null)
         {
             Debug.LogError("Canvas not found in current scene.");

@@ -7,68 +7,65 @@ namespace FpsHorrorKit
     public class PlayerInteract : MonoBehaviour
     {
         public static PlayerInteract Instance { get; private set; }
+
         [Header("Raycast Settings")]
-        public bool sendRaycast;
-        public float interactRange = 2.0f; // Etkileşim mesafesi
+        public bool sendRaycast = true;
+        public float interactRange = 2.0f;
 
         [Header("Highlight Settings")]
         public GameObject higlightObject;
         public TextMeshProUGUI interactTextUI;
         public Image interactImageUI;
+        public bool showHiglight = true;
 
-        public bool showHiglight;
+        [SerializeField] private bool canDragDoor;
 
-        private FpsAssetsInputs _input;
+        private FpsAssetsInputs input;
         private IInteractable currentInteractable;
-
         private GameObject defaultHighlightObj;
         private string defaultInteractText;
-        [SerializeField] private bool canDragDoor;
 
         private void Awake()
         {
             if (Instance != null && Instance != this)
             {
                 Destroy(this);
+                return;
             }
-            else
-            {
-                Instance = this;
-            }
+
+            Instance = this;
         }
+
         private void Start()
         {
-            _input = FindAnyObjectByType<FpsAssetsInputs>();
+            input = FindAnyObjectByType<FpsAssetsInputs>();
+            ResolveHudReferences();
 
-            showHiglight = true;
-            sendRaycast = true;
-
-            defaultInteractText = "Press [E] to interact";
-            interactTextUI.text = defaultInteractText;
+            defaultInteractText = "Nhấn E để tương tác";
+            if (interactTextUI != null)
+                interactTextUI.text = defaultInteractText;
 
             defaultHighlightObj = higlightObject;
+            SetHighlightActive(false);
         }
 
-        void Update()
+        private void Update()
         {
             if (currentInteractable != null)
             {
                 if (Input.GetMouseButton(0) && canDragDoor)
                 {
-                    higlightObject.SetActive(false); // Highlight'i kaldırın
+                    SetHighlightActive(false);
                     currentInteractable.HoldInteract();
                     sendRaycast = false;
                 }
                 else if (Input.GetMouseButtonUp(0))
                 {
                     UnHighlight();
-                    currentInteractable.UnHighlight();
-
-                    canDragDoor = false;
                     sendRaycast = true;
-                    currentInteractable = null;
                 }
             }
+
             if (sendRaycast)
             {
                 showHiglight = true;
@@ -79,44 +76,40 @@ namespace FpsHorrorKit
                 showHiglight = false;
             }
         }
-        // Ray gönderme metodu
+
         private void SendRaycast()
         {
-            // Kamera'nın merkezine bir ray yollayın
-            Ray ray = Camera.main.ScreenPointToRay(new Vector3(Screen.width / 2, Screen.height / 2, 0));
-            RaycastHit hit; // Etkilenen nesnenin bilgilerinide alın
-
-            // Ray'ı etkilenen nesneyle karşılaştırın
-            if (Physics.Raycast(ray, out hit, interactRange))
+            if (Camera.main == null)
             {
-                // Rayden etkilenen nesneyi işaretleyin
-                IInteractable interactable = hit.collider.GetComponent<IInteractable>();
-
-                // Rayden etkilenen nesne IInteractable interfase sahipse
-                if (interactable != null)
-                {
-                    currentInteractable = interactable;
-                    canDragDoor = true;
-
-                    Highlight(); // Highlight metodu çağırın
-
-                    // Rayden etkilenen nesne ile etkileşime girmek istediğinizde E tusuna basın
-                    if (_input.interact && higlightObject.activeSelf)
-                    {
-                        currentInteractable.Interact(); // Interact metodu çağırın
-                        UnHighlight();
-                        _input.interact = false;
-                    }
-                }
-                // Rayden tkilenen nesne IInteractable interfase sahip değilse
-                else
-                {
-                    UnHighlight();
-                }
+                UnHighlight();
+                return;
             }
-            // Etkilenen nesne yoksa
-            else
+
+            var ray = Camera.main.ScreenPointToRay(new Vector3(Screen.width / 2f, Screen.height / 2f, 0f));
+            if (!Physics.Raycast(ray, out var hit, interactRange, ~0, QueryTriggerInteraction.Ignore))
             {
+                UnHighlight();
+                return;
+            }
+
+            var interactable = hit.collider.GetComponent<IInteractable>() ?? hit.collider.GetComponentInParent<IInteractable>();
+            if (interactable == null)
+            {
+                UnHighlight();
+                return;
+            }
+
+            if (currentInteractable != null && currentInteractable != interactable)
+                currentInteractable.UnHighlight();
+
+            currentInteractable = interactable;
+            canDragDoor = CanHoldInteract(currentInteractable);
+            Highlight();
+
+            if (input != null && input.interact && higlightObject != null && higlightObject.activeSelf)
+            {
+                currentInteractable.Interact();
+                input.interact = false;
                 UnHighlight();
             }
         }
@@ -126,33 +119,73 @@ namespace FpsHorrorKit
             Gizmos.color = Color.yellow;
             Gizmos.DrawWireSphere(transform.position, interactRange);
         }
-        // Highlight metodu
+
         private void Highlight()
         {
-            if (currentInteractable != null)
-            {
-                currentInteractable.Highlight();
-            }
-            higlightObject.SetActive(showHiglight);
+            currentInteractable?.Highlight();
+            SetHighlightActive(showHiglight);
         }
-        // UnHighlight metodu
+
         private void UnHighlight()
         {
             canDragDoor = false;
+            currentInteractable?.UnHighlight();
+            currentInteractable = null;
 
-            higlightObject.SetActive(false);
             higlightObject = defaultHighlightObj;
-            interactTextUI.text = defaultInteractText;
+            if (interactTextUI != null)
+                interactTextUI.text = defaultInteractText;
+
+            SetHighlightActive(false);
         }
+
         public void ChangeInteractText(string interactText)
         {
-            interactTextUI.text = interactText;
-            higlightObject = interactTextUI.gameObject;
+            if (interactTextUI != null)
+                interactTextUI.text = string.IsNullOrWhiteSpace(interactText) ? defaultInteractText : interactText;
         }
+
         public void ChangeInteractImage(Sprite interactImage)
         {
+            if (interactImageUI == null)
+                return;
+
             interactImageUI.sprite = interactImage;
-            higlightObject = interactImageUI.gameObject;
+        }
+
+        private void ResolveHudReferences()
+        {
+            if (higlightObject == null)
+                higlightObject = FindSceneObject("InteractPrompt");
+
+            if (interactTextUI == null)
+            {
+                var textObject = FindSceneObject("InteractText");
+                if (textObject != null)
+                    interactTextUI = textObject.GetComponent<TextMeshProUGUI>();
+            }
+        }
+
+        private static GameObject FindSceneObject(string objectName)
+        {
+            foreach (var transform in Resources.FindObjectsOfTypeAll<Transform>())
+            {
+                if (transform.name == objectName && transform.gameObject.scene.IsValid())
+                    return transform.gameObject;
+            }
+
+            return null;
+        }
+
+        private void SetHighlightActive(bool active)
+        {
+            if (higlightObject != null)
+                higlightObject.SetActive(active);
+        }
+
+        private static bool CanHoldInteract(IInteractable interactable)
+        {
+            return interactable is DragToOpenSystem || interactable is DrawerSystem;
         }
     }
 }

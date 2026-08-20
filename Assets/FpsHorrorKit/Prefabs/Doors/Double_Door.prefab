@@ -1,4 +1,4 @@
-%YAML 1.1
+﻿%YAML 1.1
 %TAG !u! tag:unity3d.com,2011:
 --- !u!1 &385139228000082228
 GameObject:
@@ -297,9 +297,9 @@ MonoBehaviour:
   m_Script: {fileID: 11500000, guid: b895553cef17b224a80e38b8eb04a373, type: 3}
   m_Name: 
   m_EditorClassIdentifier: 
-  interactText: 'Door Open/Close [E]'
-  doorLockedText: Find Key
-  useKeyText: Use Key
+  interactText: 'Mở/Đóng cửa [E]'
+  doorLockedText: Tìm chìa khóa
+  useKeyText: Dùng chìa khóa
   isLocked: 0
   hasKey: 0
   rotationSpeed: 50

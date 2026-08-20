@@ -1,10 +1,12 @@
 namespace FpsHorrorKit
 {
+    using System;
     using UnityEngine;
 
     public class ItemUsageSystem : MonoBehaviour
     {
         public static ItemUsageSystem Instance { get; private set; }
+        public static event Action<bool> FlashlightLightChanged;
 
         [Header("Items")]
         [SerializeField] private Item itemLantern;
@@ -14,6 +16,7 @@ namespace FpsHorrorKit
         public GameObject lantern;
         public GameObject _light;
         public GameObject _lanternCanvas;
+        [SerializeField, Min(1f)] private float forcedFlashlightEnergyLevel = 78f;
 
         [Header("Item Objects Camera")]
         public GameObject photoCaptureSystem;
@@ -22,7 +25,6 @@ namespace FpsHorrorKit
         public bool isAlbumActive = false;
 
         private FpsAssetsInputs _input;
-
         private bool isFirstCameraOpen = false;
 
         private void Awake()
@@ -32,35 +34,24 @@ namespace FpsHorrorKit
                 Destroy(gameObject);
                 return;
             }
-            Instance = this;
 
+            Instance = this;
             _input = FindAnyObjectByType<FpsAssetsInputs>();
         }
+
         private void Start()
         {
-            // Oyun başladığında flashlight durumunu güncelle
+            ResolveFlashlightLight();
+
             itemLantern.canUseItem = false;
-            itemLantern.isUsingItem = false;
-            if (itemLantern.energyLevel > 0)
-            {
-                itemLantern.isEnergyEnough = true;
-            }
-            else
-            {
-                itemLantern.isEnergyEnough = false;
-            }
-            // Oyun başladığında kamera durumunu güncelle
+            itemLantern.isUsingItem = IsFlashlightLightActive();
+            itemLantern.isEnergyEnough = itemLantern.energyLevel > 0f;
+
             itemCamera.canUseItem = false;
             itemCamera.isUsingItem = false;
-            if (itemCamera.energyLevel > 0)
-            {
-                itemCamera.isEnergyEnough = true;
-            }
-            else
-            {
-                itemCamera.isEnergyEnough = false;
-            }
+            itemCamera.isEnergyEnough = itemCamera.energyLevel > 0f;
         }
+
         private void Update()
         {
             CheckInputSelect();
@@ -78,6 +69,7 @@ namespace FpsHorrorKit
                 _input.isPressed = false;
                 return;
             }
+
             if (_input.itemIndex == 2 && _input.isPressed)
             {
                 SelectCamera();
@@ -85,6 +77,7 @@ namespace FpsHorrorKit
                 _input.isPressed = false;
                 return;
             }
+
             if (_input.itemIndex == 3 && _input.isPressed)
             {
                 DiSelectFlashlight();
@@ -92,14 +85,15 @@ namespace FpsHorrorKit
                 _input.isPressed = false;
                 return;
             }
+
             if (_input.itemIndex == 4 && _input.isPressed)
             {
                 DiSelectFlashlight();
                 DiSelectCamera();
                 _input.isPressed = false;
-                return;
             }
         }
+
         public void CheckInputUse()
         {
             if (_input.useFlashlight)
@@ -107,32 +101,35 @@ namespace FpsHorrorKit
                 UseFlashlight();
                 _input.useFlashlight = false;
             }
+
             if (_input.useCamera)
             {
                 UseCamera();
                 _input.useCamera = false;
             }
         }
+
         public void SelectFlashlight()
         {
             if (lantern == null) { Debug.LogError("Flashlight Object not found!"); return; }
-            if (_light == null) { Debug.LogError("Flashlight Light not found!"); return; }
+            if (!EnsureFlashlightLight()) { return; }
             if (_lanternCanvas == null) { Debug.LogError("Flashlight Canvas not found!"); return; }
 
             if (itemLantern.hasItem)
             {
                 itemLantern.canUseItem = _input.isSelectedItem;
-                itemLantern.isUsingItem = false; // Bu değer fener seçildiğinde değil kullanılmaya başlandığında true olacak.
+                itemLantern.isUsingItem = false;
 
                 lantern.SetActive(_input.isSelectedItem);
                 _lanternCanvas.SetActive(_input.isSelectedItem);
-                _light.SetActive(false);
+                SetFlashlightLightActive(false);
             }
         }
+
         public void DiSelectFlashlight()
         {
             if (lantern == null) { Debug.LogError("Flashlight Object not found!"); return; }
-            if (_light == null) { Debug.LogError("Flashlight Light not found!"); return; }
+            if (!EnsureFlashlightLight()) { return; }
             if (_lanternCanvas == null) { Debug.LogError("Flashlight Canvas not found!"); return; }
 
             if (itemLantern.hasItem)
@@ -142,25 +139,133 @@ namespace FpsHorrorKit
 
                 lantern.SetActive(false);
                 _lanternCanvas.SetActive(false);
-                _light.SetActive(false);
+                SetFlashlightLightActive(false);
             }
         }
+
         public void UseFlashlight()
         {
             if (lantern == null) { Debug.LogError("Flashlight Object not found!"); return; }
-            if (_light == null) { Debug.LogError("Flashlight Light not found!"); return; }
+            if (!EnsureFlashlightLight()) { return; }
             if (_lanternCanvas == null) { Debug.LogError("Flashlight Canvas not found!"); return; }
 
-            if (itemLantern.hasItem && itemLantern.canUseItem)
-            {
-                itemLantern.isUsingItem = !itemLantern.isUsingItem;
+            if (!itemLantern.hasItem)
+                return;
 
-                if (itemLantern.isEnergyEnough)
-                {
-                    _light.SetActive(!_light.activeSelf);
+            itemLantern.canUseItem = true;
+            lantern.SetActive(true);
+            _lanternCanvas.SetActive(true);
+
+            if (!itemLantern.isEnergyEnough)
+            {
+                itemLantern.isUsingItem = false;
+                SetFlashlightLightActive(false);
+                InteractMessageScript.Instance?.ShowMessage("Pin đèn đã hết.");
+                return;
+            }
+
+            bool turnOn = !IsFlashlightLightActive();
+            itemLantern.isUsingItem = turnOn;
+            SetFlashlightLightActive(turnOn);
+            AudioManager.Instance?.PlayFlashlightToggle();
+        }
+
+        public void GrantFlashlightItem(bool turnOn = false)
+        {
+            if (itemLantern == null)
+                return;
+
+            itemLantern.hasItem = true;
+            if (itemLantern.energyLevel <= 0f)
+                itemLantern.energyLevel = forcedFlashlightEnergyLevel;
+            itemLantern.isEnergyEnough = itemLantern.energyLevel > 0f;
+            itemLantern.canUseItem = true;
+
+            if (turnOn)
+                ForceFlashlightOn(true);
+        }
+
+        public void ForceFlashlightOn(bool playToggleSound = false)
+        {
+            if (lantern == null || _lanternCanvas == null || itemLantern == null || !EnsureFlashlightLight())
+                return;
+
+            if (!itemLantern.hasItem)
+                itemLantern.hasItem = true;
+            if (itemLantern.energyLevel <= 0f)
+                itemLantern.energyLevel = forcedFlashlightEnergyLevel;
+
+            itemLantern.canUseItem = true;
+            itemLantern.isUsingItem = true;
+            itemLantern.isEnergyEnough = itemLantern.energyLevel > 0f;
+
+            lantern.SetActive(true);
+            _lanternCanvas.SetActive(true);
+
+            if (itemLantern.isEnergyEnough)
+            {
+                SetFlashlightLightActive(true);
+                if (playToggleSound)
                     AudioManager.Instance?.PlayFlashlightToggle();
+            }
+        }
+
+        public void SetFlashlightLightActive(bool active)
+        {
+            if (!EnsureFlashlightLight())
+                return;
+
+            bool wasActive = IsFlashlightLightActive();
+            _light.SetActive(active);
+            bool isActive = _light.activeInHierarchy;
+
+            if (wasActive != isActive)
+                FlashlightLightChanged?.Invoke(isActive);
+        }
+
+        public bool IsFlashlightLightActive()
+        {
+            return EnsureFlashlightLight() && _light.activeInHierarchy;
+        }
+
+        private bool EnsureFlashlightLight()
+        {
+            if (_light == null || _light.name == "Spot Light_1")
+                ResolveFlashlightLight();
+
+            if (_light != null)
+                return true;
+
+            Debug.LogError("Flashlight Spot Light under FollowTarget not found!");
+            return false;
+        }
+
+        private void ResolveFlashlightLight()
+        {
+            var controller = FindFirstObjectByType<FpsController>();
+            if (controller != null && controller.followTarget != null)
+            {
+                if (controller.flashlightLight != null && controller.flashlightLight.name != "Spot Light_1")
+                {
+                    _light = controller.flashlightLight.gameObject;
+                    return;
+                }
+
+                var spotLight = controller.followTarget.Find("Spot Light");
+                if (spotLight != null)
+                {
+                    _light = spotLight.gameObject;
+                    return;
                 }
             }
+
+            var followTarget = GameObject.Find("FollowTarget");
+            if (followTarget == null)
+                return;
+
+            var directSpotLight = followTarget.transform.Find("Spot Light");
+            if (directSpotLight != null)
+                _light = directSpotLight.gameObject;
         }
 
         public void SelectCamera()
@@ -180,11 +285,12 @@ namespace FpsHorrorKit
 
                 if (isFirstCameraOpen == false)
                 {
-                    InteractMessageScript.Instance?.ShowMessage("Press tab to open album!");
+                    InteractMessageScript.Instance?.ShowMessage("Nhấn Tab để mở album!");
                     isFirstCameraOpen = true;
                 }
             }
         }
+
         public void DiSelectCamera()
         {
             if (photoCaptureSystem == null) { Debug.LogError("Camera Object not found!"); return; }
@@ -201,6 +307,7 @@ namespace FpsHorrorKit
                 cameraCanvas.SetActive(false);
             }
         }
+
         public void UseCamera()
         {
             if (photoCaptureSystem == null) { Debug.LogError("Camera Object not found!"); return; }

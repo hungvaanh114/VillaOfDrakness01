@@ -1,4 +1,4 @@
-%YAML 1.1
+﻿%YAML 1.1
 %TAG !u! tag:unity3d.com,2011:
 --- !u!1 &2263683166180051599
 GameObject:
@@ -395,7 +395,7 @@ MonoBehaviour:
   m_Script: {fileID: 11500000, guid: 41981a52695dc7a419443a14c8f5dfc9, type: 3}
   m_Name: 
   m_EditorClassIdentifier: 
-  interactText: 'Read Message [E]'
+  interactText: 'Đọc ghi chú [E]'
   _message: "Poly Haven is a small company based in South Africa that works with
     artists from all over the world. \nOur goal is to create a constantly growing,
     community-funded open content resource that provides complete freedom and usability

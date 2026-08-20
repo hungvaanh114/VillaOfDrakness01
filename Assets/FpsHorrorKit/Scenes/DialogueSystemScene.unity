@@ -1,4 +1,4 @@
-%YAML 1.1
+﻿%YAML 1.1
 %TAG !u! tag:unity3d.com,2011:
 --- !u!29 &1
 OcclusionCullingSettings:
@@ -245,7 +245,7 @@ MonoBehaviour:
   m_EditorClassIdentifier: 
   dialogueData:
   - {fileID: 11400000, guid: 0e941a62276cc0d4a892beed4cd5a74e, type: 2}
-  interactText: 'Talk Npc [E]'
+  interactText: 'Nói chuyện [E]'
 --- !u!136 &320541978
 CapsuleCollider:
   m_ObjectHideFlags: 0
@@ -902,7 +902,7 @@ MonoBehaviour:
   dialogueData:
   - {fileID: 11400000, guid: 1da3643d56a9483468847bcaa18dfa6a, type: 2}
   - {fileID: 11400000, guid: 19d60dc9bdcd7454bbc9234acdfadd5e, type: 2}
-  interactText: 'Talk Npc [E]'
+  interactText: 'Nói chuyện [E]'
 --- !u!4 &2284475765460294243
 Transform:
   m_ObjectHideFlags: 0
@@ -1001,7 +1001,7 @@ MonoBehaviour:
   dialogueData:
   - {fileID: 11400000, guid: 9d6f05c1c52e8db4588bb6d17630cfe2, type: 2}
   - {fileID: 11400000, guid: 9ba832702b0f5c644a509c235d6b39fb, type: 2}
-  interactText: 'Talk Npc [E]'
+  interactText: 'Nói chuyện [E]'
 --- !u!1 &4482501642408825528
 GameObject:
   m_ObjectHideFlags: 0

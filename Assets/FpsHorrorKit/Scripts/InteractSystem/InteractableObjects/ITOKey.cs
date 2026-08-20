@@ -5,7 +5,7 @@ namespace FpsHorrorKit
     public class ITOKey : MonoBehaviour, IInteractable
     {
         public DoorSystem compatibleDoor;
-        [SerializeField] private string interactText = "Take key [E]";
+        [SerializeField] private string interactText = "Nhặt chìa khóa [E]";
 
         public void Interact()
         {

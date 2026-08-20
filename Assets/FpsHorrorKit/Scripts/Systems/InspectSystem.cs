@@ -13,7 +13,7 @@ namespace FpsHorrorKit
         [Tooltip("Distance to the camera during inspection")] public float distanceToCamera;
 
         [Header("Higlight UI")]
-        public string interactText = "Press [E] to Inspect";
+        public string interactText = "Nhấn [E] để kiểm tra";
 
         [Header("For Lantern")]
         public Light lanternLight;

@@ -12,6 +12,7 @@ TagManager:
   - Player
   - Water
   - UI
+  - Ending
   - 
   - 
   - 
@@ -36,8 +37,7 @@ TagManager:
   - 
   - 
   - 
-  - 
-  - 
+  - Guong
   m_SortingLayers:
   - name: Default
     uniqueID: 0

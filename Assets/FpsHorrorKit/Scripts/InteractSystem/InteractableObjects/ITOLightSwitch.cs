@@ -17,7 +17,7 @@ namespace FpsHorrorKit
         public float rotationSpeed = 200f;
 
         [Header("Interact UI")]
-        [SerializeField] private string interactText = "Light Open/Close [E]";
+        [SerializeField] private string interactText = "Bật/Tắt đèn [E]";
 
         bool isFinished = true;
         private float initialRotationX;

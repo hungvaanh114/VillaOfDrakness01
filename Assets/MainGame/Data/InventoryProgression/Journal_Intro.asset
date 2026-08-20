@@ -1,0 +1,74 @@
+%YAML 1.1
+%TAG !u! tag:unity3d.com,2011:
+--- !u!114 &11400000
+MonoBehaviour:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 0}
+  m_Enabled: 1
+  m_EditorHideFlags: 0
+  m_Script: {fileID: 11500000, guid: c49c013351df43147a4a156817abd04d, type: 3}
+  m_Name: Journal_Intro
+  m_EditorClassIdentifier: Assembly-CSharp::FpsHorrorKit.JournalEntryData
+  id: Journal_Intro
+  title: "Bi\u1EC7t th\u1EF1 b\u1ECF hoang"
+  content: "N\u0103m 1964, gia \u0111\xECnh t\xF4i s\u1ED1ng trong c\u0103n bi\u1EC7t
+    th\u1EF1 c\u0169 gi\u1EEFa \u0110\xE0 L\u1EA1t, n\u01A1i t\xF4i v\u1EABn ngh\u0129
+    s\u1EBD l\xE0 ch\u1ED1n b\xECnh y\xEAn \u0111\u1EC3 hai \u0111\u1EE9a tr\u1EBB
+    l\u1EDBn l\xEAn. Nh\u01B0ng t\u1EEB \u0111\u1EA7u n\u0103m, t\xF4i b\u1EAFt \u0111\u1EA7u
+    nh\u1EADn th\u1EA5y nh\u1EEFng \u0111i\u1EC1u kh\xF3 gi\u1EA3i th\xEDch. V\u1EE3
+    t\xF4i th\u01B0\u1EDDng ru con Linh b\u1EB1ng m\u1ED9t giai \u0111i\u1EC7u r\u1EA5t
+    l\u1EA1 m\xE0 n\xE0ng n\xF3i \u0111\xE3 nghe t\u1EEB thu\u1EDF nh\u1ECF. T\xF4i
+    ch\u1EB3ng \u0111\u1EC3 t\xE2m cho \u0111\u1EBFn m\u1ED9t bu\u1ED5i chi\u1EC1u
+    th\xE1ng S\xE1u, khi c\u1EA3 nh\xE0 ph\xE1t hi\u1EC7n Linh bi\u1EBFn m\u1EA5t
+    kh\u1ECFi s\xE2n. Ng\u01B0\u1EDDi l\xE0m v\u01B0\u1EDDn t\xECm th\u1EA5y con
+    b\xE9 \u0111ang ng\u1ED3i s\xE1t m\xE9p c\xE1i gi\u1EBFng \u0111\xE1 c\u1ED5
+    ph\xEDa cu\u1ED1i khu v\u01B0\u1EDDn, nh\xECn xu\u1ED1ng l\xE0n n\u01B0\u1EDBc
+    t\u1ED1i \u0111en v\xE0 c\u01B0\u1EDDi nh\u01B0 \u0111ang n\xF3i chuy\u1EC7n
+    v\u1EDBi m\u1ED9t ng\u01B0\u1EDDi quen. Khi \u0111\u01B0\u1EE3c h\u1ECFi, n\xF3
+    ch\u1EC9 xu\u1ED1ng gi\u1EBFng v\xE0 n\xF3i r\u1EB1ng c\xF3 \u201Cm\u1ED9t ch\xFA
+    \u1EDF d\u01B0\u1EDBi \u0111\xF3\u201D \u0111ang g\u1ECDi n\xF3 xu\u1ED1ng ch\u01A1i.
+    T\u1EEB h\xF4m \u1EA5y, v\u1EE3 t\xF4i c\xE0ng \xF4m con ch\u1EB7t h\u01A1n v\xE0
+    \u0111\xEAm n\xE0o c\u0169ng h\xE1t \u0111i h\xE1t l\u1EA1i giai \u0111i\u1EC7u
+    \u1EA5y. Ba th\xE1ng sau, n\xE0ng \u0111\u1ED9t nhi\xEAn bi\u1EBFn m\u1EA5t kh\xF4ng
+    \u0111\u1EC3 l\u1EA1i m\u1ED9t d\u1EA5u v\u1EBFt n\xE0o. C\u1ED5ng v\u1EABn kh\xF3a,
+    h\xE0ng r\xE0o nguy\xEAn v\u1EB9n, tr\xEAn l\u1ED1i s\u1ECFi \u01B0\u1EDBt s\u01B0\u01A1ng
+    c\u0169ng kh\xF4ng c\xF3 l\u1EA5y m\u1ED9t d\u1EA5u ch\xE2n. Th\u1EE9 duy nh\u1EA5t
+    n\xE0ng \u0111\u1EC3 l\u1EA1i l\xE0 chi\u1EBFc h\u1ED9p nh\u1EA1c b\u1EB1ng \u0111\u1ED3ng
+    \u0111\xE3 b\u1ECB h\xE0n k\xEDn \u0111\u1EB7t ngay tr\xEAn b\xE0n l\xE0m vi\u1EC7c
+    c\u1EE7a t\xF4i. Sau \u0111\xF3, m\u1ED9t ng\u01B0\u1EDDi \u0111\xE0n b\xE0 l\u1EA1
+    \u0111\u1EBFn t\xECm t\xF4i v\xE0 k\u1EC3 r\u1EB1ng ch\u1ED3ng b\xE0 t\u1EEBng
+    l\xE0m \u1EDF c\xF4ng tr\xECnh s\u1EEDa c\xE1i gi\u1EBFng \u0111\xE1 n\u0103m
+    tr\u01B0\u1EDBc, nh\u01B0ng sau ng\xE0y cu\u1ED1i c\xF9ng l\xE0m vi\u1EC7c t\u1EA1i
+    \u0111\xE2y th\xEC \xF4ng ta c\u0169ng kh\xF4ng bao gi\u1EDD tr\u1EDF v\u1EC1.
+    T\u1EEB \u0111\xEAm v\u1EE3 m\u1EA5t t\xEDch, t\xF4i th\u01B0\u1EDDng nghe th\u1EA5y
+    giai \u0111i\u1EC7u n\xE0ng v\u1EABn ru con v\u1ECDng l\xEAn t\u1EEB ph\xEDa
+    khu v\u01B0\u1EDDn, d\xF9 ngo\xE0i \u0111\xF3 ch\u1EB3ng c\xF2n ai. T\xF4i l\u1EA5y
+    c\xE2y v\u0129 c\u1EA7m c\u0169, c\u1ED1 ghi l\u1EA1i nh\u1EEFng n\u1ED1t m\xECnh
+    c\xF2n nh\u1EDB r\u1ED3i \u0111em so v\u1EDBi cu\u1ED1n t\u1ED5ng ph\u1ED5 Requiem
+    mang v\u1EC1 t\u1EEB Paris nhi\u1EC1u n\u0103m tr\u01B0\u1EDBc. T\xF4i ch\u1EBFt
+    l\u1EB7ng khi nh\u1EADn ra n\u0103m n\u1ED1t <b>\u0110\xF4 \u2013 R\xEA \u2013
+    Mi \u2013 Fa \u2013 Sol</b> \u0111\u1EC1u n\u1EB1m trong \u0111o\u1EA1n m\u1EDF
+    \u0111\u1EA7u c\u1EE7a <b>Dies Irae \u2013 \u201CNg\xE0y Ph\xE1n X\xE9t\u201D</b>,
+    kh\xFAc th\xE1nh ca d\xE0nh cho ng\u01B0\u1EDDi ch\u1EBFt. T\xF4i l\u1EA1i nh\u1EDB
+    \u0111\u1EBFn l\u1EDDi \u0111\u1ED3n c\u1EE7a nh\u1EEFng ng\u01B0\u1EDDi l\xE0m
+    c\u0169 r\u1EB1ng c\xE2y \u0111\xE0n piano trong c\u0103n nh\xE0 n\xE0y t\u1EEBng
+    thu\u1ED9c v\u1EC1 m\u1ED9t gia \u0111\xECnh kh\xE1c, v\xE0 n\u1EBFu ai \u0111\xE1nh
+    \u0111\xFAng giai \u0111i\u1EC7u b\u1ECB gi\u1EA5u trong n\xF3, c\xE2y \u0111\xE0n
+    s\u1EBD t\u1EF1 ch\u01A1i ti\u1EBFp ph\u1EA7n c\xF2n l\u1EA1i. T\xF4i v\u1ED1n
+    kh\xF4ng tin, nh\u01B0ng t\u1ED1i h\xF4m qua t\xF4i \u0111\xE3 th\u1EED \u0111\xE1nh
+    n\u0103m n\u1ED1t \u1EA5y. Ngay khi n\u1ED1t cu\u1ED1i c\xF9ng vang l\xEAn, t\u1EA5t
+    c\u1EA3 \u0111\xE8n trong nh\xE0 \u0111\u1ED3ng lo\u1EA1t chao \u0111i m\u1ED9t
+    nh\u1ECBp r\u1ED3i tr\u1EDF l\u1EA1i b\xECnh th\u01B0\u1EDDng. T\xF4i bi\u1EBFt
+    giai \u0111i\u1EC7u v\u1EABn c\xF2n thi\u1EBFu, nh\u01B0ng c\u0169ng hi\u1EC3u
+    r\u1EB1ng m\xECnh kh\xF4ng \u0111\u01B0\u1EE3c ph\xE9p t\xECm ra ph\u1EA7n c\xF2n
+    l\u1EA1i. V\xEC th\u1EBF t\u1ED1i nay, sau khi hai con \u0111\xE3 ng\u1EE7, t\xF4i
+    x\xE9 b\u1EA3n nh\u1EA1c th\xE0nh <b>n\u0103m m\u1EA3nh</b> v\xE0 gi\u1EA5u ch\xFAng
+    \u1EDF nh\u1EEFng n\u01A1i kh\xE1c nhau trong c\u0103n nh\xE0. N\u1EBFu ai \u0111\xF3
+    \u0111\u1ECDc \u0111\u01B0\u1EE3c nh\u1EEFng d\xF2ng n\xE0y, xin \u0111\u1EEBng
+    t\xECm \u0111\u1EE7 n\u0103m m\u1EA3nh gi\u1EA5y. \u0110\u1EEBng gh\xE9p ch\xFAng
+    l\u1EA1i. V\xE0 tuy\u1EC7t \u0111\u1ED1i \u0111\u1EEBng ng\u1ED3i xu\u1ED1ng
+    c\xE2y \u0111\xE0n \u1EA5y \u0111\u1EC3 ch\u01A1i ho\xE0n ch\u1EC9nh giai \u0111i\u1EC7u.
+    <b>T\xF4i nghe th\u1EA5y ti\u1EBFng b\u01B0\u1EDBc ch\xE2n ngo\xE0i h\xE0nh...</b>"

@@ -41,12 +41,10 @@ namespace FpsHorrorKit
                         if (cameraBatteryImage != null) { cameraBatteryImage.fillAmount = itemCamera.energyLevel / 100f; }
 
                         itemCamera.isEnergyEnough = true;
-                        ItemUsageSystem.Instance._light.SetActive(true);
                     }
                     else
                     {
                         itemCamera.isEnergyEnough = false;
-                        ItemUsageSystem.Instance._light.SetActive(false);
                     }
                 }
             }

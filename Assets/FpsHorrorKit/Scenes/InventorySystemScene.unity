@@ -1,4 +1,4 @@
-%YAML 1.1
+﻿%YAML 1.1
 %TAG !u! tag:unity3d.com,2011:
 --- !u!29 &1
 OcclusionCullingSettings:
@@ -1656,7 +1656,7 @@ MonoBehaviour:
   m_Name: 
   m_EditorClassIdentifier: 
   itemCameraBattery: {fileID: 11400000, guid: 4ee3025a2350782428eddab312486878, type: 2}
-  interactText: 'Take camera battery [E]'
+  interactText: 'Nhặt pin camera [E]'
 --- !u!1 &3337693554454122056
 GameObject:
   m_ObjectHideFlags: 0
@@ -1791,7 +1791,7 @@ MonoBehaviour:
   m_Name: 
   m_EditorClassIdentifier: 
   photoCamera: {fileID: 11400000, guid: 6407ec0ef25a48d4d83ed2c2dfc1edf7, type: 2}
-  interactText: 'Take camera [E]'
+  interactText: 'Nhặt camera [E]'
 --- !u!33 &3911157741676031407
 MeshFilter:
   m_ObjectHideFlags: 0
@@ -1996,7 +1996,7 @@ MonoBehaviour:
   m_Name: 
   m_EditorClassIdentifier: 
   itemCameraBattery: {fileID: 11400000, guid: 4ee3025a2350782428eddab312486878, type: 2}
-  interactText: 'Take camera battery [E]'
+  interactText: 'Nhặt pin camera [E]'
 --- !u!136 &4761110170649171679
 CapsuleCollider:
   m_ObjectHideFlags: 0
@@ -2315,7 +2315,7 @@ MonoBehaviour:
   m_Name: 
   m_EditorClassIdentifier: 
   itemCameraBattery: {fileID: 11400000, guid: 4ee3025a2350782428eddab312486878, type: 2}
-  interactText: 'Take camera battery [E]'
+  interactText: 'Nhặt pin camera [E]'
 --- !u!4 &9141211153466630672
 Transform:
   m_ObjectHideFlags: 0

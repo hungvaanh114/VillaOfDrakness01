@@ -18,7 +18,7 @@ namespace FpsHorrorKit
         [SerializeField][Tooltip("Kapının menteşe etrafında dönme hızı")] private float rotationSpeed = 100f;
 
         [Header("UI")]
-        [SerializeField] private string interactText = "Hide/Come out [E]";
+        [SerializeField] private string interactText = "Trốn/Ra khỏi chỗ trốn [E]";
 
         private bool isInteract;
         private FpsController _fpsController;
@@ -37,10 +37,13 @@ namespace FpsHorrorKit
             StopAllCoroutines();
             if (!isInteract)
             {
+                AudioManager.Instance?.PlayMaVuDaiPatrol();
+                AudioManager.Instance?.PlayGhostAmbience();
                 StartCoroutine(HandleInteraction(hidingSpeed, Hiding, hidingPoint));
             }
             else
             {
+                AudioManager.Instance?.PlayHideVoice(3);
                 StartCoroutine(HandleInteraction(hidingSpeed, ComeOut, outPoint));
             }
             isInteract = !isInteract;
@@ -106,6 +109,8 @@ namespace FpsHorrorKit
         {
             if (doorAudioSource != null)
                 doorAudioSource.Play();
+            else
+                AudioManager.Instance?.PlayDoorOpenSlow();
         }
 
         private IEnumerator RotateDoor(float fromRotation, float toRotation)

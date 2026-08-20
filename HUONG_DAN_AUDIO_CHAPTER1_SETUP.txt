@@ -1,0 +1,218 @@
+HUONG DAN GAN AM THANH CHAPTER 1 - VILLA OF DARKNESS
+Cap nhat: 19/08/2026
+
+1. FILE DATA CHINH
+
+- AudioData dang dung:
+  Assets/MainGame/Resources/Audio/AudioData.asset
+
+- Script quan ly phat am thanh:
+  Assets/MainGame/Script/AudioManager.cs
+
+- Menu bind lai khi can:
+  Tools/MainGame/Bind Chapter 1 Story Audio
+  Assets/MainGame/Bind Chapter 1 Story Audio
+
+Neu thay doi ten/duong dan file audio, hay cap nhat lai AudioData.asset hoac chay lai menu bind o tren trong Unity.
+
+
+2. AM THANH DA GAN VA TU PHAT TRONG GAMEPLAY
+
+A. Intro va ambience theo cot truyen
+
+- Amb_Exterior_Garden.mp3
+  Gan vao: GameController.ApplyChapterAudio()
+  Phat khi: ChapterPhase.Intro, luc Khoa o ngoai cong/biet thu.
+
+- Amb_CH1_Day_01.wav
+  Gan vao: GameController.ApplyChapterAudio()
+  Phat khi: gameplay mac dinh sau intro/vao nha.
+
+- Amb_CH1_Ghost.wav
+  Gan vao: GameController.ApplyChapterAudio(), HidingSystem, MonsterAI
+  Phat khi: bat dau doan am anh, tron trong tu, sau chase.
+
+- BGM_CH1_Scene3_Chase.mp3
+  Gan vao: MonsterAI.StartChaseAudio(), GameController phase Escape/HallEncounter
+  Phat khi: monster nhin thay player va bat dau chase.
+
+- BGM_DeathScreen_TheLastBroadcast.wav
+  Gan vao: GameController.TriggerDeath(), GameController.StartEnding()
+  Phat khi: chet/ending.
+
+
+B. Voice intro cua Nguyen Minh Khoa
+
+CutSceneManager da co fallback doc voice tu AudioData bang dialogueId, nen neu CutScenePoint chua keo clip tay van tu phat duoc.
+
+- VO_Ch1_Intro_01.wav
+  Gan vao: intro_arrived_line
+  Cau: "Cuoi cung cung den noi roi..."
+
+- VO_Ch1_Intro_02.wav
+  Gan vao: intro_villa_history
+  Cau: "Biet thu Do Gia... xay nam 1940..."
+
+- VO_Ch1_Intro_03.wav
+  Gan vao: intro_thesis_line
+  Cau: "De tai tot nghiep..."
+
+- VO_Ch1_Intro_04.wav
+  Gan vao: intro_front_sketch_line
+  Cau: "Chup vai tam..."
+
+- VO_Ch1_Intro_05.wav
+  Gan vao: intro_enter_window_line
+  Cau: "Ua... cua so phong an mo san ha..."
+
+
+C. Tuong tac vat pham va UI
+
+- sfxclick.mp3
+  Gan vao: InventoryUI mo/dong tab, chon vat pham, nut UI; Settings/Main Menu da dung AudioManager PlayButtonClick/PlayBack.
+
+- SFX_DialogueAdvance_Click.mp3
+  Gan vao: apply settings va typewriter click cua cutscene binder.
+
+- SFX_KeyPickup.mp3
+  Gan vao: ItemPickup khi itemData.itemType = Key.
+
+- SFX_PaperPickup_Wood.mp3
+  Gan vao: MusicSheetPickup khi nhat manh not nhac.
+
+- SFX_Diary_PageFlip.mp3
+  Gan vao: InventoryUI khi chon entry trong tab Nhat ky.
+
+- SFX_Interact_Generic_01.wav
+  Gan vao: ItemPickup cho vat pham thuong/pin, InventoryManager khi dung/trang bi vat pham.
+
+- SFX_FlashlightShake.wav
+  Gan vao: ItemUsageSystem khi bat/tat den pin bang F; InventoryManager khi dung pin sac den.
+
+- Sfx.mp3
+  Gan vao: AudioManager.PlayCameraShot(), dung cho camera shot neu camera system goi.
+
+
+D. Buoc chan di chuyen
+
+- Footstep_Grass_01.wav
+- Footstep_Grass_02.wav
+  Gan vao: AudioData.footstepGround
+  Phat khi: player dang di/chay tren Terrain hoac cac be mat khong nhan la san go.
+
+- Footstep_Wood_01.wav
+- Footstep_Wood_02.wav
+  Gan vao: AudioData.footstepWood
+  Phat khi: player dang di/chay tren vat the co ten object/hierarchy/material chua Wood, Floor, Plank, House hoac Villa.
+
+- FpsController.HandleFootsteps()
+  Raycast xuong duoi chan de nhan mat san, chay thi nhip buoc nhanh hon di bo.
+  Dung AudioManager.PlayGroundFootstep() va AudioManager.PlayWoodFootstep(), co random clip va pitch nhe de khong lap may moc.
+
+
+E. Cua, chia khoa, piano
+
+- SFX_Door_Locked.mp3
+  Gan vao: DoorSystem khi cua khoa/khong co chia/sai chia; PianoInteractable khi chua du manh nhac.
+
+- SFX_Door_Unlock.mp3
+  Gan vao: DoorSystem khi dung dung keyID va mo khoa.
+
+- SFX_Door_OpenSlow.mp3
+  Gan vao: DoorSystem fallback khi mo/dong cua; HidingSystem fallback khi mo tu tron.
+
+- c1.wav, d1.wav, e1.wav, f1.wav, g1.wav, a1.wav, b1.wav, c2.wav
+  Gan vao: PianoPuzzleUI noteClipC/noteClipD/noteClipE/noteClipF/noteClipG/noteClipA/noteClipB/noteClipHighC.
+  Phat khi: click cac phim trang tren Piano UI.
+  Phim chu C/D/E/F/G/A/B tren ban phim cung phat dung clip tuong ung.
+
+- c1s.wav, d1s.wav, f1s.wav, g1s.wav, a1s.wav
+  Gan vao: PianoPuzzleUI noteClipCSharp/noteClipDSharp/noteClipFSharp/noteClipGSharp/noteClipASharp.
+  Phat khi: click cac phim den tren Piano UI.
+  Phim so 1/2/3/4/5 tren ban phim phat lan luot C#/D#/F#/G#/A#.
+
+- SFX_Sanity_Warning_01.wav
+  Gan vao: PianoPuzzle khi bam sai giai dieu.
+
+- SFX_MusicBox_Startup_01.wav
+  Gan vao: PianoPuzzle khi bam dung giai dieu.
+
+- SFX_ItemLock_Unlock.wav
+  Gan vao: PianoPuzzle khi hoan thanh, mo co che/cua thu phong.
+
+
+F. Tron, Ma Vu Dai, chase, gieng
+
+- VO_Ch1_MaVuDai_Patrol_Full.wav
+  Gan vao: HidingSystem khi player chui vao cho tron.
+
+- VO_Ch1_MK-HIDE-03.wav
+  Gan vao: HidingSystem khi player chui ra khoi cho tron.
+
+- SFX_Ghost_Jumpscare_Scream_01.wav
+  Gan vao: MonsterAI.StartChaseAudio() khi monster lan dau thay player.
+
+- SFX_WellJumpscare_MaDa.wav
+  Gan vao: GameController.TriggerDeath(), dung cho doan bi keo xuong gieng/chet.
+
+- VO_Ch1_MK-DEATH-03.wav
+  Gan vao: GameController.TriggerDeath(), cau "...Ai do... giup..." sau khi chet.
+
+
+3. VOICE DA MAP SAN TRONG AUDIODATA NHUNG CAN TRIGGER/CUTSCENE RIENG DE PHAT DUNG CANH
+
+Nhung file nay da duoc gan vao AudioData.asset va co ham goi san trong AudioManager:
+
+- VO_Ch1_BaLan_Tape_Full.wav
+  Goi bang: AudioManager.Instance.PlayBaLanTape()
+  De dung cho: hop nhac/cuon bang Ba Lan trong Thu Phong.
+
+- VO_Ch1_DiaryReaction_01.wav, 02.wav, 03.wav
+  Goi bang: AudioManager.Instance.PlayDiaryReaction(1/2/3)
+  De dung cho: luc Khoa doc xong nhat ky va nghe dong tinh than doi sang canh giac.
+
+- VO_Ch1_MK-HIDE-01.wav den VO_Ch1_MK-HIDE-06.wav
+  Goi bang: AudioManager.Instance.PlayHideVoice(1..6)
+  Da dung truc tiep: HIDE-03 khi chui ra.
+  Con lai nen dat vao cutscene/trigger trong tu theo dung timing neu lam sequence day du.
+
+- VO_Ch1_MK-DEATH-01.wav, 02.wav, 03.wav
+  Goi bang: AudioManager.Instance.PlayDeathVoice(1..3)
+  Da dung truc tiep: DEATH-03 trong TriggerDeath.
+  DEATH-01 va DEATH-02 nen dat vao trigger mieng gieng truoc khi goi TriggerDeath.
+
+
+4. GOI Y SETUP THEM TRONG UNITY
+
+- Tao object HopNhac_BaLan trong Thu Phong.
+  Khi player interact: goi AudioManager.Instance.PlayMusicBoxStartup(), sau do AudioManager.Instance.PlayBaLanTape().
+
+- Tao trigger DocNhatKy trong Thu Phong.
+  Sau khi hien noi dung nhat ky: goi PlayDiaryReaction(1), doi 1-2 giay goi PlayDiaryReaction(2), doi tiep goi PlayDiaryReaction(3).
+
+- Tao trigger MiengGieng.
+  Khi player toi gan: goi PlayDeathVoice(1).
+  Khi nhin xuong gieng: goi PlayDeathVoice(2), goi PlayWellJumpscare(), sau do GameController.Instance.TriggerDeath().
+
+- Neu muon thay clip UI/SFX:
+  Mo Assets/MainGame/Resources/Audio/AudioData.asset va keo clip moi vao slot tuong ung.
+
+
+5. FILE CODE DA CHINH
+
+- Assets/MainGame/Script/AudioData.cs
+- Assets/MainGame/Script/AudioManager.cs
+- Assets/MainGame/Script/GameController.cs
+- Assets/MainGame/Script/CutSceneManager.cs
+- Assets/MainGame/Script/Inventory/ItemPickup.cs
+- Assets/MainGame/Script/Inventory/InventoryManager.cs
+- Assets/MainGame/Script/Inventory/InventoryUI.cs
+- Assets/MainGame/Script/Music/MusicSheetPickup.cs
+- Assets/MainGame/Script/Piano/PianoInteractable.cs
+- Assets/MainGame/Script/Piano/PianoPuzzle.cs
+- Assets/MainGame/Script/MonsterAI.cs
+- Assets/FpsHorrorKit/Scripts/FpsController/FpsController.cs
+- Assets/FpsHorrorKit/Scripts/Systems/DoorSystem.cs
+- Assets/FpsHorrorKit/Scripts/Systems/HidingSystem.cs
+- Assets/Editor/CutSceneSceneUpdater.cs
+- Assets/Editor/ChapterOneAudioBinder.cs

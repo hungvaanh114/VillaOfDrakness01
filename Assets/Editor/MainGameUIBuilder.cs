@@ -80,14 +80,11 @@ public static class MainGameUIBuilder
         PrepareRoot(root, true);
 
         AddVignette(root, "VignetteOverlay", new Color(0.01f, 0.04f, 0.08f, 0.18f));
-        AddCornerScratches(root);
         AddCrosshair(root);
-        AddChapterHeader(root);
         AddObjectivePanel(root);
-        AddStatusPanels(root);
+        AddFlashlightPanel(root);
         AddInteractPrompt(root);
-        AddInventoryBar(root);
-        AddPulseLine(root);
+        AddNarrationPanel(root);
     }
 
     private static void RebuildSettingUI(Transform root)
@@ -95,7 +92,6 @@ public static class MainGameUIBuilder
         PrepareRoot(root, false);
 
         AddVignette(root, "DimmingOverlay", new Color(0.01f, 0.04f, 0.08f, 0.78f));
-        AddCornerScratches(root);
         AddSettingsTitle(root);
 
         var body = AddImage(root, "SettingsBody", sprites["panel"], new Color(0.01f, 0.035f, 0.055f, 0.74f), Image.Type.Sliced);
@@ -143,16 +139,16 @@ public static class MainGameUIBuilder
     private static void AddObjectivePanel(Transform root)
     {
         var panel = AddImage(root, "ObjectivePanel", sprites["panel"], DeepPanelColor, Image.Type.Sliced);
-        SetRect(panel.rectTransform, new Vector2(0f, 1f), new Vector2(330, 132), new Vector2(38, -122));
+        SetRect(panel.rectTransform, new Vector2(0f, 1f), new Vector2(380, 162), new Vector2(16, -18));
 
-        var title = AddText(panel.transform, "ObjectiveTitleText", "MỤC TIÊU", 25, TextColor, TextAlignmentOptions.Left);
-        SetRect(title.rectTransform, new Vector2(0f, 1f), new Vector2(250, 38), new Vector2(38, -30));
+        var title = AddText(panel.transform, "ObjectiveTitleText", "Mục tiêu:", 28, AccentTextColor, TextAlignmentOptions.Left);
+        SetRect(title.rectTransform, new Vector2(0f, 1f), new Vector2(260, 36), new Vector2(42, -34));
 
-        var bullet = AddImage(panel.transform, "ObjectiveBulletIcon", sprites["diamond"], HotLineColor, Image.Type.Simple);
-        SetRect(bullet.rectTransform, new Vector2(0f, 1f), new Vector2(18, 18), new Vector2(39, -80));
+        var divider = AddImage(panel.transform, "ObjectiveDivider", sprites["line"], LineColor, Image.Type.Sliced);
+        SetRect(divider.rectTransform, new Vector2(0f, 1f), new Vector2(250, 3), new Vector2(42, -78));
 
-        var text = AddText(panel.transform, "ObjectiveText", "Tìm cách vào biệt thự", 20, TextColor, TextAlignmentOptions.Left);
-        SetRect(text.rectTransform, new Vector2(0f, 1f), new Vector2(240, 32), new Vector2(64, -80));
+        var text = AddText(panel.transform, "ObjectiveText", "Tìm lối vào biệt thự", 27, MutedTextColor, TextAlignmentOptions.Left);
+        SetRect(text.rectTransform, new Vector2(0f, 1f), new Vector2(300, 38), new Vector2(42, -104));
     }
 
     private static void AddStatusPanels(Transform root)
@@ -168,23 +164,29 @@ public static class MainGameUIBuilder
     private static void AddFlashlightPanel(Transform root)
     {
         var panel = AddImage(root, "FlashlightPanel", sprites["panel"], DeepPanelColor, Image.Type.Sliced);
-        SetRect(panel.rectTransform, new Vector2(0f, 1f), new Vector2(282, 104), new Vector2(0, -8));
+        SetRect(panel.rectTransform, new Vector2(0f, 0f), new Vector2(332, 158), new Vector2(20, 20));
 
-        var icon = AddImage(panel.transform, "FlashlightIcon", sprites["icon_flashlight"], Color.white, Image.Type.Simple);
-        SetRect(icon.rectTransform, new Vector2(0f, 0.5f), new Vector2(74, 74), new Vector2(24, 0));
+        var title = AddText(panel.transform, "FlashlightTitleText", "PIN ĐÈN PIN", 23, TextColor, TextAlignmentOptions.Left);
+        SetRect(title.rectTransform, new Vector2(0f, 1f), new Vector2(210, 32), new Vector2(30, -28));
 
-        var title = AddText(panel.transform, "FlashlightTitleText", "ĐÈN PIN", 18, AccentTextColor, TextAlignmentOptions.Left);
-        SetRect(title.rectTransform, new Vector2(0f, 1f), new Vector2(130, 24), new Vector2(126, -28));
+        var divider = AddImage(panel.transform, "FlashlightDivider", sprites["line"], LineColor, Image.Type.Sliced);
+        SetRect(divider.rectTransform, new Vector2(0f, 1f), new Vector2(206, 3), new Vector2(30, -68));
 
-        var bg = AddImage(panel.transform, "BatteryBarBackground", sprites["bar"], new Color(0.08f, 0.18f, 0.22f, 0.8f), Image.Type.Sliced);
-        SetRect(bg.rectTransform, new Vector2(0f, 0f), new Vector2(54, 24), new Vector2(128, 25));
+        var batteryFrame = AddImage(panel.transform, "BatteryFrame", sprites["bar"], new Color(0.02f, 0.045f, 0.06f, 0.86f), Image.Type.Sliced);
+        SetRect(batteryFrame.rectTransform, new Vector2(0f, 0f), new Vector2(168, 52), new Vector2(32, 26));
 
-        var fill = AddImage(bg.transform, "BatteryBarFill", sprites["bar_fill"], HotLineColor, Image.Type.Filled);
-        ConfigureHorizontalFill(fill, 0.78f);
-        SetStretch(fill.rectTransform, new Vector2(5, 5), new Vector2(-11, -5));
+        var cap = AddImage(panel.transform, "BatteryCap", null, LineColor, Image.Type.Simple);
+        SetRect(cap.rectTransform, new Vector2(0f, 0f), new Vector2(9, 24), new Vector2(200, 40));
 
-        var percent = AddText(panel.transform, "BatteryPercentText", "78%", 24, TextColor, TextAlignmentOptions.Left);
-        SetRect(percent.rectTransform, new Vector2(0f, 0f), new Vector2(72, 28), new Vector2(205, 27));
+        for (var i = 0; i < 6; i++)
+        {
+            var cellColor = i < 5 ? new Color(0.48f, 0.85f, 1f, 0.90f) : new Color(0.04f, 0.08f, 0.10f, 0.66f);
+            var cell = AddImage(batteryFrame.transform, $"BatteryCell{i + 1}", sprites["bar_fill"], cellColor, Image.Type.Sliced);
+            SetRect(cell.rectTransform, new Vector2(0f, 0.5f), new Vector2(22, 38), new Vector2(10 + i * 25, 0));
+        }
+
+        var percent = AddText(panel.transform, "BatteryPercentText", "78%", 28, TextColor, TextAlignmentOptions.Left);
+        SetRect(percent.rectTransform, new Vector2(0f, 0f), new Vector2(90, 40), new Vector2(238, 34));
     }
 
     private static void AddCameraPanel(Transform root)
@@ -205,16 +207,29 @@ public static class MainGameUIBuilder
     private static void AddInteractPrompt(Transform root)
     {
         var panel = AddImage(root, "InteractPrompt", sprites["button"], new Color(0.03f, 0.09f, 0.1f, 0.44f), Image.Type.Sliced);
-        SetRect(panel.rectTransform, new Vector2(0.5f, 0f), new Vector2(470, 58), new Vector2(0, 98));
+        SetRect(panel.rectTransform, new Vector2(0.5f, 0.5f), new Vector2(322, 72), new Vector2(0, -206));
 
-        var text = AddText(panel.transform, "InteractText", "Nhấn     để tương tác", 22, MutedTextColor, TextAlignmentOptions.Center);
+        var text = AddText(panel.transform, "InteractText", "Nhấn     để tương tác", 24, MutedTextColor, TextAlignmentOptions.Center);
         SetStretch(text.rectTransform, Vector2.zero, Vector2.zero);
 
         var keyBg = AddImage(panel.transform, "KeycapBackground", sprites["keycap"], new Color(0.02f, 0.04f, 0.06f, 0.78f), Image.Type.Sliced);
-        SetRect(keyBg.rectTransform, new Vector2(0.5f, 0.5f), new Vector2(30, 30), new Vector2(-40, 0));
+        SetRect(keyBg.rectTransform, new Vector2(0.5f, 0.5f), new Vector2(36, 36), new Vector2(-34, 0));
 
-        var key = AddText(panel.transform, "KeycapText", "E", 18, TextColor, TextAlignmentOptions.Center);
-        SetRect(key.rectTransform, new Vector2(0.5f, 0.5f), new Vector2(30, 30), new Vector2(-40, 0));
+        var key = AddText(keyBg.transform, "KeycapText", "E", 21, TextColor, TextAlignmentOptions.Center);
+        SetStretch(key.rectTransform, Vector2.zero, Vector2.zero);
+
+        panel.gameObject.SetActive(false);
+    }
+
+    private static void AddNarrationPanel(Transform root)
+    {
+        var panel = AddImage(root, "NarrationPanel", sprites["panel"], DeepPanelColor, Image.Type.Sliced);
+        SetRect(panel.rectTransform, new Vector2(0.5f, 0f), new Vector2(700, 94), new Vector2(0, 62));
+
+        var text = AddText(panel.transform, "NarrationText", "", 26, AccentTextColor, TextAlignmentOptions.Center);
+        text.textWrappingMode = TextWrappingModes.Normal;
+        SetStretch(text.rectTransform, new Vector2(34, 14), new Vector2(-34, -14));
+        panel.gameObject.SetActive(false);
     }
 
     private static void AddInventoryBar(Transform root)
@@ -272,12 +287,13 @@ public static class MainGameUIBuilder
         AddTab(tabList.transform, "GeneralTab", "Chung", 0, false);
         AddTab(tabList.transform, "VisualTab", "Hình ảnh", 1, true);
         AddTab(tabList.transform, "AudioTab", "Âm thanh", 2, false);
-        AddTab(tabList.transform, "ControlsTab", "Điều khiển", 3, false);
-        AddTab(tabList.transform, "GameplayTab", "Gameplay", 4, false);
     }
 
     private static void AddTab(Transform root, string objectName, string label, int index, bool selected)
     {
+        if (objectName == "ControlsTab" || objectName == "GameplayTab")
+            return;
+
         var tab = AddImage(root, objectName, sprites[selected ? "tab_selected" : "tab"], selected ? new Color(0.09f, 0.27f, 0.36f, 0.70f) : new Color(0.01f, 0.035f, 0.06f, 0.58f), Image.Type.Sliced);
         SetRect(tab.rectTransform, new Vector2(0f, 1f), new Vector2(238, 58), new Vector2(0, -index * 68));
 
@@ -304,18 +320,14 @@ public static class MainGameUIBuilder
         controller.resolutionDropdown = AddDropdown(content.transform, "ResolutionDropdown", "Độ phân giải", 0, new[] { "1920x1080", "1600x900", "1280x720" });
         controller.displayModeDropdown = AddDropdown(content.transform, "DisplayModeDropdown", "Chế độ hiển thị", 1, new[] { "Toàn màn hình", "Cửa sổ" });
         controller.brightnessSlider = AddSliderRow(content.transform, "BrightnessSlider", "Độ sáng", 2, 60, out controller.brightnessValueText);
-        controller.qualityDropdown = AddDropdown(content.transform, "QualityDropdown", "Chất lượng đồ họa", 3, new[] { "Thấp", "Trung bình", "Cao", "Cực cao" }, 2);
-        controller.shadowsDropdown = AddDropdown(content.transform, "ShadowsDropdown", "Đổ bóng", 4, new[] { "Bật", "Tắt" });
-        controller.fogDropdown = AddDropdown(content.transform, "FogDropdown", "Hiệu ứng sương mù", 5, new[] { "Thấp", "Trung bình", "Cao" }, 2);
-        controller.fpsDropdown = AddDropdown(content.transform, "FpsDropdown", "Giới hạn FPS", 6, new[] { "30", "60", "120", "Không giới hạn" }, 2);
 
         var audioTitle = AddText(content.transform, "AudioSectionTitleText", "ÂM THANH", 22, AccentTextColor, TextAlignmentOptions.Left);
-        SetRect(audioTitle.rectTransform, new Vector2(0f, 1f), new Vector2(250, 32), new Vector2(0, -345));
-        AddSeparator(content.transform, "AudioSeparator", -381);
+        SetRect(audioTitle.rectTransform, new Vector2(0f, 1f), new Vector2(250, 32), new Vector2(0, -242));
+        AddSeparator(content.transform, "AudioSeparator", -278);
 
-        controller.masterVolumeSlider = AddSliderRow(content.transform, "MasterVolumeSlider", "Âm lượng tổng", 8, 80, out controller.masterVolumeValueText);
-        controller.musicVolumeSlider = AddSliderRow(content.transform, "MusicVolumeSlider", "Âm nhạc", 9, 40, out controller.musicVolumeValueText);
-        controller.sfxVolumeSlider = AddSliderRow(content.transform, "SfxVolumeSlider", "Hiệu ứng", 10, 70, out controller.sfxVolumeValueText);
+        controller.masterVolumeSlider = AddSliderRow(content.transform, "MasterVolumeSlider", "Âm lượng tổng", 5, 80, out controller.masterVolumeValueText);
+        controller.musicVolumeSlider = AddSliderRow(content.transform, "MusicVolumeSlider", "Âm nhạc", 6, 40, out controller.musicVolumeValueText);
+        controller.sfxVolumeSlider = AddSliderRow(content.transform, "SfxVolumeSlider", "Hiệu ứng", 7, 70, out controller.sfxVolumeValueText);
     }
 
     private static TMP_Dropdown AddDropdown(Transform root, string objectName, string label, int row, string[] options, int value = 0)
@@ -337,7 +349,7 @@ public static class MainGameUIBuilder
         SetStretch(labelText.rectTransform, new Vector2(36, 0), new Vector2(-42, 0));
         dropdown.captionText = labelText;
 
-        var arrow = AddText(go.transform, "ArrowText", "⌄", 24, AccentTextColor, TextAlignmentOptions.Center);
+        var arrow = AddText(go.transform, "ArrowText", "v", 24, AccentTextColor, TextAlignmentOptions.Center);
         SetRect(arrow.rectTransform, new Vector2(1f, 0.5f), new Vector2(30, 30), new Vector2(-20, 0));
 
         BuildDropdownTemplate(go.transform, dropdown);
@@ -501,24 +513,6 @@ public static class MainGameUIBuilder
         SetStretch(overlay.rectTransform, Vector2.zero, Vector2.zero);
     }
 
-    private static void AddCornerScratches(Transform root)
-    {
-        var corners = new[]
-        {
-            ("CornerTopLeft", new Vector2(0f, 1f), new Vector2(0, 0), new Vector3(0, 0, 0)),
-            ("CornerTopRight", new Vector2(1f, 1f), new Vector2(0, 0), new Vector3(0, 180, 0)),
-            ("CornerBottomLeft", new Vector2(0f, 0f), new Vector2(0, 0), new Vector3(180, 0, 0)),
-            ("CornerBottomRight", new Vector2(1f, 0f), new Vector2(0, 0), new Vector3(180, 180, 0))
-        };
-
-        foreach (var (name, anchor, pos, rot) in corners)
-        {
-            var corner = AddImage(root, name, sprites["corner"], new Color(0.84f, 0.9f, 0.96f, 0.25f), Image.Type.Simple);
-            SetRect(corner.rectTransform, anchor, new Vector2(180, 180), pos);
-            corner.rectTransform.localEulerAngles = rot;
-        }
-    }
-
     private static GameObject EnsureChild(Transform parent, string name)
     {
         var child = parent.Find(name);
@@ -602,12 +596,54 @@ public static class MainGameUIBuilder
     private static void ConnectGameController(GameObject gameUI, GameObject settingUI)
     {
         var controller = UnityEngine.Object.FindFirstObjectByType<GameController>();
-        if (controller == null)
+        if (controller != null)
+        {
+            controller.gameUI = gameUI;
+            controller.pauseUI = settingUI;
+            EditorUtility.SetDirty(controller);
+        }
+
+        WirePlayerInteract(gameUI);
+    }
+
+    private static void WirePlayerInteract(GameObject gameUI)
+    {
+        var playerInteract = UnityEngine.Object.FindFirstObjectByType<FpsHorrorKit.PlayerInteract>();
+        if (playerInteract == null)
+        {
+            var player = GameObject.FindWithTag("Player") ?? GameObject.Find("Player");
+            if (player != null)
+                playerInteract = player.GetComponent<FpsHorrorKit.PlayerInteract>() ?? player.AddComponent<FpsHorrorKit.PlayerInteract>();
+        }
+
+        if (playerInteract == null)
             return;
 
-        controller.gameUI = gameUI;
-        controller.pauseUI = settingUI;
-        EditorUtility.SetDirty(controller);
+        var prompt = FindChildTransform(gameUI.transform, "InteractPrompt");
+        var promptText = FindChildTransform(gameUI.transform, "InteractText");
+
+        var serialized = new SerializedObject(playerInteract);
+        Set(serialized, "higlightObject", prompt != null ? prompt.gameObject : null);
+        Set(serialized, "interactTextUI", promptText != null ? promptText.GetComponent<TextMeshProUGUI>() : null);
+        serialized.ApplyModifiedPropertiesWithoutUndo();
+    }
+
+    private static Transform FindChildTransform(Transform root, string childName)
+    {
+        foreach (var child in root.GetComponentsInChildren<Transform>(true))
+        {
+            if (child.name == childName)
+                return child;
+        }
+
+        return null;
+    }
+
+    private static void Set(SerializedObject serialized, string propertyName, UnityEngine.Object value)
+    {
+        var property = serialized.FindProperty(propertyName);
+        if (property != null)
+            property.objectReferenceValue = value;
     }
 
     private static void EnsureSprites()
@@ -630,7 +666,6 @@ public static class MainGameUIBuilder
         CreateDiamondSprite("diamond", 64, 64);
         CreateLineSprite("line", 128, 4, new Vector4(2, 2, 0, 0));
         CreateDividerSprite("divider", 512, 32);
-        CreateCornerSprite("corner", 192, 192);
         CreateCrosshairSprite("crosshair", 64, 64);
         CreatePulseSprite("pulse", 512, 64);
         CreateVignetteSprite("vignette", 128, 128, new Vector4(40, 40, 40, 40));
@@ -748,18 +783,6 @@ public static class MainGameUIBuilder
         DrawDiamondOutline(texture, width / 2, height / 2, 13, LineColor);
         DrawDiamondOutline(texture, width / 2 - 24, height / 2, 7, LineColor);
         DrawDiamondOutline(texture, width / 2 + 24, height / 2, 7, LineColor);
-        SaveSprite(texture, name, Vector4.zero);
-    }
-
-    private static void CreateCornerSprite(string name, int width, int height)
-    {
-        var texture = NewTexture(width, height);
-        Fill(texture, Color.clear);
-        DrawLine(texture, 0, height - 6, 160, height - 6, LineColor, 2);
-        DrawLine(texture, 6, height - 1, 6, 32, LineColor, 2);
-        DrawLine(texture, 20, height - 24, 128, height - 24, new Color(1, 1, 1, 0.35f), 1);
-        DrawLine(texture, 24, height - 18, 24, 68, new Color(1, 1, 1, 0.32f), 1);
-        AddScratches(texture, width, height, 32);
         SaveSprite(texture, name, Vector4.zero);
     }
 

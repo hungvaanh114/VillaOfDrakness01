@@ -331,7 +331,7 @@ public static class MainMenuSceneBuilder
         SetStretch(caption.rectTransform, new Vector2(36, 0), new Vector2(-50, 0));
         dropdown.captionText = caption;
 
-        var arrow = AddText(image.transform, "ArrowText", "⌄", TextRole.Body, TextAlignmentOptions.Center);
+        var arrow = AddText(image.transform, "ArrowText", "v", TextRole.Body, TextAlignmentOptions.Center);
         SetRect(arrow.rectTransform, new Vector2(1f, 0.5f), new Vector2(32, 32), new Vector2(-22, 0));
 
         BuildSettingsDropdownTemplate(image.transform, dropdown);

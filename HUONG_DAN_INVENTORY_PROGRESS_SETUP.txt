@@ -1,0 +1,666 @@
+HUONG DAN CODE VA SETUP HE THONG INVENTORY / JOURNAL / MUSIC / KEY / BATTERY / PIANO
+Project: VillaOfDrakness01
+
+============================================================
+1. TOM TAT HE THONG DA THEM
+============================================================
+
+He thong moi nam chu yeu trong:
+
+Assets/MainGame/Script/Inventory/
+Assets/MainGame/Script/Journal/
+Assets/MainGame/Script/Music/
+Assets/MainGame/Script/Piano/
+Assets/MainGame/Script/Quest/
+
+He thong da ket noi voi cac script cu cua FpsHorrorKit:
+
+Assets/FpsHorrorKit/Scripts/InteractSystem/PlayerInteract.cs
+Assets/FpsHorrorKit/Scripts/Systems/DoorSystem.cs
+Assets/FpsHorrorKit/Scripts/Systems/FlashLightUpdater.cs
+Assets/FpsHorrorKit/Scripts/Systems/ItemUsageSystem.cs
+Assets/FpsHorrorKit/Scripts/FpsController/FpsAssetsInputs.cs
+
+Muc tieu:
+
+- Nhat item bang Interaction System hien co.
+- Mo Inventory bang phim TAB.
+- Chon item bang chuot.
+- Dung/trang bi item bang nut UI, chuot phai, hoac double-click.
+- Dung Battery de sac Flashlight.
+- Trang bi Key roi mo Door dung RequiredKeyID.
+- Thu thap 5 Music Sheet rieng o tab "MANH NOT NHAC".
+- Khi du Music Sheet thi mo khoa Piano Puzzle.
+- Choi dung giai dieu Piano de day progression sang PianoCompleted.
+- Them tab "Huong dan phim" rieng trong Settings.
+
+============================================================
+2. SCRIPT MOI DA TAO
+============================================================
+
+Inventory:
+
+- ItemData.cs
+  ScriptableObject data cho item.
+  Field quan trong:
+  id, itemName, description, icon, itemType, canStack, maxStack, canUse, keyID, worldPrefab, heldPrefab.
+
+- InventoryItem.cs
+  Data runtime cho item trong inventory: ItemData + Amount.
+
+- InventoryManager.cs
+  Quan ly danh sach item, add/remove/use/equip.
+  Event:
+  OnInventoryChanged, OnItemAdded, OnItemRemoved, OnItemSelected, OnItemUsed, OnItemEquipped.
+
+- InventoryUI.cs
+  Tu build UI fullscreen overlay:
+  Hanh Trang / Nhat Ky / Manh Not Nhac.
+  Dieu khien:
+  TAB mo/dong, Q/E doi tab, ESC dong.
+  Chuot trai chon, chuot phai hoac double-click dung/trang bi.
+
+- InventorySlotUI.cs
+  UI slot item. Xu ly click chuot.
+
+- HeldItemController.cs
+  Tim LeftHandProp/LeftHand de cam item tren tay trai.
+  Neu chua co hold point thi tao ItemHoldPoint duoi root tay trai.
+  Spawn visual cua key/item dang equip.
+
+- ItemPickup.cs
+  Component gan len prefab item world.
+  Implement IInteractable de PlayerInteract nhat item bang E.
+
+Journal:
+
+- JournalEntryData.cs
+  ScriptableObject cho entry nhat ky.
+
+- JournalManager.cs
+  Quan ly danh sach entry.
+
+Music:
+
+- MusicSheetData.cs
+  ScriptableObject cho manh not nhac.
+
+- MusicSheetManager.cs
+  Quan ly music sheet da thu thap.
+  Field quan trong:
+  requiredMusicSheetCount.
+  Khi CollectedMusicSheetCount >= RequiredMusicSheetCount thi MusicSheetCompleted = true.
+
+- MusicSheetPickup.cs
+  Component gan len prefab music sheet world.
+  Music sheet khong vao grid Inventory thuong.
+
+Piano:
+
+- PianoPuzzle.cs
+  Logic kiem tra melody.
+  Mac dinh melody:
+  C, D, E, F, G
+
+- PianoPuzzleUI.cs
+  Popup UI piano o giua man hinh.
+  Co 7 phim trang: C D E F G A B.
+  Click phim dan hoac bam keyboard C/D/E/F/G/A/B se phat note tuong ung.
+  Co phim den trang tri.
+  ESC dong UI.
+
+- PianoInteractable.cs
+  Gan len object Piano.
+  Neu chua du ban nhac: hien "Ban chua co du ban nhac."
+  Neu du: mo PianoPuzzleUI.
+
+Quest:
+
+- GameProgressManager.cs
+  Quan ly progression:
+  Start, EnteredVilla, ExploringVilla, CollectingMusicSheets, PianoUnlocked, PianoCompleted.
+
+Editor Setup:
+
+- Assets/Editor/MainGameInventoryProgressionSetup.cs
+  Tao data, prefab test, managers, UI roots va item test trong scene.
+  Menu:
+  Assets/MainGame/Build Inventory Progression System
+  Tools/MainGame/Build Inventory Progression System
+
+- Assets/Editor/SettingsTabsSceneUpdater.cs
+  Da cap nhat de co tab Huong dan phim.
+
+============================================================
+3. SCRIPT CU DA CHINH SUA
+============================================================
+
+DoorSystem.cs
+
+Them:
+
+- public string requiredKeyID;
+- public bool consumeKeyOnUse;
+- public System.Action<DoorSystem> OnDoorUnlocked;
+
+Logic:
+
+- Neu door bi lock va co requiredKeyID:
+  So sanh requiredKeyID voi InventoryManager.Instance.CurrentEquippedKey.keyID.
+- Dung key:
+  Unlock door, set isLocked = false, hasKey = true.
+- Sai key:
+  Hien "Chia khoa nay khong mo duoc cua."
+- Khong co key:
+  Hien "Cua da khoa."
+
+FlashLightUpdater.cs
+
+Them:
+
+- TryRecharge(float energyLevel)
+- GetBatteryPercent()
+
+Dung cho Battery item sac pin den pin.
+
+ItemUsageSystem.cs
+
+Sua de phim F bat/tat den pin khi player da co flashlight item.
+
+Them:
+
+- GrantFlashlightItem(bool turnOn = false)
+- ForceFlashlightOn(bool playToggleSound = false)
+
+Inventory.cs cu
+
+Neu InventoryManager moi ton tai thi legacy Inventory khong xu ly phim TAB nua.
+
+FpsAssetsInputs.cs
+
+Them input bool:
+
+- inventory
+
+Them method:
+
+- OnInventory(InputValue value)
+
+GameController.cs
+
+ESC se dong Inventory/Piano UI truoc khi mo Pause Menu.
+
+InputSystem_Actions.inputactions
+
+Them:
+
+- Inventory = Keyboard Tab
+- UseFlashlight = Keyboard F
+
+SettingsUIController.cs
+
+Them tab rieng:
+
+- Huong dan phim
+
+Tab nay hien:
+
+- W/A/S/D: Di chuyen
+- Chuot: Nhin / xoay camera
+- Shift: Chay
+- E: Tuong tac
+- TAB: Mo / dong hanh trang
+- Chuot trai: Chon item
+- Chuot phai / double-click: Dung hoac trang bi item
+- Q / E: Doi tab inventory
+- F: Bat / tat den pin
+- ESC: Dong UI hoac quay lai
+
+============================================================
+4. DATA VA PREFAB DA TAO
+============================================================
+
+Data:
+
+Assets/MainGame/Data/InventoryProgression/
+
+Item:
+
+- Item_Flashlight.asset
+- Item_Battery.asset
+- Item_Key_Guest.asset
+- Item_Key_Salon.asset
+- Item_Key_Backyard.asset
+
+Journal:
+
+- Journal_Intro.asset
+
+Music:
+
+- MusicSheet_01.asset
+- MusicSheet_02.asset
+- MusicSheet_03.asset
+- MusicSheet_04.asset
+- MusicSheet_05.asset
+
+Prefab test:
+
+Assets/MainGame/Prefab/
+
+- Item_Battery.prefab
+- Item_Key_Guest.prefab
+- Item_Key_Salon.prefab
+- Item_Key_Backyard.prefab
+- MusicSheet_01.prefab
+- MusicSheet_02.prefab
+- MusicSheet_03.prefab
+- MusicSheet_04.prefab
+- MusicSheet_05.prefab
+
+Prefab test hien dang dung Cube mau:
+
+- Battery: xanh la.
+- Key: vang.
+- MusicSheet: vang/trang nhat.
+
+============================================================
+5. SETUP SCENE CAN CO
+============================================================
+
+Scene chinh:
+
+Assets/MainGame/Game.unity
+
+Can co cac object/component sau:
+
+1. MainGameSystems
+
+Gan component:
+
+- InventoryManager
+- HeldItemController
+- GameProgressManager
+- MusicSheetManager
+- JournalManager
+- PianoPuzzle
+
+Reference quan trong:
+
+InventoryManager:
+
+- Starting Flashlight: Item_Flashlight.asset
+
+MusicSheetManager:
+
+- Sheets:
+  MusicSheet_01
+  MusicSheet_02
+  MusicSheet_03
+  MusicSheet_04
+  MusicSheet_05
+- Required Music Sheet Count: 5
+
+JournalManager:
+
+- Starting Entries:
+  Journal_Intro
+
+2. Canvas
+
+Can co:
+
+- InventoryUIRoot
+  Component: InventoryUI
+
+- PianoPuzzleUIRoot
+  Component: PianoPuzzleUI
+  Component: AudioSource
+
+InventoryUI reference:
+
+- backgroundSprite: khung.png
+- panelSprite: khungVatPham.png
+- infoPanelSprite: khungThongTin.png
+- slotSprite: slot.png hoac khungVatPham.png
+- selectedSlotSprite: slot_selected.png hoac KhungVatPhamChon.png
+- tabSprite: nut.png
+- selectedTabSprite: nutChon.png
+- closeSprite: thoat.png
+- dividerSprite: divider.png
+- unknownMusicSprite: notSol.png
+- flashlightFallbackIcon: denPin.png
+- keyFallbackIcon: chiaKhoa.png
+- titleFont: ProtestGuerrilla-Regular SDF.asset
+- bodyFont: PatrickHand-Regular SDF.asset
+
+PianoPuzzleUI reference:
+
+- panelSprite: khungThongTin.png
+- pianoBackgroundSprite: danPiano.png
+- whiteKeySprite: phimDan.png
+- dividerSprite: divider.png
+- font: PatrickHand-Regular SDF.asset
+- noteClip: PianoNote_C4.ogg
+- noteClipC: PianoNote_C4.ogg
+- noteClipD/E/F/G: keo clip rieng neu co file PianoNote_D4/E4/F4/G4.ogg
+
+3. Camera / Player
+
+HeldItemController se uu tien dung:
+
+Player
+  LeftHandProp hoac LeftHand
+    ItemHoldPoint
+
+Neu muon setup tay thu cong:
+
+- Tao child ItemHoldPoint duoi LeftHandProp/LeftHand.
+- Gan transform nay cho HeldItemController neu can.
+
+4. Door
+
+Moi DoorSystem co the set:
+
+- isLocked = true
+- requiredKeyID = GuestKey / SalonKey / BackyardKey
+- consumeKeyOnUse = false neu khong muon mat key sau khi mo cua.
+
+Vi du:
+
+- Cua phong tiep khach:
+  requiredKeyID = GuestKey
+
+- Cua salon:
+  requiredKeyID = SalonKey
+
+- Cua san sau:
+  requiredKeyID = BackyardKey
+
+5. Piano Object
+
+Gan component:
+
+- PianoInteractable
+- Collider
+
+Khi player nhin vao Piano va bam E:
+
+- Neu chua du MusicSheet: bao chua du.
+- Neu du: mo PianoPuzzleUI.
+
+============================================================
+6. SETUP PREFAB ITEM WORLD
+============================================================
+
+Item binh thuong:
+
+Prefab can co:
+
+- Mesh / Model
+- Collider
+- ItemPickup
+
+ItemPickup:
+
+- itemData: keo ItemData tu Assets/MainGame/Data/InventoryProgression
+- amount: so luong nhat
+- interactText: text hien khi nhin vao item
+
+Battery:
+
+- itemData = Item_Battery
+- amount = 1
+
+Key:
+
+- itemData = Item_Key_Guest / Item_Key_Salon / Item_Key_Backyard
+- amount = 1
+
+Music Sheet:
+
+Prefab can co:
+
+- Mesh / Model
+- Collider
+- MusicSheetPickup
+
+MusicSheetPickup:
+
+- musicSheetData = MusicSheet_01 / 02 / 03 / 04 / 05
+
+Luu y:
+
+MusicSheet khong dung ItemPickup.
+MusicSheet khong vao grid Hanh Trang.
+MusicSheet chi hien o tab "MANH NOT NHAC".
+
+============================================================
+7. CAC PHIM DIEU KHIEN
+============================================================
+
+Gameplay:
+
+- W / A / S / D: Di chuyen.
+- Chuot: Nhin / xoay camera.
+- Shift: Chay.
+- E: Tuong tac.
+- F: Bat / tat den pin.
+- ESC: Pause hoac dong UI dang mo.
+
+Inventory:
+
+- TAB: Mo / dong Inventory.
+- Khi Inventory mo, GameUI/HUD gameplay se an de khong che UI hanh trang.
+- Chuot trai: Chon item.
+- Chuot phai: Dung/trang bi item dang click.
+- Double-click: Dung/trang bi item dang click.
+- Nut SU DUNG/TRANG BI: Dung item dang chon.
+- Q / E: Doi tab.
+- ESC: Dong Inventory.
+
+Piano:
+
+- E vao Piano: mo Piano UI neu du MusicSheet.
+- Click phim C D E F G A B: choi note.
+- Bam keyboard C D E F G A B khi UI Piano dang mo: choi note.
+- ESC: dong Piano UI.
+
+Settings:
+
+- Tab Cai dat: thong so hinh anh/am thanh.
+- Tab Huong dan phim: danh sach phim dieu khien.
+- Enter: Ap dung.
+- R: Khoi phuc mac dinh.
+- ESC: Quay lai.
+
+============================================================
+8. TEST FLOW BAT BUOC
+============================================================
+
+Test Inventory:
+
+1. Play scene.
+2. Bam TAB.
+3. Inventory hien fullscreen overlay.
+4. Co 3 tab:
+   HANH TRANG / NHAT KY / MANH NOT NHAC.
+5. Chuot trai chon item.
+6. Panel ben phai cap nhat ten, icon, mo ta, so luong.
+7. Chuot phai hoac double-click de dung item.
+
+Test Battery:
+
+1. Nhat Item_Battery bang E.
+2. Mo Inventory.
+3. Chon Pin den pin.
+4. Bam SU DUNG hoac chuot phai/double-click.
+5. FlashLightUpdater.TryRecharge duoc goi.
+6. Neu pin chua day: Battery giam 1.
+7. Neu pin day: khong tru Battery, hien thong bao.
+
+Test Flashlight:
+
+1. Player co Item_Flashlight trong Inventory.
+2. Bam F.
+3. Den pin bat/tat.
+
+Test Key:
+
+1. Nhat GuestKey.
+2. Mo Inventory.
+3. Chon GuestKey.
+4. Bam TRANG BI hoac chuot phai/double-click.
+5. Key thanh CurrentEquippedKey.
+6. Visual key spawn tai ItemHoldPoint.
+7. Tuong tac door co requiredKeyID = GuestKey.
+8. Door unlock va mo theo logic DoorSystem.
+
+Test Sai Key:
+
+1. Equip SalonKey.
+2. Tuong tac door requiredKeyID = GuestKey.
+3. Door khong mo.
+4. Hien thong bao sai key.
+
+Test Music Sheet:
+
+1. Nhat MusicSheet_01.
+2. Mo Inventory.
+3. Tab HANH TRANG khong co MusicSheet.
+4. Tab MANH NOT NHAC hien 1/5.
+5. Thu thap du 5 manh.
+6. Progression sang PianoUnlocked.
+
+Test Piano:
+
+1. Tuong tac piano khi chua du MusicSheet:
+   Hien thong bao chua du.
+2. Thu thap du MusicSheet.
+3. Tuong tac piano:
+   Piano UI hien o giua man hinh.
+4. Click/bam melody mac dinh:
+   C D E F G
+5. Puzzle complete.
+6. GameProgressManager sang PianoCompleted.
+
+Test Settings:
+
+1. Mo Pause.
+2. Vao Cai dat.
+3. Co tab Huong dan phim.
+4. Click tab nay.
+5. Thay cac phim:
+   TAB, F, E, Q/E, chuot trai, chuot phai/double-click, ESC.
+
+============================================================
+9. MENU EDITOR SETUP
+============================================================
+
+Neu can tao lai data/prefab/managers:
+
+Menu:
+
+Assets/MainGame/Build Inventory Progression System
+
+Hoac:
+
+Tools/MainGame/Build Inventory Progression System
+
+Menu nay se:
+
+- Tao ScriptableObject item/music/journal.
+- Tao prefab cube test.
+- Gan manager vao scene.
+- Tao InventoryUIRoot va PianoPuzzleUIRoot.
+- Tao item test trong scene.
+- Khoa thu mot DoorSystem voi requiredKeyID = GuestKey.
+
+Neu can apply tab Settings:
+
+Tools/MainGame/Apply Settings Tabs
+
+Luu y:
+
+Neu menu Settings khong chay qua MCP, runtime SettingsUIController van tu tao tab "Huong dan phim" khi Settings duoc mo.
+
+============================================================
+10. LUU Y KHI MO RONG
+============================================================
+
+- Khong doi ten class/script/field cu dang duoc scene reference.
+- Khi them item moi:
+  1. Tao ItemData moi.
+  2. Gan icon/mo ta/type.
+  3. Tao prefab world co ItemPickup.
+  4. Gan ItemData vao ItemPickup.
+
+- Khi them key moi:
+  1. Tao ItemData itemType = Key.
+  2. Dat keyID, vi du: BasementKey.
+  3. DoorSystem.requiredKeyID phai trung chuoi BasementKey.
+
+- Khi them music sheet moi:
+  1. Tao MusicSheetData moi.
+  2. Them vao MusicSheetManager.sheets.
+  3. Tang RequiredMusicSheetCount neu can.
+  4. Tao prefab co MusicSheetPickup.
+
+- Khi doi melody Piano:
+  Mo PianoPuzzle component va sua requiredMelody.
+  Mac dinh hien tai: C D E F G.
+
+- Khi lam save system sau nay can luu:
+  Inventory item id + amount.
+  Equipped item id.
+  Collected musicSheetID.
+  Door unlocked state.
+  MusicSheetCompleted.
+  GameProgressManager.CurrentProgress.
+
+============================================================
+11. CAC FILE CAN KIEM TRA NEU CO LOI
+============================================================
+
+Khong mo duoc Inventory:
+
+- Kiem tra InventoryUIRoot co InventoryUI.
+- Kiem tra InputSystem_Actions co Inventory = Tab.
+- Kiem tra EventSystem trong scene.
+
+Khong click duoc UI:
+
+- Kiem tra Canvas co GraphicRaycaster.
+- Kiem tra EventSystem co InputSystemUIInputModule.
+- Kiem tra Cursor hien khi Inventory open.
+
+Khong nhat duoc item:
+
+- Prefab phai co Collider.
+- Prefab phai co ItemPickup hoac MusicSheetPickup.
+- PlayerInteract phai dang sendRaycast = true.
+- Item nam trong interactRange.
+
+F khong bat den:
+
+- InputSystem_Actions phai co UseFlashlight = Keyboard F.
+- PlayerInput phai dung action asset nay.
+- ItemUsageSystem phai co itemLantern, lantern, _light, _lanternCanvas.
+- Item_Flashlight phai duoc add vao InventoryManager startingFlashlight.
+
+Door khong mo bang key:
+
+- Key ItemData.keyID phai trung DoorSystem.requiredKeyID.
+- Key phai duoc equip, khong chi nam trong inventory.
+- DoorSystem.isLocked = true.
+
+Piano khong mo:
+
+- MusicSheetManager.RequiredMusicSheetCount phai dung.
+- Can collect du so sheet.
+- Piano object phai co PianoInteractable va Collider.
+- Canvas phai co PianoPuzzleUIRoot va PianoPuzzleUI.
+
+============================================================
+HET
+============================================================

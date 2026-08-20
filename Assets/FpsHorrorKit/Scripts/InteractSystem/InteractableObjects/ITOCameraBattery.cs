@@ -5,14 +5,14 @@ namespace FpsHorrorKit
     public class ITOCameraBattery : MonoBehaviour, IInteractable
     {
         [SerializeField] private Item itemCameraBattery;
-        [SerializeField] private string interactText = "Take camera battery [E]";
+        [SerializeField] private string interactText = "Nhặt pin camera [E]";
 
         public void Interact()
         {
             bool result = Inventory.Instance.AddItem(itemCameraBattery, 1);
             if (result)
             {
-                InteractMessageScript.Instance?.ShowMessage("Camera battery taken! To use, open inventory(press I) and press the use button");
+                InteractMessageScript.Instance?.ShowMessage("Đã nhặt pin camera. Nhấn I mở hành trang rồi bấm dùng.");
                 UIInventory.Instance.UpdateUI();
                 Destroy(gameObject);
             }

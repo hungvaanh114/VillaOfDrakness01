@@ -25,7 +25,7 @@ public static class MainGameHudSceneUpdater
     {
         LoadAssets();
 
-        var canvas = Object.FindFirstObjectByType<Canvas>();
+        var canvas = MainGameEditorCanvasUtility.FindOrCreateScreenCanvas();
         if (canvas == null)
         {
             Debug.LogError("Canvas not found in current scene.");
@@ -136,9 +136,10 @@ public static class MainGameHudSceneUpdater
         var panel = AddImage(root, "NarrationPanel", SpriteOrNull("panel"), PanelSoftColor, Image.Type.Sliced);
         SetRect(panel.rectTransform, new Vector2(0.5f, 0f), new Vector2(700f, 94f), new Vector2(0f, 62f));
 
-        var text = AddText(panel.transform, "NarrationText", "Cánh cổng bị khóa... mình phải tìm đường khác vào.", 26f, AccentColor, TextAlignmentOptions.Center);
+        var text = AddText(panel.transform, "NarrationText", "", 26f, AccentColor, TextAlignmentOptions.Center);
         text.textWrappingMode = TextWrappingModes.Normal;
         SetStretch(text.rectTransform, new Vector2(34f, 14f), new Vector2(-34f, -14f));
+        panel.gameObject.SetActive(false);
     }
 
     private static void AddCrosshair(Transform root)

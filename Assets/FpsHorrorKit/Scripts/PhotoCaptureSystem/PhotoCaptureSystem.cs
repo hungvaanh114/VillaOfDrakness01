@@ -48,7 +48,7 @@ namespace FpsHorrorKit
         {
             if (photoCameraItem.hasItem && photoCameraItem.canUseItem)
             {
-                if (Input.GetKeyDown(KeyCode.Tab))
+                if (Input.GetKeyDown(KeyCode.P))
                 {
                     OpenAlbum();
                 }

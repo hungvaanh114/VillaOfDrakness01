@@ -5,7 +5,7 @@ namespace FpsHorrorKit
     public class ITOInfoMessage : MonoBehaviour, IInteractable
     {
         [Header("Interact Text")]
-        [SerializeField] private string interactText = "Read Message [E]";
+        [SerializeField] private string interactText = "Đọc ghi chú [E]";
 
         [Header("Message")]
         [TextArea(3, 10)]
