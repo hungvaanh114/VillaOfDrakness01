@@ -14,6 +14,7 @@ namespace FpsHorrorKit
 
         public event Action<string> OnNotePlayed;
         public event Action OnPianoCompleted;
+        public event Action OnPianoFailed;
 
         private void Awake()
         {
@@ -39,7 +40,8 @@ namespace FpsHorrorKit
             {
                 inputMelody.Clear();
                 AudioManager.Instance?.PlayPianoWrong();
-                InteractMessageScript.Instance?.ShowMessage("Giai điệu chưa đúng.");
+                OnPianoFailed?.Invoke();
+                InteractMessageScript.Instance?.ShowMessage("Hình như mình đánh sai bản nhạc rồi thì phải, để thử lại.");
                 return;
             }
 

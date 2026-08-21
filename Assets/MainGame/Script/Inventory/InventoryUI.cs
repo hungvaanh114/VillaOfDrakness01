@@ -90,6 +90,13 @@ namespace FpsHorrorKit
 
         private void Update()
         {
+            if (GameController.IsCutsceneOrEndInputLocked())
+            {
+                if (IsOpen)
+                    Close();
+                return;
+            }
+
             var keyboard = Keyboard.current;
             if (keyboard == null)
                 return;
@@ -247,7 +254,13 @@ namespace FpsHorrorKit
             if (useButton != null)
             {
                 useButton.gameObject.SetActive(hasSelected && selectedItem.canUse);
-                if (useButtonText != null) useButtonText.text = selectedItem != null && selectedItem.itemType == ItemType.Key ? "TRANG BỊ" : "SỬ DỤNG";
+                if (useButtonText != null)
+                {
+                    if (DebtBookUI.IsDebtBook(selectedItem))
+                        useButtonText.text = "ĐỌC";
+                    else
+                        useButtonText.text = selectedItem != null && selectedItem.itemType == ItemType.Key ? "TRANG BỊ" : "SỬ DỤNG";
+                }
             }
         }
 
@@ -309,7 +322,7 @@ namespace FpsHorrorKit
         private bool CanOpenFromCurrentState()
         {
             var controller = GameController.Instance;
-            return controller == null || controller.currentGameState == GameController.GameState.Gameplay;
+            return controller == null || controller.CanUseGameplayInput();
         }
 
         private void Build()

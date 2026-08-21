@@ -17,6 +17,7 @@ public sealed class AudioManager : MonoBehaviour
     private int lastGroundFootstepIndex = -1;
     private int lastWoodFootstepIndex = -1;
     private float backgroundDuckMultiplier = 1f;
+    private bool maVuDaiPatrolPlayed;
 
     [RuntimeInitializeOnLoadMethod(RuntimeInitializeLoadType.BeforeSceneLoad)]
     private static void Bootstrap()
@@ -114,6 +115,17 @@ public sealed class AudioManager : MonoBehaviour
         PlayLoop(musicSource, audioData != null ? audioData.deathMusic : null);
     }
 
+    public void StopMonsterThreatAudio()
+    {
+        StopVoice();
+
+        if (musicSource != null && audioData != null && musicSource.clip == audioData.chaseMusic)
+            StopLoop(musicSource);
+
+        if (ambienceSource != null && audioData != null && ambienceSource.clip == audioData.ghostAmbience)
+            StopLoop(ambienceSource);
+    }
+
     public void StopMusic()
     {
         StopLoop(musicSource);
@@ -158,6 +170,15 @@ public sealed class AudioManager : MonoBehaviour
         PlaySfx(audioData != null ? audioData.flashlightToggle : null);
     }
 
+    public void PlayFlashlightBatteryUse()
+    {
+        AudioClip clip = null;
+        if (audioData != null)
+            clip = audioData.flashlightBatteryUse != null ? audioData.flashlightBatteryUse : audioData.flashlightToggle;
+
+        PlaySfx(clip);
+    }
+
     public void PlayCameraShot()
     {
         PlaySfx(audioData != null ? audioData.cameraShot : null);
@@ -176,6 +197,15 @@ public sealed class AudioManager : MonoBehaviour
     public void PlayPaperPickup()
     {
         PlaySfx(audioData != null ? audioData.paperPickup : null);
+    }
+
+    public void PlayDiaryPageFlip()
+    {
+        AudioClip clip = null;
+        if (audioData != null)
+            clip = audioData.diaryPageFlip != null ? audioData.diaryPageFlip : audioData.paperPickup;
+
+        PlaySfx(clip);
     }
 
     public void PlayGenericInteract()
@@ -218,9 +248,9 @@ public sealed class AudioManager : MonoBehaviour
         PlaySfx(audioData != null ? audioData.sanityWarning : null);
     }
 
-    public void PlayGhostJumpscare()
+    public void PlayGhostJumpscare(float volume = 1f)
     {
-        PlaySfx(audioData != null ? audioData.ghostJumpscare : null);
+        PlaySfx(audioData != null ? audioData.ghostJumpscare : null, volume);
     }
 
     public void PlayWellJumpscare()
@@ -283,7 +313,21 @@ public sealed class AudioManager : MonoBehaviour
 
     public float PlayMaVuDaiPatrol()
     {
+        if (maVuDaiPatrolPlayed)
+            return 0f;
+
+        maVuDaiPatrolPlayed = true;
         return PlayVoice(audioData != null ? audioData.maVuDaiPatrolFull : null);
+    }
+
+    public void MarkMaVuDaiPatrolPlayed()
+    {
+        maVuDaiPatrolPlayed = true;
+    }
+
+    public void ResetMaVuDaiPatrolPlayback()
+    {
+        maVuDaiPatrolPlayed = false;
     }
 
     public float PlayDiaryReaction(int index)
@@ -322,10 +366,10 @@ public sealed class AudioManager : MonoBehaviour
         });
     }
 
-    public void PlaySfx(AudioClip clip)
+    public void PlaySfx(AudioClip clip, float volume = 1f)
     {
         if (clip != null && sfxSource != null)
-            sfxSource.PlayOneShot(clip);
+            sfxSource.PlayOneShot(clip, Mathf.Clamp01(volume));
     }
 
     private void PlayFootstep(AudioClip[] clips, ref int lastIndex, float volume)

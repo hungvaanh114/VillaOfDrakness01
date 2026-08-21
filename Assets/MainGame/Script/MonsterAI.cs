@@ -89,6 +89,10 @@ public sealed class MonsterAI : MonoBehaviour
     [SerializeField, Min(0.1f)] private float footstepMaxDistance = 28f;
     [SerializeField, Min(0.1f)] private float voiceMinInterval = 8f;
     [SerializeField, Min(0.1f)] private float voiceMaxInterval = 18f;
+    [SerializeField] private bool voiceLinePlaysOnce = true;
+    [SerializeField, Range(0f, 1f)] private float voiceLineVolume = 0.85f;
+    [SerializeField, Range(0f, 1f)] private float attackScreamVolume = 0.72f;
+    [SerializeField, Range(0f, 1f)] private float chaseScreamVolume = 0.72f;
 
     [Header("Door Interaction")]
     [SerializeField, Min(0.5f)] private float doorCheckDistance = 2.2f;
@@ -120,6 +124,7 @@ public sealed class MonsterAI : MonoBehaviour
     private NavMeshPath reusablePath;
     private Coroutine scriptedRoutine;
     private AudioData fallbackAudioData;
+    private bool hasPlayedVoiceLine;
 
     public bool IsHuntActive => state != MonsterState.Disabled && state != MonsterState.Scripted;
     public bool IsScriptedSequenceRunning => state == MonsterState.Scripted;
@@ -230,6 +235,7 @@ public sealed class MonsterAI : MonoBehaviour
         AlignPatrolIndexToNearest(transform.position);
         hasWanderTarget = false;
         state = MonsterState.Wandering;
+        nextFootstepTime = Time.time;
         nextSearchTime = Time.time + searchInterval;
         searchEndTime = 0f;
 
@@ -239,6 +245,10 @@ public sealed class MonsterAI : MonoBehaviour
 
     public void DisableHunt(bool hideMesh)
     {
+        bool wasMakingThreatAudio = IsHuntActive
+            || state == MonsterState.Scripted
+            || (monsterAudioSource != null && monsterAudioSource.isPlaying);
+
         state = MonsterState.Disabled;
         if (agent != null)
         {
@@ -249,7 +259,10 @@ public sealed class MonsterAI : MonoBehaviour
 
         SetRunAnimation(false);
         if (hideMesh)
+        {
             SetMeshVisible(false);
+            StopMonsterAudio(wasMakingThreatAudio);
+        }
     }
 
     public void TeleportTo(Transform point)
@@ -493,11 +506,11 @@ public sealed class MonsterAI : MonoBehaviour
         FacePlayer();
         SetRunAnimation(false);
         animator?.SetTrigger(SwipingHash);
-        bool playedAttack = PlayRandomOneShot(attackClips, 0.95f);
+        bool playedAttack = PlayRandomOneShot(attackClips, attackScreamVolume);
         if (!playedAttack)
-            playedAttack = PlayClipOneShot(ResolveAudioData()?.ghostJumpscare, 0.95f);
+            playedAttack = PlayClipOneShot(ResolveAudioData()?.ghostJumpscare, attackScreamVolume);
         if (!playedAttack)
-            AudioManager.Instance?.PlayGhostJumpscare();
+            AudioManager.Instance?.PlayGhostJumpscare(attackScreamVolume);
 
         if (attackHitDelay > 0f)
             yield return new WaitForSeconds(attackHitDelay);
@@ -598,8 +611,10 @@ public sealed class MonsterAI : MonoBehaviour
 
         if (Time.time >= nextVoiceTime && (state == MonsterState.Wandering || state == MonsterState.Searching))
         {
-            PlayVoiceLine();
-            ScheduleNextVoice();
+            if (PlayVoiceLine())
+                ScheduleNextVoice();
+            else
+                nextVoiceTime = float.PositiveInfinity;
         }
     }
 
@@ -661,14 +676,28 @@ public sealed class MonsterAI : MonoBehaviour
         return data.footstepGround;
     }
 
-    private void PlayVoiceLine()
+    private bool PlayVoiceLine()
     {
-        if (!PlayRandomOneShot(voiceClips, 0.95f))
+        if (voiceLinePlaysOnce && hasPlayedVoiceLine)
+            return false;
+
+        hasPlayedVoiceLine = true;
+        bool playedVoice = PlayRandomOneShot(voiceClips, voiceLineVolume);
+        if (playedVoice)
         {
-            var data = ResolveAudioData();
-            if (data == null || !PlayClipOneShot(data.maVuDaiPatrolFull, 0.95f))
-                AudioManager.Instance?.PlayMaVuDaiPatrol();
+            AudioManager.Instance?.MarkMaVuDaiPatrolPlayed();
+            return true;
         }
+
+        var data = ResolveAudioData();
+        playedVoice = data != null && PlayClipOneShot(data.maVuDaiPatrolFull, voiceLineVolume);
+        if (playedVoice)
+        {
+            AudioManager.Instance?.MarkMaVuDaiPatrolPlayed();
+            return true;
+        }
+
+        return AudioManager.Instance != null && AudioManager.Instance.PlayMaVuDaiPatrol() > 0f;
     }
 
     private bool PlayRandomOneShot(AudioClip[] clips, float volume)
@@ -699,6 +728,21 @@ public sealed class MonsterAI : MonoBehaviour
         monsterAudioSource.rolloffMode = AudioRolloffMode.Linear;
         monsterAudioSource.minDistance = footstepMinDistance;
         monsterAudioSource.maxDistance = Mathf.Max(footstepMinDistance + 0.1f, footstepMaxDistance);
+    }
+
+    private void StopMonsterAudio(bool stopSharedThreatAudio)
+    {
+        if (monsterAudioSource != null)
+        {
+            monsterAudioSource.Stop();
+            monsterAudioSource.clip = null;
+        }
+
+        nextFootstepTime = float.PositiveInfinity;
+        nextVoiceTime = float.PositiveInfinity;
+
+        if (stopSharedThreatAudio)
+            AudioManager.Instance?.StopMonsterThreatAudio();
     }
 
     private AudioData ResolveAudioData()
@@ -914,7 +958,7 @@ public sealed class MonsterAI : MonoBehaviour
         if (controller != null && controller.currentChapterPhase < GameController.ChapterPhase.Escape)
             controller.SetChapterPhase(GameController.ChapterPhase.Escape);
 
-        AudioManager.Instance?.PlayGhostJumpscare();
+        AudioManager.Instance?.PlayGhostJumpscare(chaseScreamVolume);
         AudioManager.Instance?.PlayChaseMusic();
     }
 

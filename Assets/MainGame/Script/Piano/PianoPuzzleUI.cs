@@ -64,11 +64,30 @@ namespace FpsHorrorKit
             Build();
             Close();
             if (PianoPuzzle.Instance != null)
+            {
                 PianoPuzzle.Instance.OnPianoCompleted += OnCompleted;
+                PianoPuzzle.Instance.OnPianoFailed += OnFailed;
+            }
+        }
+
+        private void OnDestroy()
+        {
+            if (PianoPuzzle.Instance == null)
+                return;
+
+            PianoPuzzle.Instance.OnPianoCompleted -= OnCompleted;
+            PianoPuzzle.Instance.OnPianoFailed -= OnFailed;
         }
 
         private void Update()
         {
+            if (GameController.IsCutsceneOrEndInputLocked())
+            {
+                if (IsOpen)
+                    Close();
+                return;
+            }
+
             if (!IsOpen || Keyboard.current == null)
                 return;
 
@@ -84,6 +103,9 @@ namespace FpsHorrorKit
 
         public void Open()
         {
+            if (GameController.Instance != null && !GameController.Instance.CanUseGameplayInput())
+                return;
+
             Build();
             root.SetActive(true);
             completed = false;
@@ -202,6 +224,15 @@ namespace FpsHorrorKit
         private void OnCompleted()
         {
             completed = true;
+            Close();
+        }
+
+        private void OnFailed()
+        {
+            if (!IsOpen)
+                return;
+
+            completed = false;
             Close();
         }
 

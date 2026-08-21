@@ -51,6 +51,13 @@ namespace FpsHorrorKit
 
         private void Update()
         {
+            if (global::GameController.IsGameplayInputLocked())
+            {
+                input?.ClearGameplayInput();
+                UnHighlight();
+                return;
+            }
+
             if (currentInteractable != null)
             {
                 if (Input.GetMouseButton(0) && canDragDoor)

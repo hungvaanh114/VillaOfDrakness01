@@ -67,6 +67,7 @@ public sealed class ChapterOneStoryFlow : MonoBehaviour
     private bool playerExitedClosetDuringObjective;
     private bool monsterSeenBeforeCloset;
     private Coroutine sequenceRoutine;
+    private float blockGramophoneSkipUntil;
 
     private void Awake()
     {
@@ -94,6 +95,11 @@ public sealed class ChapterOneStoryFlow : MonoBehaviour
         FpsHorrorKit.ClosetHiding.PlayerExitedCloset -= HandlePlayerExitedCloset;
         if (gramophoneTapePlayer != null)
             gramophoneTapePlayer.TapeFinished -= HandleTapeFinished;
+    }
+
+    private void OnApplicationFocus(bool hasFocus)
+    {
+        blockGramophoneSkipUntil = Time.unscaledTime + 0.5f;
     }
 
     private void Update()
@@ -132,6 +138,7 @@ public sealed class ChapterOneStoryFlow : MonoBehaviour
         if (monster == null || gramophoneTapePlayer == null)
             return false;
 
+        AudioManager.Instance?.ResetMaVuDaiPatrolPlayback();
         studyLetterSequenceStarted = true;
         sequenceRoutine = StartCoroutine(StudyLetterSequence());
         return true;
@@ -177,9 +184,17 @@ public sealed class ChapterOneStoryFlow : MonoBehaviour
         }
 
         float nextPromptTime = 0f;
+        blockGramophoneSkipUntil = Time.unscaledTime + 0.25f;
         while (gramophoneTapePlayer != null && gramophoneTapePlayer.IsPlayingTape)
         {
             RotatePlayerTowardGramophone(playerController);
+
+            if (!Application.isFocused)
+            {
+                blockGramophoneSkipUntil = Time.unscaledTime + 0.5f;
+                yield return null;
+                continue;
+            }
 
             if (allowSkipGramophoneCutscene && Time.time >= nextPromptTime)
             {
@@ -187,7 +202,11 @@ public sealed class ChapterOneStoryFlow : MonoBehaviour
                 nextPromptTime = Time.time + skipPromptRefreshInterval;
             }
 
-            if (allowSkipGramophoneCutscene && Keyboard.current != null && Keyboard.current.spaceKey.wasPressedThisFrame)
+            if (allowSkipGramophoneCutscene
+                && Application.isFocused
+                && Time.unscaledTime >= blockGramophoneSkipUntil
+                && Keyboard.current != null
+                && Keyboard.current.spaceKey.wasPressedThisFrame)
             {
                 gramophoneTapePlayer.SkipTape();
                 break;
@@ -371,11 +390,14 @@ public sealed class ChapterOneStoryFlow : MonoBehaviour
             yield break;
 
         float callLength = AudioManager.Instance != null ? AudioManager.Instance.PlayMaVuDaiPatrol() : 0f;
-        float callDuration = Mathf.Min(Mathf.Max(callLength, 2.2f), 3f);
-        ShowSubtitle("Khoa ơi... con đâu rồi... ra đây với má đi con...", callDuration);
-        yield return WaitForClosetObjective(callDuration);
-        if (ShouldAbortClosetObjective())
-            yield break;
+        if (callLength > 0f)
+        {
+            float callDuration = Mathf.Min(Mathf.Max(callLength, 2.2f), 3f);
+            ShowSubtitle("Khoa ơi... con đâu rồi... ra đây với má đi con...", callDuration);
+            yield return WaitForClosetObjective(callDuration);
+            if (ShouldAbortClosetObjective())
+                yield break;
+        }
 
         yield return PlayClosetObjectiveKhoaLine(3, "Ổn rồi... hình như ổn rồi.", 1.4f);
         if (ShouldAbortClosetObjective())

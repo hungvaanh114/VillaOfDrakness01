@@ -143,30 +143,42 @@ namespace FpsHorrorKit
                 return false;
 
             bool used = false;
-            switch (item.itemType)
+            bool playGenericUseSound = true;
+            if (DebtBookUI.IsDebtBook(item))
             {
-                case ItemType.Battery:
-                    used = UseBattery(item);
-                    break;
-                case ItemType.Key:
-                    EquipItem(item);
-                    used = true;
-                    break;
-                case ItemType.Flashlight:
-                    if (ItemUsageSystem.Instance != null)
-                        ItemUsageSystem.Instance.ForceFlashlightOn(true);
-                    else
-                        ToggleFallbackFlashlight();
-                    used = true;
-                    break;
-                default:
-                    used = true;
-                    break;
+                used = DebtBookUI.Open(item);
+                playGenericUseSound = false;
+            }
+            else
+            {
+                switch (item.itemType)
+                {
+                    case ItemType.Battery:
+                        used = UseBattery(item);
+                        playGenericUseSound = false;
+                        break;
+                    case ItemType.Key:
+                        EquipItem(item);
+                        used = true;
+                        break;
+                    case ItemType.Flashlight:
+                        if (ItemUsageSystem.Instance != null)
+                            ItemUsageSystem.Instance.ForceFlashlightOn(true);
+                        else
+                            ToggleFallbackFlashlight();
+                        used = true;
+                        break;
+                    default:
+                        used = true;
+                        break;
+                }
             }
 
             if (used)
             {
-                AudioManager.Instance?.PlayGenericInteract();
+                if (playGenericUseSound)
+                    AudioManager.Instance?.PlayGenericInteract();
+
                 OnItemUsed?.Invoke(item);
                 OnInventoryChanged?.Invoke();
             }
@@ -202,7 +214,7 @@ namespace FpsHorrorKit
             }
 
             RemoveItem(item, 1);
-            AudioManager.Instance?.PlayFlashlightToggle();
+            AudioManager.Instance?.PlayFlashlightBatteryUse();
             InteractMessageScript.Instance?.ShowMessage("Đã sạc đầy pin đèn pin.");
             return true;
         }
@@ -233,6 +245,12 @@ namespace FpsHorrorKit
             InitializeFallbackFlashlight();
             SyncFallbackFlashlightStateFromScene();
 
+            if (GameController.IsGameplayInputLocked())
+            {
+                UpdateFallbackFlashlightUi();
+                return;
+            }
+
             var keyboard = Keyboard.current;
             if (keyboard != null && keyboard.fKey.wasPressedThisFrame)
                 ToggleFallbackFlashlight();
@@ -256,6 +274,9 @@ namespace FpsHorrorKit
 
         private void ToggleFallbackFlashlight()
         {
+            if (GameController.IsGameplayInputLocked())
+                return;
+
             if (ItemUsageSystem.Instance != null)
             {
                 ItemUsageSystem.Instance.UseFlashlight();

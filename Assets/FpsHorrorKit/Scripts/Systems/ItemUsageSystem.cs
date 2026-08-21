@@ -54,12 +54,21 @@ namespace FpsHorrorKit
 
         private void Update()
         {
+            if (global::GameController.IsGameplayInputLocked())
+            {
+                _input?.ClearGameplayInput();
+                return;
+            }
+
             CheckInputSelect();
             CheckInputUse();
         }
 
         private void CheckInputSelect()
         {
+            if (_input == null)
+                return;
+
             if (isAlbumActive) { return; }
 
             if (_input.itemIndex == 1 && _input.isPressed)
@@ -96,6 +105,9 @@ namespace FpsHorrorKit
 
         public void CheckInputUse()
         {
+            if (_input == null)
+                return;
+
             if (_input.useFlashlight)
             {
                 UseFlashlight();

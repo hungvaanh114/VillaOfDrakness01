@@ -72,6 +72,11 @@ public class ElectricTorchOnOff : MonoBehaviour
 
 	void InputKey()
     {
+		if (GameController.IsGameplayInputLocked())
+		{
+			return;
+		}
+
 		if (Input.GetKeyDown(_kCode) && _flashLightOn == true)
 		{
 			_flashLightOn = false;

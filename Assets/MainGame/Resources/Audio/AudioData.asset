@@ -22,11 +22,13 @@ MonoBehaviour:
   buttonClick: {fileID: 8300000, guid: 21516114640167f48b2548f53bfed396, type: 3}
   applySettings: {fileID: 8300000, guid: 5f8783404fb034b4198678c79d7a5848, type: 3}
   back: {fileID: 8300000, guid: 21516114640167f48b2548f53bfed396, type: 3}
-  flashlightToggle: {fileID: 8300000, guid: cf295f270d975a34b98bb78c4f3c97fa, type: 3}
+  flashlightToggle: {fileID: 8300000, guid: 21516114640167f48b2548f53bfed396, type: 3}
+  flashlightBatteryUse: {fileID: 8300000, guid: cf295f270d975a34b98bb78c4f3c97fa, type: 3}
   cameraShot: {fileID: 8300000, guid: 672f5389d8d97a24085692dd1e494351, type: 3}
   keyPickup: {fileID: 8300000, guid: 8c17a6180226bcc408326f891788adb2, type: 3}
   notePickup: {fileID: 8300000, guid: b8361c095491b9b44b3a95411e1d6e1d, type: 3}
   paperPickup: {fileID: 8300000, guid: 58845c63099b9204fa6a615ae9554878, type: 3}
+  diaryPageFlip: {fileID: 8300000, guid: 58845c63099b9204fa6a615ae9554878, type: 3}
   genericInteract: {fileID: 8300000, guid: 0d384f898556b8a4099288246cf43319, type: 3}
   doorLocked: {fileID: 8300000, guid: a323b22d1ada88743b149c6ec090038a, type: 3}
   doorOpenSlow: {fileID: 8300000, guid: adf554832d4d64e49b6b736a9691d5ce, type: 3}

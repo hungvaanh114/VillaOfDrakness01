@@ -1,0 +1,231 @@
+{
+    "simplifiedPaths": [
+        "Assets/_Project/Models/_Simplified/CleanDiningTable_Final_Simplified 1.asset",
+        "Assets/_Project/Models/_Simplified/Candelabra_Simplified 1.asset",
+        "Assets/_Project/Models/_Simplified/TaxidermyHead_Simplified 1.asset",
+        "Assets/_Project/Models/_Simplified/DaiPhunNuoc_CoBon_Simplified 1.asset",
+        "Assets/_Project/Models/_Simplified/WallSconce_Simplified 1.asset",
+        "Assets/_Project/Models/_Simplified/ChinaCabinet_Simplified 1.asset",
+        "Assets/_Project/Models/_Simplified/tripo_mesh_a4efcd86-ca1b-4711-886d-59aa79b24215_Simplified 1.asset",
+        "Assets/_Project/Models/_Simplified/tripo_mesh_e41c668b-f42e-4504-8702-1ef25dcc0bd4_Simplified 1.asset",
+        "Assets/_Project/Models/_Simplified/tripo_mesh_e023cdd6-a084-4295-804f-3dfbc0f482e4_Simplified 1.asset",
+        "Assets/_Project/Models/_Simplified/phone_Simplified 1.asset",
+        "Assets/_Project/Models/_Simplified/tripo_mesh_22c34278-c8b1-430a-8090-934cd9dc237c_Simplified 1.asset",
+        "Assets/_Project/Models/_Simplified/tripo_mesh_22c34278-c8b1-430a-8090-934cd9dc237c_Smooth_Smooth_Smooth_Smooth_Simplified 1.asset",
+        "Assets/_Project/Models/_Simplified/gramophone_Simplified 1.asset",
+        "Assets/_Project/Models/_Simplified/antique_light_Simplified 1.asset",
+        "Assets/_Project/Models/_Simplified/tripo_mesh_9cbdeb19-d96d-49c1-b42b-3ee2ce1b7763_Simplified 1.asset",
+        "Assets/_Project/Models/_Simplified/tripo_mesh_c0098eff-9ec4-46b4-b543-e437ed9b647d_Simplified 1.asset",
+        "Assets/_Project/Models/_Simplified/tripo_mesh_6be7a972-71a4-4d69-a87f-4e4df257f281_Simplified 1.asset",
+        "Assets/_Project/Models/_Simplified/tripo_mesh_0cd5b528-e4f7-457b-a296-f13aa73b0833_Simplified 1.asset",
+        "Assets/_Project/Models/_Simplified/tripo_mesh_cad5bc9a-00b8-439a-afc6-6402c246f07b_Smooth_Smooth_Smooth_Smooth_Simplified 1.asset",
+        "Assets/_Project/Models/_Simplified/tripo_mesh_740cc6c8-ae49-45bf-b7c6-da43697b6ca6_Simplified 1.asset",
+        "Assets/_Project/Models/_Simplified/tv_desk_Simplified 1.asset",
+        "Assets/_Project/Models/_Simplified/sofa_small_Simplified 1.asset",
+        "Assets/_Project/Models/_Simplified/DryBranch_FB1_7_Simplified 1.asset",
+        "Assets/_Project/Models/_Simplified/sofa_big_Simplified 1.asset",
+        "Assets/_Project/Models/_Simplified/DryBranch_FB1_1_Simplified 1.asset",
+        "Assets/_Project/Models/_Simplified/tea_table_Simplified 1.asset",
+        "Assets/_Project/Models/_Simplified/desk_Simplified 1.asset",
+        "Assets/_Project/Models/_Simplified/bookshelf_Simplified 1.asset",
+        "Assets/_Project/Models/_Simplified/DryBranch_FB1_3_Simplified 1.asset",
+        "Assets/_Project/Models/_Simplified/photo_1_Simplified 1.asset",
+        "Assets/_Project/Models/_Simplified/photo_4_Simplified 1.asset",
+        "Assets/_Project/Models/_Simplified/tripo_mesh_a1deb33b-48d1-4727-ba70-545715e57119_Simplified 1.asset",
+        "Assets/_Project/Models/_Simplified/clock_wall_Simplified 1.asset",
+        "Assets/_Project/Models/_Simplified/Furn_Table_Kitchen_body_Simplified 1.asset",
+        "Assets/_Project/Models/_Simplified/wdg_editable_text_Simplified 1.asset",
+        "Assets/_Project/Models/_Simplified/record_Simplified 1.asset",
+        "Assets/_Project/Models/_Simplified/light_desk_Simplified 1.asset",
+        "Assets/_Project/Models/_Simplified/tv_desk_open_Simplified 1.asset",
+        "Assets/_Project/Models/_Simplified/curtain_2_Simplified 1.asset",
+        "Assets/_Project/Models/_Simplified/tv_Simplified 1.asset",
+        "Assets/_Project/Models/_Simplified/light_tall_Simplified 1.asset",
+        "Assets/_Project/Models/_Simplified/sofa_big_fabric_Simplified 1.asset",
+        "Assets/_Project/Models/_Simplified/sofa_small_fabric_Simplified 1.asset",
+        "Assets/_Project/Models/_Simplified/curtain_1_Simplified 1.asset",
+        "Assets/_Project/Models/_Simplified/vase_1_Simplified 1.asset"
+    ],
+    "entries": [
+        {
+            "originalAssetPath": "Assets/Nôi Thất/ZNS3D/Prefabs/CleanDiningTable_Final.fbx",
+            "originalMeshName": "CleanDiningTable_Final"
+        },
+        {
+            "originalAssetPath": "Assets/Nôi Thất/Individual_Assets/Candelabra.fbx",
+            "originalMeshName": "Candelabra"
+        },
+        {
+            "originalAssetPath": "Assets/Nôi Thất/Individual_Assets/TaxidermyHead.fbx",
+            "originalMeshName": "TaxidermyHead"
+        },
+        {
+            "originalAssetPath": "Assets/BonHoaCung_Export/BonHoaCung.fbx",
+            "originalMeshName": "DaiPhunNuoc_CoBon"
+        },
+        {
+            "originalAssetPath": "Assets/Nôi Thất/Individual_Assets/WallSconce.fbx",
+            "originalMeshName": "WallSconce"
+        },
+        {
+            "originalAssetPath": "Assets/Nôi Thất/Individual_Assets/ChinaCabinet.fbx",
+            "originalMeshName": "ChinaCabinet"
+        },
+        {
+            "originalAssetPath": "Assets/_Project/Models/Props/Furniture/Furn_Desk_Study.glb",
+            "originalMeshName": "tripo_mesh_a4efcd86-ca1b-4711-886d-59aa79b24215"
+        },
+        {
+            "originalAssetPath": "Assets/_Project/Models/Props/Furniture/Furn_Sofa_Colonial.glb",
+            "originalMeshName": "tripo_mesh_e41c668b-f42e-4504-8702-1ef25dcc0bd4"
+        },
+        {
+            "originalAssetPath": "Assets/_Project/Models/Props/Furniture/Furn_Bookshelf_Colonial.glb",
+            "originalMeshName": "tripo_mesh_e023cdd6-a084-4295-804f-3dfbc0f482e4"
+        },
+        {
+            "originalAssetPath": "Assets/Nôi Thất/ZNS3D/Vintage Living Room Game Pack/Meshes/phone.fbx",
+            "originalMeshName": "phone"
+        },
+        {
+            "originalAssetPath": "Assets/_Project/Models/Props/Gameplay/Prop_MusicBox_Cylinder.glb",
+            "originalMeshName": "tripo_mesh_22c34278-c8b1-430a-8090-934cd9dc237c"
+        },
+        {
+            "originalAssetPath": "Assets/_Project/Models/VFX/tripo_mesh_22c34278-c8b1-430a-8090-934cd9dc237c_Smooth_Smooth_Smooth_Smooth.asset",
+            "originalMeshName": "tripo_mesh_22c34278-c8b1-430a-8090-934cd9dc237c_Smooth_Smooth_Smooth_Smooth"
+        },
+        {
+            "originalAssetPath": "Assets/Nôi Thất/ZNS3D/Vintage Living Room Game Pack/Meshes/gramophone.fbx",
+            "originalMeshName": "gramophone"
+        },
+        {
+            "originalAssetPath": "Assets/Nôi Thất/ZNS3D/Vintage Living Room Game Pack/Meshes/antique_light.fbx",
+            "originalMeshName": "antique_light"
+        },
+        {
+            "originalAssetPath": "Assets/_Project/Models/Props/Architecture/Prop_Curtain_Torn.glb",
+            "originalMeshName": "tripo_mesh_9cbdeb19-d96d-49c1-b42b-3ee2ce1b7763"
+        },
+        {
+            "originalAssetPath": "Assets/_Project/Models/Props/Decor/Prop_Lamp_TableOil.glb",
+            "originalMeshName": "tripo_mesh_c0098eff-9ec4-46b4-b543-e437ed9b647d"
+        },
+        {
+            "originalAssetPath": "Assets/_Project/Models/Props/Decor/Prop_Vase_Ceramic.glb",
+            "originalMeshName": "tripo_mesh_6be7a972-71a4-4d69-a87f-4e4df257f281"
+        },
+        {
+            "originalAssetPath": "Assets/_Project/Models/Props/Gameplay/Prop_Flashlight_Ch1.glb",
+            "originalMeshName": "tripo_mesh_0cd5b528-e4f7-457b-a296-f13aa73b0833"
+        },
+        {
+            "originalAssetPath": "Assets/_Project/Models/VFX/tripo_mesh_cad5bc9a-00b8-439a-afc6-6402c246f07b_Smooth_Smooth_Smooth_Smooth.asset",
+            "originalMeshName": "tripo_mesh_cad5bc9a-00b8-439a-afc6-6402c246f07b_Smooth_Smooth_Smooth_Smooth"
+        },
+        {
+            "originalAssetPath": "Assets/_Project/Models/Props/Decor/Prop_Frame_Portrait.glb",
+            "originalMeshName": "tripo_mesh_740cc6c8-ae49-45bf-b7c6-da43697b6ca6"
+        },
+        {
+            "originalAssetPath": "Assets/Nôi Thất/ZNS3D/Vintage Living Room Game Pack/Meshes/tv_desk.fbx",
+            "originalMeshName": "tv_desk"
+        },
+        {
+            "originalAssetPath": "Assets/Nôi Thất/ZNS3D/Vintage Living Room Game Pack/Meshes/sofa_small.fbx",
+            "originalMeshName": "sofa_small"
+        },
+        {
+            "originalAssetPath": "Assets/BonHoaCung_Export/BonHoaCung.fbx",
+            "originalMeshName": "DryBranch_FB1_7"
+        },
+        {
+            "originalAssetPath": "Assets/Nôi Thất/ZNS3D/Vintage Living Room Game Pack/Meshes/sofa_big.fbx",
+            "originalMeshName": "sofa_big"
+        },
+        {
+            "originalAssetPath": "Assets/BonHoaCung_Export/BonHoaCung.fbx",
+            "originalMeshName": "DryBranch_FB1_1"
+        },
+        {
+            "originalAssetPath": "Assets/Nôi Thất/ZNS3D/Vintage Living Room Game Pack/Meshes/tea_table.fbx",
+            "originalMeshName": "tea_table"
+        },
+        {
+            "originalAssetPath": "Assets/Nôi Thất/ZNS3D/Vintage Living Room Game Pack/Meshes/photo_frame_desk.fbx",
+            "originalMeshName": "desk"
+        },
+        {
+            "originalAssetPath": "Assets/Nôi Thất/ZNS3D/Vintage Living Room Game Pack/Meshes/bookshelf.fbx",
+            "originalMeshName": "bookshelf"
+        },
+        {
+            "originalAssetPath": "Assets/BonHoaCung_Export/BonHoaCung.fbx",
+            "originalMeshName": "DryBranch_FB1_3"
+        },
+        {
+            "originalAssetPath": "Assets/Nôi Thất/ZNS3D/Vintage Living Room Game Pack/Meshes/photo_1.fbx",
+            "originalMeshName": "photo_1"
+        },
+        {
+            "originalAssetPath": "Assets/Nôi Thất/ZNS3D/Vintage Living Room Game Pack/Meshes/photo_4.fbx",
+            "originalMeshName": "photo_4"
+        },
+        {
+            "originalAssetPath": "Assets/_Project/Models/Props/Architecture/Arch_Gate_Colonial.glb",
+            "originalMeshName": "tripo_mesh_a1deb33b-48d1-4727-ba70-545715e57119"
+        },
+        {
+            "originalAssetPath": "Assets/Nôi Thất/ZNS3D/Vintage Living Room Game Pack/Meshes/clock_wall.fbx",
+            "originalMeshName": "clock_wall"
+        },
+        {
+            "originalAssetPath": "Assets/_Project/Models/Props/Kitchen/Furn_Table_Kitchen.fbx",
+            "originalMeshName": "Furn_Table_Kitchen_body"
+        },
+        {
+            "originalAssetPath": "Assets/_Project/Models/Props/Decor/PolyHaven/PH_GrandfatherClock.glb",
+            "originalMeshName": "wdg_editable_text"
+        },
+        {
+            "originalAssetPath": "Assets/Nôi Thất/ZNS3D/Vintage Living Room Game Pack/Meshes/gramophone.fbx",
+            "originalMeshName": "record"
+        },
+        {
+            "originalAssetPath": "Assets/Nôi Thất/ZNS3D/Vintage Living Room Game Pack/Meshes/light_desk.fbx",
+            "originalMeshName": "light_desk"
+        },
+        {
+            "originalAssetPath": "Assets/Nôi Thất/ZNS3D/Vintage Living Room Game Pack/Meshes/tv_desk.fbx",
+            "originalMeshName": "tv_desk_open"
+        },
+        {
+            "originalAssetPath": "Assets/Nôi Thất/ZNS3D/Vintage Living Room Game Pack/Meshes/curtain_2.fbx",
+            "originalMeshName": "curtain_2"
+        },
+        {
+            "originalAssetPath": "Assets/Nôi Thất/ZNS3D/Vintage Living Room Game Pack/Meshes/tv.fbx",
+            "originalMeshName": "tv"
+        },
+        {
+            "originalAssetPath": "Assets/Nôi Thất/ZNS3D/Vintage Living Room Game Pack/Meshes/light_tall.fbx",
+            "originalMeshName": "light_tall"
+        },
+        {
+            "originalAssetPath": "Assets/Nôi Thất/ZNS3D/Vintage Living Room Game Pack/Meshes/sofa_big.fbx",
+            "originalMeshName": "sofa_big_fabric"
+        },
+        {
+            "originalAssetPath": "Assets/Nôi Thất/ZNS3D/Vintage Living Room Game Pack/Meshes/sofa_small.fbx",
+            "originalMeshName": "sofa_small_fabric"
+        },
+        {
+            "originalAssetPath": "Assets/Nôi Thất/ZNS3D/Vintage Living Room Game Pack/Meshes/curtain_1.fbx",
+            "originalMeshName": "curtain_1"
+        },
+        {
+            "originalAssetPath": "Assets/Nôi Thất/ZNS3D/Vintage Living Room Game Pack/Meshes/vase_1.fbx",
+            "originalMeshName": "vase_1"
+        }
+    ]
+}

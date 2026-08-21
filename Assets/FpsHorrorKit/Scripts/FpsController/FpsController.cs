@@ -605,6 +605,9 @@ namespace FpsHorrorKit
 
         private void CaptureJumpInputFallback()
         {
+            if (global::GameController.IsGameplayInputLocked())
+                return;
+
             if (_input == null || Keyboard.current == null)
                 return;
 

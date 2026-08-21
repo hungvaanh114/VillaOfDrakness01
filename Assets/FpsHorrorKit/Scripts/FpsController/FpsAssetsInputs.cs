@@ -44,68 +44,146 @@ namespace FpsHorrorKit
 
         public void OnMove(InputValue value)
         {
+            if (IsGameplayInputLocked())
+            {
+                move = Vector2.zero;
+                return;
+            }
+
             MoveInput(value.Get<Vector2>());
         }
         public void OnLook(InputValue value)
         {
+            if (IsGameplayInputLocked())
+            {
+                look = Vector2.zero;
+                return;
+            }
+
             LookInput(value.Get<Vector2>());
         }
         public void OnJump(InputValue value)
         {
+            if (IsGameplayInputLocked())
+            {
+                jump = false;
+                return;
+            }
+
             JumpInput(value.isPressed);
         }
         public void OnSprint(InputValue value)
         {
+            if (IsGameplayInputLocked())
+            {
+                sprint = false;
+                return;
+            }
+
             SprintInput(value.isPressed);
         }
 
         public void OnFire(InputValue value)
         {
+            if (IsGameplayInputLocked())
+            {
+                fire = false;
+                return;
+            }
+
             FireInput(value.isPressed);
         }
 
         public void OnInteract(InputValue value)
         {
+            if (IsGameplayInputLocked())
+            {
+                interact = false;
+                return;
+            }
+
             InteractInput(value.isPressed);
         }
 
         public void OnStopInteract(InputValue value)
         {
+            if (IsGameplayInputLocked())
+            {
+                stopInteract = false;
+                return;
+            }
+
             StopInteractInput(value.isPressed);
         }
 
         public void OnUseFlashlight(InputValue value)
         {
+            if (IsGameplayInputLocked())
+            {
+                useFlashlight = false;
+                return;
+            }
+
             UseFlashlightInput(value.isPressed);
         }
 
         public void OnUseCamera(InputValue value)
         {
+            if (IsGameplayInputLocked())
+            {
+                useCamera = false;
+                return;
+            }
+
             UseCameraInput(value.isPressed);
         }
         public void OnInventory(InputValue value)
         {
+            if (IsGameplayInputLocked())
+            {
+                inventory = false;
+                return;
+            }
+
             InventoryInput(value.isPressed);
         }
         public void OnKey1(InputValue value)
         {
+            if (IsGameplayInputLocked())
+                return;
+
             UseItem(1);
         }
         public void OnKey2(InputValue value)
         {
+            if (IsGameplayInputLocked())
+                return;
+
             UseItem(2);
         }
         public void OnKey3(InputValue value)
         {
+            if (IsGameplayInputLocked())
+                return;
+
             UseItem(3);
         }
         public void OnKey4(InputValue value)
         {
+            if (IsGameplayInputLocked())
+                return;
+
             UseItem(4);
         }
 
         public void UseItem(int newItemIndex)
         {
+            if (IsGameplayInputLocked())
+            {
+                ClearGameplayInput();
+                return;
+            }
+
             isPressed = true;
 
             if (currentItemIndex != newItemIndex)
@@ -136,6 +214,29 @@ namespace FpsHorrorKit
         private void UseFlashlightInput(bool useFlashlightInput) => useFlashlight = useFlashlightInput;
         private void UseCameraInput(bool useCameraInput) => useCamera = useCameraInput;
         private void InventoryInput(bool inventoryInput) => inventory = inventoryInput;
+
+        public void ClearGameplayInput()
+        {
+            move = Vector2.zero;
+            look = Vector2.zero;
+            jump = false;
+            sprint = false;
+            interact = false;
+            stopInteract = false;
+            useFlashlight = false;
+            useCamera = false;
+            fire = false;
+            inventory = false;
+            isPressed = false;
+            isSelectedItem = false;
+            itemIndex = 0;
+            currentItemIndex = -1;
+        }
+
+        private static bool IsGameplayInputLocked()
+        {
+            return global::GameController.IsGameplayInputLocked();
+        }
 
         private void OnApplicationFocus(bool hasFocus)
         {

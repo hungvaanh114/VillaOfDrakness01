@@ -19,10 +19,12 @@ public sealed class AudioData : ScriptableObject
 
     [Header("Gameplay SFX")]
     public AudioClip flashlightToggle;
+    public AudioClip flashlightBatteryUse;
     public AudioClip cameraShot;
     public AudioClip keyPickup;
     public AudioClip notePickup;
     public AudioClip paperPickup;
+    public AudioClip diaryPageFlip;
     public AudioClip genericInteract;
     public AudioClip doorLocked;
     public AudioClip doorOpenSlow;

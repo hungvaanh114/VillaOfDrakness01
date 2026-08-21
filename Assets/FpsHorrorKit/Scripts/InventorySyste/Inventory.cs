@@ -23,6 +23,9 @@ namespace FpsHorrorKit
         }
         private void Update()
         {
+            if (global::GameController.IsGameplayInputLocked())
+                return;
+
             if (InventoryManager.Instance != null)
                 return;
 

@@ -146,6 +146,9 @@ public class GameController : MonoBehaviour
             else if (isPaused) ResumeGame();
             else PauseGame();
         }
+
+        if (IsCutsceneInputLocked())
+            FpsAssetsInputs.Instance?.ClearGameplayInput();
     }
 
     private void LateUpdate()
@@ -211,6 +214,32 @@ public class GameController : MonoBehaviour
 
         playerController.isCutScene = !canControl;
         playerController.isInteracting = !canControl;
+
+        if (!canControl)
+            FpsAssetsInputs.Instance?.ClearGameplayInput();
+    }
+
+    public bool CanUseGameplayInput()
+    {
+        return currentGameState == GameState.Gameplay && !isPaused && !isDead;
+    }
+
+    public bool IsCutsceneInputLocked()
+    {
+        return currentGameState == GameState.Cutscene
+            || currentGameState == GameState.Ending
+            || currentGameState == GameState.Dead
+            || isDead;
+    }
+
+    public static bool IsGameplayInputLocked()
+    {
+        return Instance != null && !Instance.CanUseGameplayInput();
+    }
+
+    public static bool IsCutsceneOrEndInputLocked()
+    {
+        return Instance != null && Instance.IsCutsceneInputLocked();
     }
 
     public void PauseGame()
