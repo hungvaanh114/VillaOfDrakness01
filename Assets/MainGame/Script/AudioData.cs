@@ -7,6 +7,10 @@ public sealed class AudioData : ScriptableObject
     public AudioClip menuMusic;
     public AudioClip introAmbience;
     public AudioClip gameplayAmbience;
+    public AudioClip[] gameplayAmbiences;
+    [Min(0f)] public float gameplayAmbienceSilenceSeconds = 45f;
+    [Min(0f)] public float gameplayAmbienceMaxSilenceSeconds = 90f;
+    [Min(0.1f)] public float gameplayAmbienceBlockedRetrySeconds = 3f;
     public AudioClip ghostAmbience;
     public AudioClip chaseMusic;
     public AudioClip deathMusic;

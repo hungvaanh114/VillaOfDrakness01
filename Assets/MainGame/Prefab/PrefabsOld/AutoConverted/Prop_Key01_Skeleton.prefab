@@ -12,8 +12,6 @@ GameObject:
   - component: {fileID: 1072034133859022779}
   - component: {fileID: 2373384833886463097}
   - component: {fileID: 647277062053598917}
-  - component: {fileID: 2693510955530884296}
-  - component: {fileID: 2530247561836741848}
   m_Layer: 8
   m_Name: Prop_Key01_Skeleton
   m_TagString: Interactable
@@ -114,48 +112,3 @@ BoxCollider:
   serializedVersion: 3
   m_Size: {x: 0.998047, y: 0.099609375, z: 0.33789065}
   m_Center: {x: 0, y: 0, z: 0}
---- !u!114 &2693510955530884296
-MonoBehaviour:
-  m_ObjectHideFlags: 0
-  m_CorrespondingSourceObject: {fileID: 0}
-  m_PrefabInstance: {fileID: 0}
-  m_PrefabAsset: {fileID: 0}
-  m_GameObject: {fileID: 6106287913193466982}
-  m_Enabled: 1
-  m_EditorHideFlags: 0
-  m_Script: {fileID: 11500000, guid: 4e6c21c2597e7544695d12a7a7110fcc, type: 3}
-  m_Name: 
-  m_EditorClassIdentifier: BietThuBongToi.Runtime::ExamineItem
-  _examineDistance: 0.6
-  _inventoryExamineOffset: {x: 0.1, y: 0.05, z: 0.6}
-  _rotateSpeed: 4
-  _examineRotationOffset: {x: 0, y: 0, z: 0}
-  _playerController: {fileID: 0}
-  _linkedPickupItem: {fileID: 2530247561836741848}
-  _pickupKey: 114
-  OnExamineStart:
-    m_PersistentCalls:
-      m_Calls: []
-  OnExamineEnd:
-    m_PersistentCalls:
-      m_Calls: []
---- !u!114 &2530247561836741848
-MonoBehaviour:
-  m_ObjectHideFlags: 0
-  m_CorrespondingSourceObject: {fileID: 0}
-  m_PrefabInstance: {fileID: 0}
-  m_PrefabAsset: {fileID: 0}
-  m_GameObject: {fileID: 6106287913193466982}
-  m_Enabled: 1
-  m_EditorHideFlags: 0
-  m_Script: {fileID: 11500000, guid: 1dee48166d9bcce45a158be59323118f, type: 3}
-  m_Name: 
-  m_EditorClassIdentifier: BietThuBongToi.Runtime::PickupItem
-  _itemData: {fileID: 11400000, guid: 1bb53db701436f045a9692da70f5bab2, type: 2}
-  _inventorySystem: {fileID: 0}
-  _pickupSFX: {fileID: 0}
-  OnPickedUp:
-    m_PersistentCalls:
-      m_Calls: []
-  _requireExamineFirst: 1
-  _examineItem: {fileID: 2693510955530884296}

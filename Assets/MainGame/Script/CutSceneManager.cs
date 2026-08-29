@@ -523,7 +523,10 @@ public sealed class CutSceneManager : MonoBehaviour
         voiceSource.Stop();
         voiceSource.clip = clip;
         if (clip != null)
+        {
+            AudioManager.Instance?.BlockGameplayAmbience(clip.length);
             voiceSource.Play();
+        }
     }
 
     private void StopVoice()

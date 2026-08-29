@@ -15,6 +15,12 @@ MonoBehaviour:
   menuMusic: {fileID: 8300000, guid: 9d646b1744dd91a4592b89d9625de322, type: 3}
   introAmbience: {fileID: 8300000, guid: 2dc9a029d0f6a4d4f95eca9f86b410f2, type: 3}
   gameplayAmbience: {fileID: 8300000, guid: fcf6276a13ac13e4aabcf0ecfdf2d3b2, type: 3}
+  gameplayAmbiences:
+  - {fileID: 8300000, guid: fcf6276a13ac13e4aabcf0ecfdf2d3b2, type: 3}
+  - {fileID: 8300000, guid: d647ed10ff7183342a220aed39cc6873, type: 3}
+  gameplayAmbienceSilenceSeconds: 45
+  gameplayAmbienceMaxSilenceSeconds: 90
+  gameplayAmbienceBlockedRetrySeconds: 3
   ghostAmbience: {fileID: 8300000, guid: 175b325ec4eb7674491bcef498fd21db, type: 3}
   chaseMusic: {fileID: 8300000, guid: e03bf5e746688b04487345ac827f5669, type: 3}
   deathMusic: {fileID: 8300000, guid: afbb8b47caf19f04aaab86413d8bc459, type: 3}

@@ -44,7 +44,7 @@ public sealed class MonsterAI : MonoBehaviour
     [SerializeField] private bool startSearchImmediately;
 
     [Header("Movement")]
-    [SerializeField, Min(0.1f)] private float chaseSpeed = 4.8f;
+    [SerializeField, Min(0.1f)] private float chaseSpeed = 3.6f;
     [SerializeField, Min(0.1f)] private float scriptedPassSpeed = 12f;
     [SerializeField, Min(0.1f)] private float searchSpeed = 2.3f;
     [SerializeField, Min(0.1f)] private float wanderSpeed = 1.8f;
@@ -66,6 +66,10 @@ public sealed class MonsterAI : MonoBehaviour
     [SerializeField, Min(0.2f)] private float attackRange = 1.65f;
     [SerializeField, Min(0.1f)] private float attackCooldown = 1.15f;
     [SerializeField, Min(0f)] private float attackHitDelay = 0.32f;
+    [SerializeField, Min(0.1f)] private float caughtDeathDelay = 4.5f;
+    [SerializeField, Range(0f, 10f)] private float caughtCameraShakeAmplitude = 4.2f;
+    [SerializeField, Range(0f, 20f)] private float caughtCameraShakeFrequency = 8f;
+    [SerializeField, Min(0f)] private float caughtLookHeight = 1.6f;
     [SerializeField] private bool killPlayerOnHit = true;
 
     [Header("Animation")]
@@ -125,6 +129,8 @@ public sealed class MonsterAI : MonoBehaviour
     private Coroutine scriptedRoutine;
     private AudioData fallbackAudioData;
     private bool hasPlayedVoiceLine;
+    private bool hasPlayedChaseScream;
+    private bool caughtDeathSequenceRunning;
 
     public bool IsHuntActive => state != MonsterState.Disabled && state != MonsterState.Scripted;
     public bool IsScriptedSequenceRunning => state == MonsterState.Scripted;
@@ -188,6 +194,12 @@ public sealed class MonsterAI : MonoBehaviour
         if (!searchWindowActive && Time.time >= nextSearchTime)
             BeginSearchWindow();
 
+        if (caughtDeathSequenceRunning)
+        {
+            FacePlayer();
+            return;
+        }
+
         bool canDetectPlayer = CanDetectPlayer();
         if (canDetectPlayer)
         {
@@ -198,7 +210,8 @@ public sealed class MonsterAI : MonoBehaviour
             if (state != MonsterState.Chasing && state != MonsterState.Attacking)
                 StartChaseAudio();
 
-            state = MonsterState.Chasing;
+            if (state != MonsterState.Attacking)
+                state = MonsterState.Chasing;
         }
         else if (state == MonsterState.Chasing)
         {
@@ -238,6 +251,8 @@ public sealed class MonsterAI : MonoBehaviour
         nextFootstepTime = Time.time;
         nextSearchTime = Time.time + searchInterval;
         searchEndTime = 0f;
+        hasPlayedChaseScream = false;
+        caughtDeathSequenceRunning = false;
 
         if (beginSearchNow)
             BeginSearchWindow();
@@ -249,13 +264,16 @@ public sealed class MonsterAI : MonoBehaviour
             || state == MonsterState.Scripted
             || (monsterAudioSource != null && monsterAudioSource.isPlaying);
 
-        state = MonsterState.Disabled;
-        if (agent != null)
+        if (scriptedRoutine != null)
         {
-            agent.isStopped = true;
-            if (agent.isOnNavMesh && agent.hasPath)
-                agent.ResetPath();
+            StopCoroutine(scriptedRoutine);
+            scriptedRoutine = null;
         }
+
+        state = MonsterState.Disabled;
+        hasPlayedChaseScream = false;
+        caughtDeathSequenceRunning = false;
+        TryStopAgent(resetPath: true);
 
         SetRunAnimation(false);
         if (hideMesh)
@@ -326,13 +344,24 @@ public sealed class MonsterAI : MonoBehaviour
         if (agent != null && agent.enabled && agent.isOnNavMesh)
         {
             agent.speed = priorityWanderSpeed;
-            agent.isStopped = false;
+            TryResumeAgent();
             if (TrySampleNavMesh(point.position, out var sampledPosition))
             {
                 currentWanderTarget = sampledPosition;
-                agent.SetDestination(sampledPosition);
+                TrySetAgentDestination(sampledPosition);
             }
         }
+    }
+
+    public void PlayScriptedApproachThenWander(Transform approachPoint, float moveSpeed, float randomRadius)
+    {
+        if (approachPoint == null)
+            return;
+
+        if (scriptedRoutine != null)
+            StopCoroutine(scriptedRoutine);
+
+        scriptedRoutine = StartCoroutine(ScriptedApproachThenWanderRoutine(approachPoint, moveSpeed, randomRadius));
     }
 
     public void SetMeshVisible(bool visible)
@@ -373,8 +402,7 @@ public sealed class MonsterAI : MonoBehaviour
 
         SetMeshVisible(false);
         SetRunAnimation(false);
-        if (agent != null && agent.isOnNavMesh)
-            agent.ResetPath();
+        TryResetAgentPath();
 
         state = MonsterState.Disabled;
         scriptedRoutine = null;
@@ -383,6 +411,11 @@ public sealed class MonsterAI : MonoBehaviour
     private IEnumerator MoveScriptedTo(Vector3 target, bool running)
     {
         float moveSpeed = running ? scriptedPassSpeed : wanderSpeed;
+        yield return MoveScriptedTo(target, moveSpeed, running);
+    }
+
+    private IEnumerator MoveScriptedTo(Vector3 target, float moveSpeed, bool running)
+    {
         if (!EnsureAgentOnNavMesh(force: true))
         {
             yield return MoveScriptedTransformTo(target, moveSpeed, running);
@@ -390,8 +423,8 @@ public sealed class MonsterAI : MonoBehaviour
         }
 
         agent.speed = moveSpeed;
-        agent.isStopped = false;
-        if (!agent.SetDestination(target))
+        TryResumeAgent();
+        if (!TrySetAgentDestination(target))
         {
             yield return MoveScriptedTransformTo(target, moveSpeed, running);
             yield break;
@@ -404,6 +437,38 @@ public sealed class MonsterAI : MonoBehaviour
         {
             TickFootsteps(running);
             yield return null;
+        }
+    }
+
+    private IEnumerator ScriptedApproachThenWanderRoutine(Transform approachPoint, float moveSpeed, float randomRadius)
+    {
+        state = MonsterState.Scripted;
+        SetMeshVisible(true);
+        ConfigureAgent();
+        EnsureAgentOnNavMesh(force: true);
+        SetRunAnimation(false);
+        nextFootstepTime = Time.time;
+
+        float speed = Mathf.Max(0.1f, moveSpeed);
+        yield return MoveScriptedTo(approachPoint.position, speed, false);
+
+        wanderCenter = transform.position;
+        float radius = Mathf.Max(0.5f, randomRadius);
+
+        while (state == MonsterState.Scripted)
+        {
+            Vector3 target = transform.position;
+            if (TryGetRandomReachablePoint(wanderCenter, radius, out var randomPoint))
+                target = randomPoint;
+
+            yield return MoveScriptedTo(target, speed, false);
+
+            float waitUntil = Time.time + patrolPointWaitTime;
+            while (state == MonsterState.Scripted && Time.time < waitUntil)
+            {
+                SetRunAnimation(false);
+                yield return null;
+            }
         }
     }
 
@@ -479,8 +544,11 @@ public sealed class MonsterAI : MonoBehaviour
             return;
         }
 
+        if (!HasActiveAgentOnNavMesh())
+            return;
+
         agent.speed = shouldRun ? chaseSpeed : searchSpeed;
-        agent.isStopped = false;
+        TryResumeAgent();
         TryOpenDoorAhead();
         TickFootsteps(shouldRun);
 
@@ -489,19 +557,17 @@ public sealed class MonsterAI : MonoBehaviour
 
         nextRepathTime = Time.time + repathInterval;
         if (TrySampleNavMesh(player.position, out var targetPosition))
-            agent.SetDestination(targetPosition);
+            TrySetAgentDestination(targetPosition);
     }
 
     private IEnumerator AttackRoutine()
     {
+        if (caughtDeathSequenceRunning)
+            yield break;
+
         state = MonsterState.Attacking;
         nextAttackTime = Time.time + attackCooldown;
-        if (agent != null)
-        {
-            agent.isStopped = true;
-            if (agent.isOnNavMesh && agent.hasPath)
-                agent.ResetPath();
-        }
+        TryStopAgent(resetPath: true);
 
         FacePlayer();
         SetRunAnimation(false);
@@ -512,21 +578,139 @@ public sealed class MonsterAI : MonoBehaviour
         if (!playedAttack)
             AudioManager.Instance?.PlayGhostJumpscare(attackScreamVolume);
 
+        if (killPlayerOnHit && player != null && Vector3.Distance(transform.position, player.position) <= attackRange + 0.65f)
+        {
+            StartCoroutine(CaughtDeathRoutine());
+            yield break;
+        }
+
         if (attackHitDelay > 0f)
             yield return new WaitForSeconds(attackHitDelay);
 
         if (killPlayerOnHit && player != null && Vector3.Distance(transform.position, player.position) <= attackRange + 0.65f)
-            GameController.Instance?.TriggerDeath(false);
+        {
+            StartCoroutine(CaughtDeathRoutine());
+            yield break;
+        }
 
         if (GameController.Instance == null || GameController.Instance.currentGameState != GameController.GameState.Dead)
             state = MonsterState.Chasing;
     }
 
+    private IEnumerator CaughtDeathRoutine()
+    {
+        if (caughtDeathSequenceRunning)
+            yield break;
+
+        caughtDeathSequenceRunning = true;
+        state = MonsterState.Attacking;
+
+        TryStopAgent(resetPath: true);
+
+        var controller = GameController.Instance;
+        var playerController = player != null
+            ? player.GetComponent<FpsHorrorKit.FpsController>()
+            : FindFirstObjectByType<FpsHorrorKit.FpsController>();
+
+        controller?.SetGameState(GameController.GameState.Cutscene);
+
+        float originalAmplitude = 0f;
+        float originalFrequency = 0f;
+        bool hasHeadBob = playerController != null && playerController.headBob != null;
+        if (hasHeadBob)
+        {
+            originalAmplitude = playerController.headBob.AmplitudeGain;
+            originalFrequency = playerController.headBob.FrequencyGain;
+        }
+
+        float elapsed = 0f;
+        float duration = Mathf.Max(0.1f, caughtDeathDelay);
+        while (elapsed < duration)
+        {
+            ForcePlayerLookAtMonsterHead(playerController);
+
+            if (hasHeadBob)
+            {
+                float intensity = 1f - Mathf.Clamp01(elapsed / duration);
+                playerController.headBob.AmplitudeGain = caughtCameraShakeAmplitude * intensity;
+                playerController.headBob.FrequencyGain = caughtCameraShakeFrequency;
+            }
+
+            elapsed += Time.deltaTime;
+            yield return null;
+        }
+
+        if (hasHeadBob)
+        {
+            playerController.headBob.AmplitudeGain = originalAmplitude;
+            playerController.headBob.FrequencyGain = originalFrequency;
+        }
+
+        GameController.Instance?.TriggerDeathWithUIDelay(false, 0f);
+    }
+
+    private void ForcePlayerLookAtMonsterHead(FpsHorrorKit.FpsController playerController)
+    {
+        if (playerController == null)
+            return;
+
+        Vector3 eyePosition = playerController.followTarget != null
+            ? playerController.followTarget.position
+            : playerController.transform.position + Vector3.up * 1.55f;
+        Vector3 headPosition = GetLookAtHeadPosition();
+        Vector3 direction = headPosition - eyePosition;
+        if (direction.sqrMagnitude <= 0.001f)
+            return;
+
+        Vector3 flatDirection = direction;
+        flatDirection.y = 0f;
+        if (flatDirection.sqrMagnitude > 0.001f)
+            playerController.transform.rotation = Quaternion.LookRotation(flatDirection.normalized, Vector3.up);
+
+        Vector3 normalized = direction.normalized;
+        float pitch = -Mathf.Asin(Mathf.Clamp(normalized.y, -1f, 1f)) * Mathf.Rad2Deg;
+        playerController.SetCutSceneCameraPitch(pitch);
+        FacePlayer();
+    }
+
+    private Vector3 GetLookAtHeadPosition()
+    {
+        if (renderers == null || renderers.Length == 0)
+            renderers = GetComponentsInChildren<Renderer>(true);
+
+        bool hasBounds = false;
+        Bounds bounds = default;
+        for (int i = 0; i < renderers.Length; i++)
+        {
+            Renderer itemRenderer = renderers[i];
+            if (itemRenderer == null || !itemRenderer.enabled)
+                continue;
+
+            if (!hasBounds)
+            {
+                bounds = itemRenderer.bounds;
+                hasBounds = true;
+            }
+            else
+            {
+                bounds.Encapsulate(itemRenderer.bounds);
+            }
+        }
+
+        if (hasBounds)
+            return new Vector3(bounds.center.x, bounds.max.y - 0.15f, bounds.center.z);
+
+        return transform.position + Vector3.up * caughtLookHeight;
+    }
+
     private void TickSearching()
     {
         SetRunAnimation(false);
+        if (!HasActiveAgentOnNavMesh())
+            return;
+
         agent.speed = searchSpeed;
-        agent.isStopped = false;
+        TryResumeAgent();
         TryOpenDoorAhead();
         TickFootsteps(false);
 
@@ -549,7 +733,7 @@ public sealed class MonsterAI : MonoBehaviour
 
         nextRepathTime = Time.time + repathInterval;
         if (TrySampleNavMesh(lastKnownPlayerPosition, out var targetPosition))
-            agent.SetDestination(targetPosition);
+            TrySetAgentDestination(targetPosition);
 
         if (!agent.pathPending && agent.remainingDistance <= stoppingDistance + 0.25f)
             ChooseWanderTarget();
@@ -557,10 +741,13 @@ public sealed class MonsterAI : MonoBehaviour
 
     private void TickWandering()
     {
+        if (!HasActiveAgentOnNavMesh())
+            return;
+
         bool runningToPriorityTarget = hasPriorityWanderTarget && priorityWanderSpeed > wanderSpeed + 0.1f;
         SetRunAnimation(runningToPriorityTarget);
         agent.speed = hasPriorityWanderTarget ? priorityWanderSpeed : wanderSpeed;
-        agent.isStopped = false;
+        TryResumeAgent();
         TickFootsteps(runningToPriorityTarget);
 
         if (hasPriorityWanderTarget)
@@ -577,7 +764,7 @@ public sealed class MonsterAI : MonoBehaviour
             if (Time.time >= nextRepathTime)
             {
                 nextRepathTime = Time.time + repathInterval;
-                agent.SetDestination(currentWanderTarget);
+                TrySetAgentDestination(currentWanderTarget);
             }
 
             return;
@@ -595,7 +782,7 @@ public sealed class MonsterAI : MonoBehaviour
         if (hasWanderTarget && Time.time >= nextRepathTime)
         {
             nextRepathTime = Time.time + repathInterval;
-            agent.SetDestination(currentWanderTarget);
+            TrySetAgentDestination(currentWanderTarget);
         }
     }
 
@@ -714,6 +901,7 @@ public sealed class MonsterAI : MonoBehaviour
         if (clip == null || monsterAudioSource == null)
             return false;
 
+        AudioManager.Instance?.BlockGameplayAmbience(clip.length);
         monsterAudioSource.PlayOneShot(clip, volume);
         return true;
     }
@@ -787,20 +975,30 @@ public sealed class MonsterAI : MonoBehaviour
         if (usePatrolPoints && TryChoosePatrolTarget())
             return;
 
+        if (TryGetRandomReachablePoint(wanderCenter, wanderRadius, out var sampledPosition))
+        {
+            currentWanderTarget = sampledPosition;
+            hasWanderTarget = true;
+        }
+    }
+
+    private bool TryGetRandomReachablePoint(Vector3 center, float radius, out Vector3 sampledPosition)
+    {
         for (int attempt = 0; attempt < 12; attempt++)
         {
-            Vector2 offset = Random.insideUnitCircle * wanderRadius;
-            Vector3 candidate = wanderCenter + new Vector3(offset.x, 0f, offset.y);
-            if (!TrySampleNavMesh(candidate, out var sampledPosition))
+            Vector2 offset = Random.insideUnitCircle * radius;
+            Vector3 candidate = center + new Vector3(offset.x, 0f, offset.y);
+            if (!TrySampleNavMesh(candidate, out sampledPosition))
                 continue;
 
             if (!CanReach(sampledPosition))
                 continue;
 
-            currentWanderTarget = sampledPosition;
-            hasWanderTarget = true;
-            return;
+            return true;
         }
+
+        sampledPosition = center;
+        return false;
     }
 
     private bool TryChoosePatrolTarget()
@@ -911,8 +1109,7 @@ public sealed class MonsterAI : MonoBehaviour
         hasWanderTarget = false;
         nextPatrolMoveTime = Time.time + patrolPointWaitTime;
         AlignPatrolIndexToNearest(transform.position);
-        if (agent != null && agent.isOnNavMesh && agent.hasPath)
-            agent.ResetPath();
+        TryResetAgentPath();
     }
 
     private void StartHiddenReturnToSpawn()
@@ -942,6 +1139,9 @@ public sealed class MonsterAI : MonoBehaviour
 
     private void ConfigureAgent()
     {
+        if (agent == null)
+            return;
+
         agent.speed = chaseSpeed;
         agent.acceleration = acceleration;
         agent.stoppingDistance = stoppingDistance;
@@ -949,7 +1149,46 @@ public sealed class MonsterAI : MonoBehaviour
         agent.autoRepath = true;
         agent.obstacleAvoidanceType = ObstacleAvoidanceType.HighQualityObstacleAvoidance;
         agent.updateRotation = true;
+        TryResumeAgent();
+    }
+
+    private bool HasActiveAgentOnNavMesh()
+    {
+        return agent != null && agent.isActiveAndEnabled && agent.isOnNavMesh;
+    }
+
+    private bool TryResumeAgent()
+    {
+        if (!HasActiveAgentOnNavMesh())
+            return false;
+
         agent.isStopped = false;
+        return true;
+    }
+
+    private bool TryStopAgent(bool resetPath)
+    {
+        if (!HasActiveAgentOnNavMesh())
+            return false;
+
+        agent.isStopped = true;
+        if (resetPath)
+            TryResetAgentPath();
+        return true;
+    }
+
+    private bool TryResetAgentPath()
+    {
+        if (!HasActiveAgentOnNavMesh() || !agent.hasPath)
+            return false;
+
+        agent.ResetPath();
+        return true;
+    }
+
+    private bool TrySetAgentDestination(Vector3 destination)
+    {
+        return HasActiveAgentOnNavMesh() && agent.SetDestination(destination);
     }
 
     private void StartChaseAudio()
@@ -958,7 +1197,12 @@ public sealed class MonsterAI : MonoBehaviour
         if (controller != null && controller.currentChapterPhase < GameController.ChapterPhase.Escape)
             controller.SetChapterPhase(GameController.ChapterPhase.Escape);
 
-        AudioManager.Instance?.PlayGhostJumpscare(chaseScreamVolume);
+        if (!hasPlayedChaseScream)
+        {
+            AudioManager.Instance?.PlayGhostJumpscare(chaseScreamVolume);
+            hasPlayedChaseScream = true;
+        }
+
         AudioManager.Instance?.PlayChaseMusic();
     }
 

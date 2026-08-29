@@ -140,6 +140,7 @@ namespace FpsHorrorKit
             isLocked = false;
             hasKey = true;
             AudioManager.Instance?.PlayDoorUnlock();
+            AudioManager.Instance?.RequestGameplayAmbienceMoment();
             OnDoorUnlocked?.Invoke(this);
 
             if (!isOpen && isFinished)
@@ -202,6 +203,7 @@ namespace FpsHorrorKit
             if (consumeKeyOnUse && equippedKey.itemType != ItemType.Key)
                 inventory.RemoveItem(equippedKey, 1);
             AudioManager.Instance?.PlayDoorUnlock();
+            AudioManager.Instance?.RequestGameplayAmbienceMoment();
             InteractMessageScript.Instance?.ShowMessage("Đã mở khóa cửa.");
             OnDoorUnlocked?.Invoke(this);
             return true;
@@ -329,6 +331,7 @@ namespace FpsHorrorKit
             isLocked = false;
             hasKey = true;
             AudioManager.Instance?.PlayDoorUnlock();
+            AudioManager.Instance?.RequestGameplayAmbienceMoment();
             OnDoorUnlocked?.Invoke(this);
 
             if (!isOpen && isFinished)

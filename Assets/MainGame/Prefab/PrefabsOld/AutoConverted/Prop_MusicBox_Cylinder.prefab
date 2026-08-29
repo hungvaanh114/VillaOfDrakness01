@@ -11,9 +11,7 @@ GameObject:
   - component: {fileID: 3746161071217094559}
   - component: {fileID: 8905053236411124383}
   - component: {fileID: 1536223198885159358}
-  - component: {fileID: 7120223794335243687}
   - component: {fileID: 7313467070155109581}
-  - component: {fileID: 3116524630855627145}
   m_Layer: 8
   m_Name: Prop_MusicBox_Cylinder
   m_TagString: Interactable
@@ -93,23 +91,6 @@ MeshRenderer:
   m_SortingOrder: 0
   m_MaskInteraction: 0
   m_AdditionalVertexStreams: {fileID: 0}
---- !u!114 &7120223794335243687
-MonoBehaviour:
-  m_ObjectHideFlags: 0
-  m_CorrespondingSourceObject: {fileID: 0}
-  m_PrefabInstance: {fileID: 0}
-  m_PrefabAsset: {fileID: 0}
-  m_GameObject: {fileID: 4082036304235390228}
-  m_Enabled: 1
-  m_EditorHideFlags: 0
-  m_Script: {fileID: 11500000, guid: 7b13c62490489ba4e84fea29f9ec4f77, type: 3}
-  m_Name: 
-  m_EditorClassIdentifier: BietThuBongToi.Runtime::AudioLogItem
-  _logClip: {fileID: 8300000, guid: bdecdb100e48b3f4a911f9bfad935a4e, type: 3}
-  _logText: "B\xE0 Lan: Con c\xF3 nghe th\u1EA5y ti\u1EBFng nh\u1EA1c kh\xF4ng...
-    n\xF3 v\u1EABn c\xF2n vang trong h\u1ED9p nh\u1EA1c \u1EA5y. Ta \u0111\xE3 gi\u1EA5u
-    n\xF3 r\u1EA5t k\u1EF9, s\u1EE3 ai \u0111\xF3 t\xECm th\u1EA5y s\u1EBD \u0111\xE1nh
-    th\u1EE9c... th\u1EE9 kh\xF4ng n\xEAn \u0111\xE1nh th\u1EE9c."
 --- !u!65 &7313467070155109581
 BoxCollider:
   m_ObjectHideFlags: 0
@@ -131,100 +112,3 @@ BoxCollider:
   serializedVersion: 3
   m_Size: {x: 1.0002695, y: 0.79927135, z: 0.637473}
   m_Center: {x: -0.0000041127205, y: -0.00020042062, z: 0.00008365512}
---- !u!82 &3116524630855627145
-AudioSource:
-  m_ObjectHideFlags: 0
-  m_CorrespondingSourceObject: {fileID: 0}
-  m_PrefabInstance: {fileID: 0}
-  m_PrefabAsset: {fileID: 0}
-  m_GameObject: {fileID: 4082036304235390228}
-  m_Enabled: 1
-  serializedVersion: 4
-  OutputAudioMixerGroup: {fileID: 0}
-  m_audioClip: {fileID: 0}
-  m_Resource: {fileID: 8300000, guid: bdecdb100e48b3f4a911f9bfad935a4e, type: 3}
-  m_PlayOnAwake: 0
-  m_Volume: 1
-  m_Pitch: 1
-  Loop: 0
-  Mute: 0
-  Spatialize: 0
-  SpatializePostEffects: 0
-  Priority: 128
-  DopplerLevel: 1
-  MinDistance: 1
-  MaxDistance: 500
-  Pan2D: 0
-  rolloffMode: 0
-  BypassEffects: 0
-  BypassListenerEffects: 0
-  BypassReverbZones: 0
-  rolloffCustomCurve:
-    serializedVersion: 2
-    m_Curve:
-    - serializedVersion: 3
-      time: 0
-      value: 1
-      inSlope: 0
-      outSlope: 0
-      tangentMode: 0
-      weightedMode: 0
-      inWeight: 0.33333334
-      outWeight: 0.33333334
-    - serializedVersion: 3
-      time: 1
-      value: 0
-      inSlope: 0
-      outSlope: 0
-      tangentMode: 0
-      weightedMode: 0
-      inWeight: 0.33333334
-      outWeight: 0.33333334
-    m_PreInfinity: 2
-    m_PostInfinity: 2
-    m_RotationOrder: 4
-  panLevelCustomCurve:
-    serializedVersion: 2
-    m_Curve:
-    - serializedVersion: 3
-      time: 0
-      value: 0
-      inSlope: 0
-      outSlope: 0
-      tangentMode: 0
-      weightedMode: 0
-      inWeight: 0.33333334
-      outWeight: 0.33333334
-    m_PreInfinity: 2
-    m_PostInfinity: 2
-    m_RotationOrder: 4
-  spreadCustomCurve:
-    serializedVersion: 2
-    m_Curve:
-    - serializedVersion: 3
-      time: 0
-      value: 0
-      inSlope: 0
-      outSlope: 0
-      tangentMode: 0
-      weightedMode: 0
-      inWeight: 0.33333334
-      outWeight: 0.33333334
-    m_PreInfinity: 2
-    m_PostInfinity: 2
-    m_RotationOrder: 4
-  reverbZoneMixCustomCurve:
-    serializedVersion: 2
-    m_Curve:
-    - serializedVersion: 3
-      time: 0
-      value: 1
-      inSlope: 0
-      outSlope: 0
-      tangentMode: 0
-      weightedMode: 0
-      inWeight: 0.33333334
-      outWeight: 0.33333334
-    m_PreInfinity: 2
-    m_PostInfinity: 2
-    m_RotationOrder: 4

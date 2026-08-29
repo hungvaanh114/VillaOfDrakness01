@@ -11,7 +11,6 @@ GameObject:
   - component: {fileID: 4005384852573887629}
   - component: {fileID: 1320429321353017540}
   - component: {fileID: 5921743495844670825}
-  - component: {fileID: 4201692234905510086}
   m_Layer: 8
   m_Name: Ngan_Keo
   m_TagString: Untagged
@@ -91,28 +90,3 @@ MeshRenderer:
   m_SortingOrder: 0
   m_MaskInteraction: 0
   m_AdditionalVertexStreams: {fileID: 0}
---- !u!114 &4201692234905510086
-MonoBehaviour:
-  m_ObjectHideFlags: 0
-  m_CorrespondingSourceObject: {fileID: 0}
-  m_PrefabInstance: {fileID: 0}
-  m_PrefabAsset: {fileID: 0}
-  m_GameObject: {fileID: 1767817188239119117}
-  m_Enabled: 1
-  m_EditorHideFlags: 0
-  m_Script: {fileID: 11500000, guid: 1f6c109e409e5354087ff8d908fc4a98, type: 3}
-  m_Name: 
-  m_EditorClassIdentifier: BietThuBongToi.Runtime::DoorController
-  _isOpen: 0
-  _isLocked: 1
-  _isDrawer: 1
-  _autoLockOnClose: 1
-  _slideOffset: {x: 0, y: 0, z: 0.4}
-  _openAngle: 90
-  _animSpeed: 3
-  OnDoorOpen:
-    m_PersistentCalls:
-      m_Calls: []
-  OnDoorClose:
-    m_PersistentCalls:
-      m_Calls: []

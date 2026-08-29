@@ -19,7 +19,7 @@ public static class ChapterOneAudioBinder
             return;
 
         var data = AssetDatabase.LoadAssetAtPath<AudioData>(AudioDataPath);
-        if (data != null && data.menuMusic != null && data.introAmbience != null && data.doorOpenSlow != null)
+        if (data != null && data.menuMusic != null && data.introAmbience != null && HasGameplayAmbienceSequence(data) && data.doorOpenSlow != null)
             return;
 
         SessionState.SetBool(AutoBindSessionKey, true);
@@ -62,6 +62,12 @@ public static class ChapterOneAudioBinder
         Set(serialized, "menuMusic", Clip("Assets/MainGame/Audio/BGM/BGM_MainMenu_TheHollowRoom.wav"));
         Set(serialized, "introAmbience", Clip("Assets/MainGame/Audio/Ambient/Amb_Exterior_Garden.mp3"));
         Set(serialized, "gameplayAmbience", Clip("Assets/MainGame/Audio/Ambient/Amb_CH1_Day_01.wav"));
+        SetArray(serialized, "gameplayAmbiences",
+            Clip("Assets/MainGame/Audio/Ambient/Amb_CH1_Day_01.wav"),
+            Clip("Assets/MainGame/Audio/Ambient/Amb_CH1_Day_02.wav"));
+        Set(serialized, "gameplayAmbienceSilenceSeconds", 45f);
+        Set(serialized, "gameplayAmbienceMaxSilenceSeconds", 90f);
+        Set(serialized, "gameplayAmbienceBlockedRetrySeconds", 3f);
         Set(serialized, "ghostAmbience", Clip("Assets/MainGame/Audio/Ambient/Amb_CH1_Ghost.wav"));
         Set(serialized, "chaseMusic", Clip("Assets/MainGame/Audio/BGM/BGM_CH1_Scene3_Chase.mp3"));
         Set(serialized, "deathMusic", Clip("Assets/MainGame/Audio/BGM/BGM_DeathScreen_TheLastBroadcast.wav"));
@@ -124,7 +130,7 @@ public static class ChapterOneAudioBinder
         var serialized = new SerializedObject(audioManager);
         Set(serialized, "audioData", audioData);
         Set(serialized, "musicSource", EnsureAudioSource(audioManager.transform, "MusicSource", true, null));
-        Set(serialized, "ambienceSource", EnsureAudioSource(audioManager.transform, "AmbienceSource", true, null));
+        Set(serialized, "ambienceSource", EnsureAudioSource(audioManager.transform, "AmbienceSource", false, null));
         Set(serialized, "sfxSource", EnsureAudioSource(audioManager.transform, "SfxSource", false, null));
         Set(serialized, "uiSource", EnsureAudioSource(audioManager.transform, "UiSource", false, null));
         Set(serialized, "voiceSource", EnsureAudioSource(audioManager.transform, "VoiceSource", false, null));
@@ -242,6 +248,14 @@ public static class ChapterOneAudioBinder
         return AssetDatabase.LoadAssetAtPath<AudioClip>(path);
     }
 
+    private static bool HasGameplayAmbienceSequence(AudioData data)
+    {
+        return data.gameplayAmbiences != null
+            && data.gameplayAmbiences.Length >= 2
+            && data.gameplayAmbiences[0] != null
+            && data.gameplayAmbiences[1] != null;
+    }
+
     private static void EnsureFolder(string parent, string folderName)
     {
         var fullPath = Path.Combine(parent, folderName).Replace('\\', '/');
@@ -254,5 +268,23 @@ public static class ChapterOneAudioBinder
         var property = serialized.FindProperty(propertyName);
         if (property != null)
             property.objectReferenceValue = value;
+    }
+
+    private static void Set(SerializedObject serialized, string propertyName, float value)
+    {
+        var property = serialized.FindProperty(propertyName);
+        if (property != null)
+            property.floatValue = value;
+    }
+
+    private static void SetArray(SerializedObject serialized, string propertyName, params UnityEngine.Object[] values)
+    {
+        var property = serialized.FindProperty(propertyName);
+        if (property == null)
+            return;
+
+        property.arraySize = values.Length;
+        for (int i = 0; i < values.Length; i++)
+            property.GetArrayElementAtIndex(i).objectReferenceValue = values[i];
     }
 }

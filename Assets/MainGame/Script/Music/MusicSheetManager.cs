@@ -39,6 +39,7 @@ namespace FpsHorrorKit
 
             collected.Add(sheet.musicSheetID);
             OnMusicSheetCollected?.Invoke(sheet);
+            AudioManager.Instance?.RequestGameplayAmbienceMoment();
             GameProgressManager.Instance?.NotifyMusicSheetCollected();
 
             if (!MusicSheetCompleted && CollectedMusicSheetCount >= requiredMusicSheetCount)

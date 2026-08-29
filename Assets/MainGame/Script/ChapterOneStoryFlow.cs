@@ -1,5 +1,8 @@
 using System.Collections;
+using System.Collections.Generic;
+using Unity.Cinemachine;
 using UnityEngine;
+using UnityEngine.AI;
 using UnityEngine.InputSystem;
 
 public sealed class ChapterOneStoryFlow : MonoBehaviour
@@ -33,6 +36,23 @@ public sealed class ChapterOneStoryFlow : MonoBehaviour
     [SerializeField, Min(0f)] private float gramophoneLookAtHeight = 0.75f;
     [SerializeField, Min(0.1f)] private float gramophoneTurnSpeed = 540f;
     [SerializeField, Min(0.2f)] private float skipPromptRefreshInterval = 1.2f;
+
+    [Header("Stair Encounter Cutscene")]
+    [SerializeField] private Transform stairMonsterCutscenePoint;
+    [SerializeField] private Transform stairPlayerCutscenePoint;
+    [SerializeField] private string stairMonsterCutscenePointName = "V\u1ecb tr\u00ed qu\u00e1i \u1edf c\u1ea7u thang cutscene";
+    [SerializeField] private string stairPlayerCutscenePointName = "V\u1ecb tr\u00ed nh\u00e2n v\u1eadt \u1edf c\u1ea7u thang cutscene";
+    [SerializeField] private string[] studyDoorsToLockNames = { "Villa2_Door_90_phongsach" };
+    [SerializeField] private string studyDoorToOpenName = "Villa2_Door_90_cauthang_phongSach";
+    [SerializeField, Min(0.1f)] private float stairCutsceneMoveSpeed = 3.2f;
+    [SerializeField, Min(0.1f)] private float stairCutsceneTurnSpeed = 540f;
+    [SerializeField, Min(0.05f)] private float stairCutsceneArriveDistance = 0.22f;
+    [SerializeField, Min(0f)] private float stairCutsceneLookHoldTime = 0.5f;
+    [SerializeField] private Vector3 stairCutsceneCameraOffset = new(0.55f, 2.05f, -3.25f);
+    [SerializeField, Min(0.05f)] private float stairCutsceneCameraSmoothTime = 0.18f;
+    [SerializeField, Min(0.1f)] private float stairMonsterScriptedSpeed = 0.9f;
+    [SerializeField, Min(0.5f)] private float stairMonsterScriptedWanderRadius = 3f;
+    [SerializeField, Min(0.1f)] private float stairCutsceneNavMeshSampleRadius = 2.5f;
 
     [Header("Carry Gramophone")]
     [SerializeField] private Transform gramophoneHoldPoint;
@@ -68,6 +88,13 @@ public sealed class ChapterOneStoryFlow : MonoBehaviour
     private bool monsterSeenBeforeCloset;
     private Coroutine sequenceRoutine;
     private float blockGramophoneSkipUntil;
+    private Camera stairCutsceneCamera;
+    private CinemachineBrain stairCutsceneBrain;
+    private CinemachineCamera stairGameplayVirtualCamera;
+    private bool previousStairBrainEnabled;
+    private bool previousStairVirtualCameraEnabled;
+    private Vector3 stairCutsceneCameraVelocity;
+    private NavMeshPath stairCutscenePath;
 
     private void Awake()
     {
@@ -147,7 +174,6 @@ public sealed class ChapterOneStoryFlow : MonoBehaviour
     private IEnumerator StudyLetterSequence()
     {
         var controller = GameController.Instance;
-        controller?.SetChapterPhase(GameController.ChapterPhase.HallEncounter);
         controller?.SetGameState(GameController.GameState.Cutscene);
 
         if (monster != null)
@@ -158,12 +184,6 @@ public sealed class ChapterOneStoryFlow : MonoBehaviour
 
         yield return WatchGramophoneUntilTapeEnds();
         yield return CarryGramophoneInHand();
-
-        if (controller != null && controller.currentGameState != GameController.GameState.Dead)
-            controller.SetGameState(GameController.GameState.Gameplay);
-
-        yield return PlayDiaryLine(1, "...Ổn.", 1.4f);
-        yield return PlayDiaryLine(2, "Cái... cái gì vậy?", 2.2f);
 
         QueueHuntAfterGramophone();
     }
@@ -299,45 +319,433 @@ public sealed class ChapterOneStoryFlow : MonoBehaviour
             return;
 
         huntStartQueued = true;
-        StartCoroutine(StartHuntAfterGramophoneRoutine());
+        StartCoroutine(StartPostGramophoneStairEncounterRoutine());
     }
 
-    private IEnumerator StartHuntAfterGramophoneRoutine()
+    private IEnumerator StartPostGramophoneStairEncounterRoutine()
     {
         sequenceRoutine = null;
         if (gramophoneTapePlayer != null)
             gramophoneTapePlayer.TapeFinished -= HandleTapeFinished;
 
-        if (monsterUpperFloorSpawn != null)
-            monster.TeleportTo(monsterUpperFloorSpawn);
+        ResolveReferences();
+        ResolveStairEncounterPoints();
+        AudioManager.Instance?.BlockGameplayAmbience(postGramophoneSilence + 30f);
 
-        monster.DisableHunt(true);
+        var controller = GameController.Instance;
+        var playerController = controller != null && controller.playerController != null
+            ? controller.playerController
+            : FindFirstObjectByType<FpsHorrorKit.FpsController>();
 
-        if (postGramophoneSilence > 0f)
-            yield return new WaitForSeconds(postGramophoneSilence);
+        controller?.SetGameState(GameController.GameState.Cutscene);
+
+        if (monster == null || playerController == null || stairMonsterCutscenePoint == null || stairPlayerCutscenePoint == null)
+        {
+            Debug.LogWarning("Cannot play stair encounter cutscene because player, monster, or the required stair cutscene markers are missing.");
+            huntStartQueued = false;
+            RestoreStairEncounterControl(controller, playerController, true, true);
+            yield break;
+        }
+
+        bool previousRaycast = true;
+        bool changedRaycast = false;
+        if (FpsHorrorKit.PlayerInteract.Instance != null)
+        {
+            previousRaycast = FpsHorrorKit.PlayerInteract.Instance.sendRaycast;
+            FpsHorrorKit.PlayerInteract.Instance.sendRaycast = false;
+            changedRaycast = true;
+        }
+
+        Transform openedDoor = PreparePostGramophoneDoors();
+
+        monster.DisableHunt(false);
+        monster.TeleportTo(stairMonsterCutscenePoint);
+        monster.SetMeshVisible(true);
+
+        if (ShouldAbortStairEncounter())
+            yield break;
+
+        if (playerController != null && openedDoor != null)
+            yield return RotatePlayerTowardTarget(playerController, openedDoor.position, 0.2f);
+
+        BeginStairCinematicCamera(playerController, playerController.transform.position + Vector3.up * 1.35f);
+
+        if (playerController != null && stairPlayerCutscenePoint != null)
+            yield return MovePlayerToCutscenePoint(playerController, stairPlayerCutscenePoint);
+
+        playerController.StopCutSceneMovement();
+
+        if (playerController != null && monster != null)
+            yield return RotatePlayerTowardTarget(playerController, GetMonsterLookTarget(), stairCutsceneLookHoldTime);
+
+        yield return WaitUntilMonsterVisibleInCutscene(playerController);
+
+        if (ShouldAbortStairEncounter())
+            yield break;
+
+        monsterSeenBeforeCloset = true;
+        monster.PlayScriptedApproachThenWander(
+            stairPlayerCutscenePoint,
+            stairMonsterScriptedSpeed,
+            stairMonsterScriptedWanderRadius);
+
+        RestoreStairEncounterControl(controller, playerController, changedRaycast, previousRaycast);
+
+        float reactionLength = AudioManager.Instance != null ? AudioManager.Instance.PlayHideVoice(1) : 0f;
+        float reactionDuration = Mathf.Max(reactionLength, playerReactionDelay);
+        ShowSubtitle("C\u00e1i g\u00ec v\u1eeba-", reactionDuration);
+        if (reactionDuration > 0f)
+            yield return new WaitForSeconds(reactionDuration);
+
+        if (ShouldAbortStairEncounter())
+            yield break;
+
+        float monsterLineLength = AudioManager.Instance != null ? AudioManager.Instance.PlayMaVuDaiPatrol() : 0f;
+        float monsterLineDuration = Mathf.Max(monsterLineLength, 7f);
+        FpsHorrorKit.InteractMessageScript.Instance?.ClearMessage();
+        if (monsterLineDuration > 0f)
+            yield return new WaitForSeconds(monsterLineDuration);
+
+        if (ShouldAbortStairEncounter())
+            yield break;
 
         huntStarted = true;
         huntStartQueued = false;
-        monsterSeenBeforeCloset = false;
-        monster.EnableHunt(true);
-        ShowSubtitle("Khoa ơi... con đâu rồi... ra đây với má đi con...", 7f);
-
-        GameController.Instance?.SetChapterPhase(GameController.ChapterPhase.Escape);
-
         waitingForCloset = true;
-        StartCoroutine(PlayerReactionRoutine());
+
+        if (controller != null && controller.currentGameState != GameController.GameState.Dead)
+            controller.SetChapterPhase(GameController.ChapterPhase.Escape);
+
+        if (monster != null)
+            monster.EnableHunt(true);
     }
 
-    private IEnumerator PlayerReactionRoutine()
+    private bool ShouldAbortStairEncounter()
     {
-        if (playerReactionDelay > 0f)
-            yield return new WaitForSeconds(playerReactionDelay);
+        var controller = GameController.Instance;
+        if (controller != null && controller.currentGameState == GameController.GameState.Dead)
+        {
+            huntStartQueued = false;
+            return true;
+        }
 
-        if (closetObjectiveCompleted || closetObjectiveActive || !waitingForCloset)
-            yield break;
+        return false;
+    }
 
-        float length = AudioManager.Instance != null ? AudioManager.Instance.PlayHideVoice(1) : 0f;
-        ShowSubtitle("Cái gì vừa-", Mathf.Max(length, 2.2f));
+    private void BeginStairCinematicCamera(FpsHorrorKit.FpsController playerController, Vector3 lookAt)
+    {
+        if (playerController == null)
+            return;
+
+        stairCutsceneCamera = Camera.main;
+        if (stairCutsceneCamera == null)
+            return;
+
+        stairCutsceneBrain = stairCutsceneCamera.GetComponent<CinemachineBrain>();
+        stairGameplayVirtualCamera = playerController.virtualCamera;
+        previousStairBrainEnabled = stairCutsceneBrain == null || stairCutsceneBrain.enabled;
+        previousStairVirtualCameraEnabled = stairGameplayVirtualCamera != null && stairGameplayVirtualCamera.enabled;
+
+        if (stairCutsceneBrain != null)
+            stairCutsceneBrain.enabled = false;
+
+        if (stairGameplayVirtualCamera != null)
+            stairGameplayVirtualCamera.enabled = false;
+
+        stairCutsceneCamera.gameObject.SetActive(true);
+        UpdateStairCinematicCamera(playerController, lookAt, true);
+    }
+
+    private void RestoreStairEncounterControl(
+        GameController controller,
+        FpsHorrorKit.FpsController playerController,
+        bool restoreRaycast,
+        bool raycastValue)
+    {
+        EndStairCinematicCamera();
+
+        if (controller != null && controller.currentGameState != GameController.GameState.Dead)
+        {
+            controller.SetGameState(GameController.GameState.Gameplay);
+        }
+        else if (playerController != null)
+        {
+            playerController.isCutScene = false;
+            playerController.isInteracting = false;
+            playerController.StopCutSceneMovement();
+        }
+
+        if (restoreRaycast && FpsHorrorKit.PlayerInteract.Instance != null)
+            FpsHorrorKit.PlayerInteract.Instance.sendRaycast = raycastValue;
+    }
+
+    private void EndStairCinematicCamera()
+    {
+        if (stairGameplayVirtualCamera != null)
+            stairGameplayVirtualCamera.enabled = previousStairVirtualCameraEnabled;
+
+        if (stairCutsceneBrain != null)
+            stairCutsceneBrain.enabled = previousStairBrainEnabled;
+
+        stairCutsceneCamera = null;
+        stairCutsceneBrain = null;
+        stairGameplayVirtualCamera = null;
+        stairCutsceneCameraVelocity = Vector3.zero;
+    }
+
+    private void UpdateStairCinematicCamera(FpsHorrorKit.FpsController playerController, Vector3 lookAt, bool instant = false)
+    {
+        if (stairCutsceneCamera == null || playerController == null)
+            return;
+
+        Transform playerTransform = playerController.transform;
+        Vector3 forward = playerTransform.forward;
+        forward.y = 0f;
+        if (forward.sqrMagnitude <= 0.001f)
+            forward = Vector3.forward;
+        forward.Normalize();
+
+        Vector3 right = Vector3.Cross(Vector3.up, forward).normalized;
+        Vector3 targetPosition = playerTransform.position
+            + right * stairCutsceneCameraOffset.x
+            + Vector3.up * stairCutsceneCameraOffset.y
+            + forward * stairCutsceneCameraOffset.z;
+
+        if (instant)
+        {
+            stairCutsceneCamera.transform.position = targetPosition;
+            stairCutsceneCameraVelocity = Vector3.zero;
+        }
+        else
+        {
+            stairCutsceneCamera.transform.position = Vector3.SmoothDamp(
+                stairCutsceneCamera.transform.position,
+                targetPosition,
+                ref stairCutsceneCameraVelocity,
+                stairCutsceneCameraSmoothTime);
+        }
+
+        Vector3 direction = lookAt - stairCutsceneCamera.transform.position;
+        if (direction.sqrMagnitude <= 0.001f)
+            return;
+
+        Quaternion targetRotation = Quaternion.LookRotation(direction.normalized, Vector3.up);
+        stairCutsceneCamera.transform.rotation = instant
+            ? targetRotation
+            : Quaternion.Slerp(stairCutsceneCamera.transform.rotation, targetRotation, Time.deltaTime * 5.2f);
+    }
+
+    private IEnumerator WaitUntilMonsterVisibleInCutscene(FpsHorrorKit.FpsController playerController)
+    {
+        while (!IsMonsterVisibleToCamera(stairCutsceneCamera))
+        {
+            Vector3 lookTarget = GetMonsterLookTarget();
+            playerController.RotateCutSceneTowards(lookTarget - playerController.transform.position, stairCutsceneTurnSpeed);
+            playerController.StopCutSceneMovement();
+            UpdateStairCinematicCamera(playerController, lookTarget);
+            yield return null;
+        }
+    }
+
+    private bool IsMonsterVisibleToCamera(Camera camera)
+    {
+        if (camera == null || !TryGetMonsterBounds(out var bounds))
+            return false;
+
+        Vector3 viewport = camera.WorldToViewportPoint(bounds.center);
+        return viewport.z > 0f
+            && viewport.x > 0.08f
+            && viewport.x < 0.92f
+            && viewport.y > 0.08f
+            && viewport.y < 0.92f;
+    }
+
+    private Transform PreparePostGramophoneDoors()
+    {
+        if (studyDoorsToLockNames != null)
+        {
+            for (int i = 0; i < studyDoorsToLockNames.Length; i++)
+            {
+                var doorsToLock = FindDoorsByExactName(studyDoorsToLockNames[i]);
+                for (int doorIndex = 0; doorIndex < doorsToLock.Count; doorIndex++)
+                    doorsToLock[doorIndex]?.CloseAndLockFromStory();
+            }
+        }
+
+        var doorToOpen = FindDoorByExactName(studyDoorToOpenName);
+        if (doorToOpen != null)
+        {
+            doorToOpen.UnlockAndOpenFromStory();
+            return doorToOpen.transform;
+        }
+
+        return FindSceneTransform(studyDoorToOpenName);
+    }
+
+    private void ResolveStairEncounterPoints()
+    {
+        if (stairMonsterCutscenePoint == null)
+            stairMonsterCutscenePoint = FindSceneTransform(stairMonsterCutscenePointName);
+
+        if (stairPlayerCutscenePoint == null)
+            stairPlayerCutscenePoint = FindSceneTransform(stairPlayerCutscenePointName);
+    }
+
+    private IEnumerator RotatePlayerTowardTarget(FpsHorrorKit.FpsController playerController, Vector3 targetPosition, float holdTime)
+    {
+        float elapsed = 0f;
+        float alignedTime = 0f;
+        float timeout = Mathf.Max(1f, holdTime + 2f);
+
+        while (elapsed < timeout)
+        {
+            Vector3 direction = targetPosition - playerController.transform.position;
+            direction.y = 0f;
+            bool aligned = playerController.RotateCutSceneTowards(direction, stairCutsceneTurnSpeed);
+            playerController.SetCutSceneCameraPitch(0f);
+            playerController.StopCutSceneMovement();
+            UpdateStairCinematicCamera(playerController, targetPosition);
+
+            if (aligned)
+            {
+                alignedTime += Time.deltaTime;
+                if (alignedTime >= holdTime)
+                    break;
+            }
+            else
+            {
+                alignedTime = 0f;
+            }
+
+            elapsed += Time.deltaTime;
+            yield return null;
+        }
+    }
+
+    private IEnumerator MovePlayerToCutscenePoint(FpsHorrorKit.FpsController playerController, Transform point)
+    {
+        int cornerIndex = 1;
+        float nextPathRefreshTime = 0f;
+        Vector3[] corners = null;
+
+        while (HorizontalDistance(playerController.transform.position, point.position) > stairCutsceneArriveDistance)
+        {
+            if (corners == null || cornerIndex >= corners.Length || Time.time >= nextPathRefreshTime)
+            {
+                corners = BuildStairCutscenePath(playerController.transform.position, point.position);
+                cornerIndex = corners.Length > 1 ? 1 : 0;
+                nextPathRefreshTime = Time.time + 0.5f;
+            }
+
+            if (corners.Length == 0)
+            {
+                playerController.StopCutSceneMovement();
+                UpdateStairCinematicCamera(playerController, point.position + Vector3.up * 1.35f);
+                yield return null;
+                continue;
+            }
+
+            Vector3 target = corners.Length > 0 && cornerIndex < corners.Length
+                ? corners[cornerIndex]
+                : point.position;
+
+            Vector3 offset = target - playerController.transform.position;
+            offset.y = 0f;
+            if (offset.magnitude <= stairCutsceneArriveDistance * 0.75f)
+            {
+                cornerIndex++;
+                playerController.StopCutSceneMovement();
+                yield return null;
+                continue;
+            }
+
+            playerController.MoveCutScene(offset.normalized, stairCutsceneMoveSpeed, true, stairCutsceneTurnSpeed);
+            UpdateStairCinematicCamera(playerController, playerController.transform.position + Vector3.up * 1.35f);
+            yield return null;
+        }
+
+        playerController.StopCutSceneMovement();
+        UpdateStairCinematicCamera(playerController, GetMonsterLookTarget(), true);
+    }
+
+    private static float HorizontalDistance(Vector3 a, Vector3 b)
+    {
+        a.y = 0f;
+        b.y = 0f;
+        return Vector3.Distance(a, b);
+    }
+
+    private Vector3[] BuildStairCutscenePath(Vector3 from, Vector3 to)
+    {
+        stairCutscenePath ??= new NavMeshPath();
+
+        bool sampledStart = NavMesh.SamplePosition(from, out var startHit, stairCutsceneNavMeshSampleRadius, NavMesh.AllAreas);
+        bool sampledEnd = NavMesh.SamplePosition(to, out var endHit, stairCutsceneNavMeshSampleRadius, NavMesh.AllAreas);
+        if (!sampledStart || !sampledEnd)
+            return new Vector3[0];
+
+        if (!NavMesh.CalculatePath(startHit.position, endHit.position, NavMesh.AllAreas, stairCutscenePath)
+            || stairCutscenePath.status != NavMeshPathStatus.PathComplete
+            || stairCutscenePath.corners.Length < 2)
+        {
+            return new Vector3[0];
+        }
+
+        return stairCutscenePath.corners;
+    }
+
+    private Vector3 GetMonsterLookTarget()
+    {
+        if (monster == null)
+            return Vector3.zero;
+
+        if (TryGetMonsterBounds(out var bounds))
+            return bounds.center;
+
+        return monster.transform.position + Vector3.up * 1.35f;
+    }
+
+    private static FpsHorrorKit.DoorSystem FindDoorByExactName(string doorName)
+    {
+        var doors = FindDoorsByExactName(doorName);
+        return doors.Count > 0 ? doors[0] : null;
+    }
+
+    private static List<FpsHorrorKit.DoorSystem> FindDoorsByExactName(string doorName)
+    {
+        var matches = new List<FpsHorrorKit.DoorSystem>();
+        var seen = new HashSet<FpsHorrorKit.DoorSystem>();
+        if (string.IsNullOrWhiteSpace(doorName))
+            return matches;
+
+        foreach (var door in Resources.FindObjectsOfTypeAll<FpsHorrorKit.DoorSystem>())
+        {
+            if (door == null || !door.gameObject.scene.IsValid())
+                continue;
+
+            if (door.name == doorName)
+                AddDoorIfUnique(door, matches, seen);
+        }
+
+        foreach (var sceneTransform in Resources.FindObjectsOfTypeAll<Transform>())
+        {
+            if (sceneTransform == null || sceneTransform.name != doorName || !sceneTransform.gameObject.scene.IsValid())
+                continue;
+
+            AddDoorIfUnique(sceneTransform.GetComponent<FpsHorrorKit.DoorSystem>(), matches, seen);
+            AddDoorIfUnique(sceneTransform.GetComponentInParent<FpsHorrorKit.DoorSystem>(true), matches, seen);
+            AddDoorIfUnique(sceneTransform.GetComponentInChildren<FpsHorrorKit.DoorSystem>(true), matches, seen);
+        }
+
+        return matches;
+    }
+
+    private static void AddDoorIfUnique(FpsHorrorKit.DoorSystem door, List<FpsHorrorKit.DoorSystem> matches, HashSet<FpsHorrorKit.DoorSystem> seen)
+    {
+        if (door == null || !door.gameObject.scene.IsValid() || !seen.Add(door))
+            return;
+
+        matches.Add(door);
     }
 
     private void HandlePlayerEnteredCloset(FpsHorrorKit.ClosetHiding closet)
@@ -393,7 +801,7 @@ public sealed class ChapterOneStoryFlow : MonoBehaviour
         if (callLength > 0f)
         {
             float callDuration = Mathf.Min(Mathf.Max(callLength, 2.2f), 3f);
-            ShowSubtitle("Khoa ơi... con đâu rồi... ra đây với má đi con...", callDuration);
+            FpsHorrorKit.InteractMessageScript.Instance?.ClearMessage();
             yield return WaitForClosetObjective(callDuration);
             if (ShouldAbortClosetObjective())
                 yield break;

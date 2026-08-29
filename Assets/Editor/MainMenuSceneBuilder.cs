@@ -126,7 +126,7 @@ public static class MainMenuSceneBuilder
         sourceObject.layer = 0;
         var source = sourceObject.GetComponent<AudioSource>();
         source.playOnAwake = false;
-        source.loop = name is "MusicSource" or "AmbienceSource";
+        source.loop = name is "MusicSource";
         return source;
     }
 

@@ -84,6 +84,7 @@ namespace FpsHorrorKit
             audioSource.minDistance = tapeMinDistance;
             audioSource.maxDistance = tapeMaxDistance;
             audioSource.Play();
+            AudioManager.Instance?.BlockGameplayAmbience(tapeClip.length);
             isPlayingTape = true;
             pausedByFocusLoss = false;
             lastKnownTapeTime = 0f;
@@ -178,6 +179,7 @@ namespace FpsHorrorKit
             audioSource.maxDistance = tapeMaxDistance;
             audioSource.time = Mathf.Clamp(lastKnownTapeTime, 0f, Mathf.Max(0f, tapeClip.length - 0.05f));
             audioSource.Play();
+            AudioManager.Instance?.BlockGameplayAmbience(tapeClip.length - audioSource.time);
             pausedByFocusLoss = false;
             suppressStoppedCheckUntil = Time.unscaledTime + 0.5f;
         }

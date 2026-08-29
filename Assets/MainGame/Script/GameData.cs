@@ -14,7 +14,7 @@ public sealed class GameData : MonoBehaviour
     private const string MusicVolumeKey = PrefPrefix + "MusicVolume";
     private const string SfxVolumeKey = PrefPrefix + "SfxVolume";
 
-    private const int BrightnessSortingOrder = 32000;
+    private const int BrightnessSortingOrder = -100;
 
     public static GameData Instance { get; private set; }
     public static event Action<GameSettings> SettingsChanged;

@@ -8,6 +8,8 @@ namespace FpsHorrorKit
 {
     public sealed class InventoryUI : MonoBehaviour
     {
+        private const int InventorySortingOrder = 32100;
+
         private enum InventoryTab
         {
             Inventory,
@@ -334,7 +336,8 @@ namespace FpsHorrorKit
             if (canvas == null)
                 canvas = gameObject.AddComponent<Canvas>();
             canvas.renderMode = RenderMode.ScreenSpaceOverlay;
-            canvas.sortingOrder = 80;
+            canvas.overrideSorting = true;
+            canvas.sortingOrder = InventorySortingOrder;
             if (GetComponent<CanvasScaler>() == null)
             {
                 var scaler = gameObject.AddComponent<CanvasScaler>();
@@ -346,7 +349,8 @@ namespace FpsHorrorKit
 
             root = CreateUIObject(transform, "InventoryOverlay").gameObject;
             Stretch(root.GetComponent<RectTransform>());
-            AddImage(root.transform, "DimBackground", backgroundSprite, new Color(0.01f, 0.035f, 0.055f, 0.84f), Image.Type.Sliced, true);
+            AddImage(root.transform, "SceneShield", null, new Color(38f / 255f, 38f / 255f, 38f / 255f, 0.92f), Image.Type.Simple, true);
+            AddImage(root.transform, "DimBackground", backgroundSprite, new Color(0.01f, 0.035f, 0.055f, 0.96f), Image.Type.Sliced, true);
 
             BuildTabs(root.transform);
             inventoryTabRoot = CreateUIObject(root.transform, "InventoryTab").gameObject;
@@ -389,7 +393,7 @@ namespace FpsHorrorKit
 
         private void BuildInventoryTab(Transform parent)
         {
-            var gridPanel = AddImage(parent, "GridPanel", panelSprite, new Color(0.02f, 0.07f, 0.1f, 0.58f), Image.Type.Sliced, false);
+            var gridPanel = AddImage(parent, "GridPanel", panelSprite, new Color(0.02f, 0.07f, 0.1f, 0.88f), Image.Type.Sliced, false);
             SetRect(gridPanel.rectTransform, new Vector2(0.08f, 0.12f), new Vector2(0.62f, 0.78f), Vector2.zero, Vector2.zero);
 
             for (int row = 0; row < 3; row++)
@@ -413,7 +417,7 @@ namespace FpsHorrorKit
                 }
             }
 
-            var detail = AddImage(parent, "DetailPanel", infoPanelSprite, new Color(0.018f, 0.06f, 0.09f, 0.68f), Image.Type.Sliced, false);
+            var detail = AddImage(parent, "DetailPanel", infoPanelSprite, new Color(0.018f, 0.06f, 0.09f, 0.9f), Image.Type.Sliced, false);
             SetRect(detail.rectTransform, new Vector2(0.67f, 0.12f), new Vector2(0.93f, 0.78f), Vector2.zero, Vector2.zero);
             detailName = AddText(detail.transform, "DetailName", "ĐÈN PIN", 32, new Color(0.85f, 0.95f, 1f), TextAlignmentOptions.Center, new Vector2(0.08f, 0.84f), new Vector2(0.92f, 0.94f));
             AddImage(detail.transform, "TopDivider", dividerSprite, new Color(0.68f, 0.85f, 0.95f, 0.7f), Image.Type.Sliced, false).rectTransform.sizeDelta = new Vector2(260f, 12f);
@@ -434,7 +438,7 @@ namespace FpsHorrorKit
 
         private void BuildMusicTab(Transform parent)
         {
-            var panel = AddImage(parent, "MusicPanel", panelSprite, new Color(0.02f, 0.07f, 0.1f, 0.58f), Image.Type.Sliced, false);
+            var panel = AddImage(parent, "MusicPanel", panelSprite, new Color(0.02f, 0.07f, 0.1f, 0.9f), Image.Type.Sliced, false);
             SetRect(panel.rectTransform, new Vector2(0.14f, 0.16f), new Vector2(0.86f, 0.74f), Vector2.zero, Vector2.zero);
             AddText(panel.transform, "MusicTitle", "MẢNH NỐT NHẠC", 38, new Color(0.85f, 0.95f, 1f), TextAlignmentOptions.Center, new Vector2(0.1f, 0.83f), new Vector2(0.9f, 0.94f));
             musicProgressText = AddText(panel.transform, "MusicProgress", "0 / 4", 30, new Color(0.68f, 0.9f, 1f), TextAlignmentOptions.Center, new Vector2(0.42f, 0.73f), new Vector2(0.58f, 0.82f));

@@ -82,7 +82,7 @@ public static class GameSceneSettingsIntegrator
 
         var audioObject = audioManager.gameObject;
         var musicSource = EnsureAudioSource(audioObject.transform, "MusicSource", true);
-        var ambienceSource = EnsureAudioSource(audioObject.transform, "AmbienceSource", true);
+        var ambienceSource = EnsureAudioSource(audioObject.transform, "AmbienceSource", false);
         var sfxSource = EnsureAudioSource(audioObject.transform, "SfxSource", false);
         var uiSource = EnsureAudioSource(audioObject.transform, "UiSource", false);
 

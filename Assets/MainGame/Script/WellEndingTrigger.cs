@@ -8,6 +8,7 @@ using UnityEngine.UI;
 public sealed class WellEndingTrigger : MonoBehaviour
 {
     private const string DefaultJumpscareAssetPath = "Assets/MainGame/UI/ma duoi gieng.png";
+    private const string DefaultPlayerScreamAssetPath = "Assets/MainGame/Audio/Voice/Chapter1/VO_Ch1_MK-DEATH-03.wav";
     private const string FallbackJumpscareResourcePath = "UI/EndingJumpscare";
 
     [Header("Testing")]
@@ -42,6 +43,21 @@ public sealed class WellEndingTrigger : MonoBehaviour
     [SerializeField, Min(0.05f)] private float jumpscareImpactScale = 1.08f;
     [SerializeField, Range(0f, 1f)] private float jumpscareOpacity = 1f;
     [SerializeField, Range(0f, 1f)] private float jumpscareDarkBackdropOpacity = 0.78f;
+    [SerializeField] private AudioClip playerJumpscareScream;
+    [SerializeField, TextArea(1, 3)] private string playerJumpscareSubtitle = "...Ai đó... giúp...";
+    [SerializeField, Range(1, 3)] private int fallbackPlayerScreamVoiceIndex = 3;
+    [SerializeField, Min(0f)] private float jumpscareCameraShakeDuration = 0.9f;
+    [SerializeField, Range(0f, 0.25f)] private float jumpscareCameraShakePosition = 0.075f;
+    [SerializeField, Range(0f, 8f)] private float jumpscareCameraShakeRotation = 2.8f;
+    [SerializeField, Range(0f, 80f)] private float jumpscareScreenShakePixels = 26f;
+    [SerializeField, Min(1f)] private float jumpscareShakeFrequency = 24f;
+
+    [Header("Circular Backdrop")]
+    [SerializeField, Range(0f, 1f)] private float circularBackdropBaseOpacity = 0.28f;
+    [SerializeField, Range(0f, 1f)] private float circularBackdropEdgeOpacity = 0.92f;
+    [SerializeField, Min(0.05f)] private float circularBackdropStartScale = 0.48f;
+    [SerializeField, Min(0.05f)] private float circularBackdropEndScale = 1.18f;
+    [SerializeField, Min(128)] private int circularBackdropTextureSize = 768;
 
     [Header("Ending Text")]
     [SerializeField, Min(1f)] private float creditsDuration = 36f;
@@ -78,12 +94,15 @@ public sealed class WellEndingTrigger : MonoBehaviour
     private SphereCollider triggerCollider;
     private bool isArmed;
     private bool hasTriggered;
+    private Texture2D circularBackdropTexture;
 
 #if UNITY_EDITOR
     private void OnValidate()
     {
         if (jumpscareTexture == null || jumpscareTexture.name == "EndingJumpscare")
             jumpscareTexture = UnityEditor.AssetDatabase.LoadAssetAtPath<Texture2D>(DefaultJumpscareAssetPath);
+        if (playerJumpscareScream == null)
+            playerJumpscareScream = UnityEditor.AssetDatabase.LoadAssetAtPath<AudioClip>(DefaultPlayerScreamAssetPath);
         ResolveReferences();
     }
 #endif
@@ -168,11 +187,7 @@ public sealed class WellEndingTrigger : MonoBehaviour
 
         var controller = GameController.Instance;
         if (controller != null)
-        {
-            controller.SetChapterPhase(GameController.ChapterPhase.Ending);
-            if (controller.gameUI != null)
-                controller.gameUI.SetActive(false);
-        }
+            controller.SetGameState(GameController.GameState.Cutscene);
 
         if (FpsHorrorKit.PlayerInteract.Instance != null)
             FpsHorrorKit.PlayerInteract.Instance.sendRaycast = false;
@@ -209,10 +224,17 @@ public sealed class WellEndingTrigger : MonoBehaviour
                 controller.gameUI.SetActive(false);
         }
 
-        BuildEndingUi(out CanvasGroup blackGroup, out RawImage jumpscareImage, out RectTransform jumpscareRect, out TextMeshProUGUI creditLabel);
+        BuildEndingUi(
+            out CanvasGroup blackGroup,
+            out CanvasGroup vignetteGroup,
+            out RectTransform vignetteRect,
+            out RawImage jumpscareImage,
+            out RectTransform jumpscareRect,
+            out TextMeshProUGUI jumpscareSubtitle,
+            out TextMeshProUGUI creditLabel);
 
-        AudioManager.Instance?.PlayWellJumpscare();
-        yield return PlayJumpscareImage(blackGroup, jumpscareImage, jumpscareRect);
+        PlayWellJumpscareAudio();
+        yield return PlayJumpscareImage(blackGroup, vignetteGroup, vignetteRect, jumpscareImage, jumpscareRect, jumpscareSubtitle);
 
         if (jumpscareImage != null)
             jumpscareImage.gameObject.SetActive(false);
@@ -235,17 +257,53 @@ public sealed class WellEndingTrigger : MonoBehaviour
             SceneManager.LoadScene("Menu");
     }
 
-    private IEnumerator PlayJumpscareImage(CanvasGroup blackGroup, RawImage jumpscareImage, RectTransform jumpscareRect)
+    private void PlayWellJumpscareAudio()
+    {
+        var audio = AudioManager.Instance;
+        if (audio == null)
+            return;
+
+        audio.PlayWellJumpscare();
+        if (playerJumpscareScream != null)
+            audio.PlayVoice(playerJumpscareScream);
+        else
+            audio.PlayDeathVoice(fallbackPlayerScreamVoiceIndex);
+    }
+
+    private IEnumerator PlayJumpscareImage(
+        CanvasGroup blackGroup,
+        CanvasGroup vignetteGroup,
+        RectTransform vignetteRect,
+        RawImage jumpscareImage,
+        RectTransform jumpscareRect,
+        TextMeshProUGUI jumpscareSubtitle)
     {
         if (jumpscareImage == null || jumpscareRect == null)
             yield break;
 
         if (blackGroup != null)
-            blackGroup.alpha = jumpscareDarkBackdropOpacity;
+            blackGroup.alpha = circularBackdropBaseOpacity;
+        if (vignetteGroup != null)
+            vignetteGroup.alpha = jumpscareDarkBackdropOpacity;
+        if (vignetteRect != null)
+            vignetteRect.localScale = Vector3.one * circularBackdropStartScale;
+
+        Camera shakeCamera = Camera.main;
+        Transform shakeCameraTransform = shakeCamera != null ? shakeCamera.transform : null;
+        Vector3 cameraBasePosition = shakeCameraTransform != null ? shakeCameraTransform.localPosition : Vector3.zero;
+        Quaternion cameraBaseRotation = shakeCameraTransform != null ? shakeCameraTransform.localRotation : Quaternion.identity;
+        Behaviour cameraBrain = shakeCamera != null ? shakeCamera.GetComponent("CinemachineBrain") as Behaviour : null;
+        bool cameraBrainWasEnabled = cameraBrain != null && cameraBrain.enabled;
+        if (cameraBrain != null)
+            cameraBrain.enabled = false;
+
+        Vector2 jumpscareBasePosition = jumpscareRect.anchoredPosition;
+        Quaternion jumpscareBaseRotation = jumpscareRect.localRotation;
 
         jumpscareImage.gameObject.SetActive(true);
         jumpscareImage.color = new Color(1f, 1f, 1f, 0f);
         jumpscareRect.localScale = Vector3.one * jumpscareStartScale;
+        ShowJumpscareSubtitle(jumpscareSubtitle, true);
 
         float elapsed = 0f;
         while (elapsed < jumpscarePopDuration)
@@ -254,15 +312,105 @@ public sealed class WellEndingTrigger : MonoBehaviour
             float impact = 1f - Mathf.Pow(1f - t, 3f);
             jumpscareImage.color = new Color(1f, 1f, 1f, Mathf.Lerp(0f, jumpscareOpacity, impact));
             jumpscareRect.localScale = Vector3.one * Mathf.Lerp(jumpscareStartScale, jumpscareImpactScale, impact);
+            if (vignetteRect != null)
+                vignetteRect.localScale = Vector3.one * Mathf.Lerp(circularBackdropStartScale, circularBackdropEndScale, impact);
+            ApplyJumpscareShake(shakeCameraTransform, cameraBasePosition, cameraBaseRotation, jumpscareRect, jumpscareBasePosition, elapsed);
             elapsed += Time.deltaTime;
             yield return null;
         }
 
         jumpscareImage.color = new Color(1f, 1f, 1f, jumpscareOpacity);
         jumpscareRect.localScale = Vector3.one;
+        if (vignetteRect != null)
+            vignetteRect.localScale = Vector3.one * circularBackdropEndScale;
 
         if (jumpscareHoldDuration > 0f)
-            yield return new WaitForSeconds(jumpscareHoldDuration);
+        {
+            float holdElapsed = 0f;
+            while (holdElapsed < jumpscareHoldDuration)
+            {
+                ApplyJumpscareShake(
+                    shakeCameraTransform,
+                    cameraBasePosition,
+                    cameraBaseRotation,
+                    jumpscareRect,
+                    jumpscareBasePosition,
+                    elapsed + holdElapsed);
+                holdElapsed += Time.deltaTime;
+                yield return null;
+            }
+        }
+
+        RestoreJumpscareShake(shakeCameraTransform, cameraBasePosition, cameraBaseRotation, jumpscareRect, jumpscareBasePosition, jumpscareBaseRotation);
+        if (cameraBrain != null)
+            cameraBrain.enabled = cameraBrainWasEnabled;
+        ShowJumpscareSubtitle(jumpscareSubtitle, false);
+    }
+
+    private void ShowJumpscareSubtitle(TextMeshProUGUI subtitle, bool visible)
+    {
+        if (subtitle == null)
+            return;
+
+        subtitle.text = visible ? playerJumpscareSubtitle : string.Empty;
+        subtitle.gameObject.SetActive(visible && !string.IsNullOrWhiteSpace(playerJumpscareSubtitle));
+    }
+
+    private void ApplyJumpscareShake(
+        Transform cameraTransform,
+        Vector3 cameraBasePosition,
+        Quaternion cameraBaseRotation,
+        RectTransform imageRect,
+        Vector2 imageBasePosition,
+        float elapsed)
+    {
+        if (jumpscareCameraShakeDuration <= 0f || elapsed >= jumpscareCameraShakeDuration)
+        {
+            RestoreJumpscareShake(cameraTransform, cameraBasePosition, cameraBaseRotation, imageRect, imageBasePosition, Quaternion.identity);
+            return;
+        }
+
+        float life = 1f - Mathf.Clamp01(elapsed / jumpscareCameraShakeDuration);
+        float phase = elapsed * jumpscareShakeFrequency;
+        float x = (Mathf.PerlinNoise(phase, 8.13f) - 0.5f) * 2f;
+        float y = (Mathf.PerlinNoise(14.71f, phase) - 0.5f) * 2f;
+        float roll = Mathf.Sin(phase * Mathf.PI * 2f) * life;
+
+        if (cameraTransform != null)
+        {
+            cameraTransform.localPosition = cameraBasePosition + new Vector3(x, y, 0f) * jumpscareCameraShakePosition * life;
+            cameraTransform.localRotation = cameraBaseRotation * Quaternion.Euler(
+                y * jumpscareCameraShakeRotation * life,
+                x * jumpscareCameraShakeRotation * life,
+                roll * jumpscareCameraShakeRotation * 0.65f);
+        }
+
+        if (imageRect != null)
+        {
+            imageRect.anchoredPosition = imageBasePosition + new Vector2(x, y) * jumpscareScreenShakePixels * life;
+            imageRect.localRotation = Quaternion.Euler(0f, 0f, roll * jumpscareCameraShakeRotation * 1.4f);
+        }
+    }
+
+    private static void RestoreJumpscareShake(
+        Transform cameraTransform,
+        Vector3 cameraBasePosition,
+        Quaternion cameraBaseRotation,
+        RectTransform imageRect,
+        Vector2 imageBasePosition,
+        Quaternion imageBaseRotation)
+    {
+        if (cameraTransform != null)
+        {
+            cameraTransform.localPosition = cameraBasePosition;
+            cameraTransform.localRotation = cameraBaseRotation;
+        }
+
+        if (imageRect != null)
+        {
+            imageRect.anchoredPosition = imageBasePosition;
+            imageRect.localRotation = imageBaseRotation;
+        }
     }
 
     private static IEnumerator FadeBlack(CanvasGroup blackGroup, float from, float to, float duration)
@@ -309,7 +457,14 @@ public sealed class WellEndingTrigger : MonoBehaviour
         rect.anchoredPosition = new Vector2(0f, creditsEndY);
     }
 
-    private void BuildEndingUi(out CanvasGroup blackGroup, out RawImage jumpscareImage, out RectTransform jumpscareRect, out TextMeshProUGUI creditLabel)
+    private void BuildEndingUi(
+        out CanvasGroup blackGroup,
+        out CanvasGroup vignetteGroup,
+        out RectTransform vignetteRect,
+        out RawImage jumpscareImage,
+        out RectTransform jumpscareRect,
+        out TextMeshProUGUI jumpscareSubtitle,
+        out TextMeshProUGUI creditLabel)
     {
         var canvasObject = new GameObject("EndingRuntimeUI", typeof(RectTransform), typeof(Canvas), typeof(CanvasScaler), typeof(GraphicRaycaster));
         var canvas = canvasObject.GetComponent<Canvas>();
@@ -325,6 +480,20 @@ public sealed class WellEndingTrigger : MonoBehaviour
         blackGroup = black.gameObject.AddComponent<CanvasGroup>();
         blackGroup.alpha = 0f;
 
+        var vignette = new GameObject("EndingCircularVignette", typeof(RectTransform), typeof(CanvasRenderer), typeof(RawImage), typeof(AspectRatioFitter), typeof(CanvasGroup)).GetComponent<RawImage>();
+        vignette.transform.SetParent(canvasObject.transform, false);
+        vignette.texture = GetCircularBackdropTexture();
+        vignette.color = Color.white;
+        vignette.raycastTarget = false;
+        vignetteRect = vignette.rectTransform;
+        Stretch(vignetteRect);
+        vignetteRect.localScale = Vector3.one * circularBackdropStartScale;
+        var vignetteFitter = vignette.GetComponent<AspectRatioFitter>();
+        vignetteFitter.aspectMode = AspectRatioFitter.AspectMode.EnvelopeParent;
+        vignetteFitter.aspectRatio = 1f;
+        vignetteGroup = vignette.GetComponent<CanvasGroup>();
+        vignetteGroup.alpha = 0f;
+
         jumpscareImage = new GameObject("EndingJumpscareImage", typeof(RectTransform), typeof(CanvasRenderer), typeof(RawImage), typeof(AspectRatioFitter)).GetComponent<RawImage>();
         jumpscareImage.transform.SetParent(canvasObject.transform, false);
         var texture = jumpscareTexture != null ? jumpscareTexture : Resources.Load<Texture2D>(FallbackJumpscareResourcePath);
@@ -337,6 +506,27 @@ public sealed class WellEndingTrigger : MonoBehaviour
         aspectFitter.aspectMode = AspectRatioFitter.AspectMode.FitInParent;
         aspectFitter.aspectRatio = texture != null && texture.height > 0 ? (float)texture.width / texture.height : 1f;
         jumpscareImage.gameObject.SetActive(false);
+
+        jumpscareSubtitle = new GameObject("EndingJumpscareSubtitle", typeof(RectTransform), typeof(CanvasRenderer), typeof(TextMeshProUGUI)).GetComponent<TextMeshProUGUI>();
+        jumpscareSubtitle.transform.SetParent(canvasObject.transform, false);
+        RectTransform subtitleRect = jumpscareSubtitle.rectTransform;
+        subtitleRect.anchorMin = new Vector2(0.5f, 0f);
+        subtitleRect.anchorMax = new Vector2(0.5f, 0f);
+        subtitleRect.pivot = new Vector2(0.5f, 0f);
+        subtitleRect.sizeDelta = new Vector2(1480f, 160f);
+        subtitleRect.anchoredPosition = new Vector2(0f, 92f);
+        jumpscareSubtitle.text = string.Empty;
+        jumpscareSubtitle.fontSize = 38f;
+        jumpscareSubtitle.lineSpacing = 6f;
+        jumpscareSubtitle.color = Color.white;
+        jumpscareSubtitle.fontStyle = FontStyles.Bold;
+        jumpscareSubtitle.alignment = TextAlignmentOptions.Center;
+        jumpscareSubtitle.textWrappingMode = TextWrappingModes.Normal;
+        jumpscareSubtitle.overflowMode = TextOverflowModes.Overflow;
+        jumpscareSubtitle.outlineColor = Color.black;
+        jumpscareSubtitle.outlineWidth = 0.18f;
+        jumpscareSubtitle.raycastTarget = false;
+        jumpscareSubtitle.gameObject.SetActive(false);
 
         creditLabel = new GameObject("EndingMovieCredits", typeof(RectTransform), typeof(CanvasRenderer), typeof(TextMeshProUGUI)).GetComponent<TextMeshProUGUI>();
         creditLabel.transform.SetParent(canvasObject.transform, false);
@@ -356,6 +546,41 @@ public sealed class WellEndingTrigger : MonoBehaviour
         creditLabel.overflowMode = TextOverflowModes.Overflow;
         creditLabel.raycastTarget = false;
         creditLabel.gameObject.SetActive(false);
+    }
+
+    private Texture2D GetCircularBackdropTexture()
+    {
+        if (circularBackdropTexture != null)
+            return circularBackdropTexture;
+
+        int size = Mathf.Max(128, circularBackdropTextureSize);
+        var pixels = new Color32[size * size];
+        float center = (size - 1f) * 0.5f;
+        float innerRadius = center * 0.34f;
+        float outerRadius = center * 0.98f;
+        byte maxAlpha = (byte)Mathf.RoundToInt(circularBackdropEdgeOpacity * 255f);
+
+        for (int y = 0; y < size; y++)
+        {
+            for (int x = 0; x < size; x++)
+            {
+                float distance = Vector2.Distance(new Vector2(x, y), new Vector2(center, center));
+                float fade = Mathf.InverseLerp(innerRadius, outerRadius, distance);
+                fade = Mathf.SmoothStep(0f, 1f, fade);
+                byte alpha = (byte)Mathf.RoundToInt(maxAlpha * fade);
+                pixels[y * size + x] = new Color32(0, 0, 0, alpha);
+            }
+        }
+
+        circularBackdropTexture = new Texture2D(size, size, TextureFormat.RGBA32, false)
+        {
+            name = "EndingGeneratedCircularBackdrop",
+            wrapMode = TextureWrapMode.Clamp,
+            filterMode = FilterMode.Bilinear
+        };
+        circularBackdropTexture.SetPixels32(pixels);
+        circularBackdropTexture.Apply(false, true);
+        return circularBackdropTexture;
     }
 
     private void DropGramophone(Transform carriedGramophone)

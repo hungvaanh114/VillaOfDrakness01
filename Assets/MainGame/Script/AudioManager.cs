@@ -1,3 +1,4 @@
+using System.Collections;
 using UnityEngine;
 
 public sealed class AudioManager : MonoBehaviour
@@ -18,6 +19,11 @@ public sealed class AudioManager : MonoBehaviour
     private int lastWoodFootstepIndex = -1;
     private float backgroundDuckMultiplier = 1f;
     private bool maVuDaiPatrolPlayed;
+    private Coroutine gameplayAmbienceRoutine;
+    private bool gameplayAmbienceSequenceActive;
+    private bool gameplayAmbienceMomentRequested;
+    private bool gameplayAmbienceClipPlaying;
+    private float gameplayAmbienceBlockedUntil;
 
     [RuntimeInitializeOnLoadMethod(RuntimeInitializeLoadType.BeforeSceneLoad)]
     private static void Bootstrap()
@@ -91,27 +97,44 @@ public sealed class AudioManager : MonoBehaviour
 
     public void PlayGameplayAmbience()
     {
+        var clips = audioData != null ? audioData.gameplayAmbiences : null;
+        if (HasPlayableClip(clips))
+        {
+            if (gameplayAmbienceSequenceActive)
+                return;
+
+            StopGameplayAmbienceSequence();
+            gameplayAmbienceSequenceActive = true;
+            gameplayAmbienceRoutine = StartCoroutine(PlayGameplayAmbienceSequence(clips, audioData.gameplayAmbienceSilenceSeconds));
+            return;
+        }
+
+        StopGameplayAmbienceSequence();
         PlayLoop(ambienceSource, audioData != null ? audioData.gameplayAmbience : null);
     }
 
     public void PlayIntroAmbience()
     {
         StopMusic();
+        StopGameplayAmbienceSequence();
         PlayLoop(ambienceSource, audioData != null ? audioData.introAmbience : null);
     }
 
     public void PlayGhostAmbience()
     {
+        StopGameplayAmbienceSequence();
         PlayLoop(ambienceSource, audioData != null ? audioData.ghostAmbience : null);
     }
 
     public void PlayChaseMusic()
     {
+        StopGameplayAmbienceSequence();
         PlayLoop(musicSource, audioData != null ? audioData.chaseMusic : null);
     }
 
     public void PlayDeathMusic()
     {
+        StopGameplayAmbienceSequence();
         PlayLoop(musicSource, audioData != null ? audioData.deathMusic : null);
     }
 
@@ -134,6 +157,8 @@ public sealed class AudioManager : MonoBehaviour
     public void SetBackgroundDuck(float multiplier)
     {
         backgroundDuckMultiplier = Mathf.Clamp01(multiplier);
+        if (backgroundDuckMultiplier < 0.99f)
+            BlockGameplayAmbience(1f);
         if (GameData.Instance != null)
             ApplySettings(GameData.Instance.Settings);
     }
@@ -235,27 +260,27 @@ public sealed class AudioManager : MonoBehaviour
 
     public void PlayMusicBoxStartup()
     {
-        PlaySfx(audioData != null ? audioData.musicBoxStartup : null);
+        PlayBlockingSfx(audioData != null ? audioData.musicBoxStartup : null);
     }
 
     public void PlayPianoWrong()
     {
-        PlaySfx(audioData != null ? audioData.pianoWrong : null);
+        PlayBlockingSfx(audioData != null ? audioData.pianoWrong : null);
     }
 
     public void PlaySanityWarning()
     {
-        PlaySfx(audioData != null ? audioData.sanityWarning : null);
+        PlayBlockingSfx(audioData != null ? audioData.sanityWarning : null);
     }
 
     public void PlayGhostJumpscare(float volume = 1f)
     {
-        PlaySfx(audioData != null ? audioData.ghostJumpscare : null, volume);
+        PlayBlockingSfx(audioData != null ? audioData.ghostJumpscare : null, volume);
     }
 
     public void PlayWellJumpscare()
     {
-        PlaySfx(audioData != null ? audioData.wellJumpscare : null);
+        PlayBlockingSfx(audioData != null ? audioData.wellJumpscare : null);
     }
 
     public void PlayGroundFootstep(float volume = 0.1f)
@@ -397,6 +422,7 @@ public sealed class AudioManager : MonoBehaviour
         if (voiceSource == null || clip == null)
             return 0f;
 
+        BlockGameplayAmbience(clip.length);
         voiceSource.Stop();
         voiceSource.clip = clip;
         voiceSource.Play();
@@ -418,6 +444,17 @@ public sealed class AudioManager : MonoBehaviour
             uiSource.PlayOneShot(clip);
     }
 
+    public void RequestGameplayAmbienceMoment()
+    {
+        gameplayAmbienceMomentRequested = true;
+    }
+
+    public void BlockGameplayAmbience(float seconds)
+    {
+        gameplayAmbienceBlockedUntil = Mathf.Max(gameplayAmbienceBlockedUntil, Time.unscaledTime + Mathf.Max(0f, seconds));
+        StopCurrentGameplayAmbienceClip();
+    }
+
     private static void PlayLoop(AudioSource source, AudioClip clip)
     {
         if (source == null || clip == null)
@@ -429,6 +466,152 @@ public sealed class AudioManager : MonoBehaviour
         source.clip = clip;
         source.loop = true;
         source.Play();
+    }
+
+    private IEnumerator PlayGameplayAmbienceSequence(AudioClip[] clips, float silenceSeconds)
+    {
+        int index = 0;
+        float nextPlaybackTime = Time.unscaledTime + GameplayAmbienceDelay();
+
+        while (true)
+        {
+            if (ambienceSource == null)
+                yield break;
+
+            if (!gameplayAmbienceMomentRequested && Time.unscaledTime < nextPlaybackTime)
+            {
+                yield return null;
+                continue;
+            }
+
+            if (IsGameplayAmbienceBlocked())
+            {
+                nextPlaybackTime = Time.unscaledTime + GameplayAmbienceBlockedRetryDelay();
+                yield return null;
+                continue;
+            }
+
+            var clip = NextClip(clips, ref index);
+            if (clip == null)
+                yield break;
+
+            gameplayAmbienceMomentRequested = false;
+            ambienceSource.Stop();
+            ambienceSource.clip = clip;
+            ambienceSource.loop = false;
+            ambienceSource.Play();
+            gameplayAmbienceClipPlaying = true;
+
+            while (ambienceSource != null && ambienceSource.clip == clip && ambienceSource.isPlaying)
+            {
+                if (IsGameplayAmbienceBlocked())
+                {
+                    StopCurrentGameplayAmbienceClip();
+                    break;
+                }
+
+                yield return null;
+            }
+
+            if (ambienceSource != null && ambienceSource.clip == clip)
+                ambienceSource.clip = null;
+            gameplayAmbienceClipPlaying = false;
+
+            nextPlaybackTime = Time.unscaledTime + GameplayAmbienceDelay();
+        }
+    }
+
+    private void StopGameplayAmbienceSequence()
+    {
+        if (gameplayAmbienceRoutine != null)
+        {
+            StopCoroutine(gameplayAmbienceRoutine);
+            gameplayAmbienceRoutine = null;
+        }
+
+        gameplayAmbienceSequenceActive = false;
+        gameplayAmbienceMomentRequested = false;
+        gameplayAmbienceClipPlaying = false;
+    }
+
+    private void StopCurrentGameplayAmbienceClip()
+    {
+        if (!gameplayAmbienceClipPlaying || ambienceSource == null)
+            return;
+
+        ambienceSource.Stop();
+        ambienceSource.clip = null;
+        gameplayAmbienceClipPlaying = false;
+    }
+
+    private bool IsGameplayAmbienceBlocked()
+    {
+        if (Time.unscaledTime < gameplayAmbienceBlockedUntil)
+            return true;
+        if (backgroundDuckMultiplier < 0.99f)
+            return true;
+        if (voiceSource != null && voiceSource.isPlaying)
+            return true;
+        if (musicSource != null && musicSource.isPlaying && musicSource.clip != audioData?.menuMusic)
+            return true;
+        if (FpsHorrorKit.PianoPuzzleUI.IsAnyOpen)
+            return true;
+
+        return false;
+    }
+
+    private float GameplayAmbienceDelay()
+    {
+        if (audioData == null)
+            return 45f;
+
+        float min = Mathf.Max(0f, audioData.gameplayAmbienceSilenceSeconds);
+        float max = Mathf.Max(min, audioData.gameplayAmbienceMaxSilenceSeconds);
+        return Random.Range(min, max);
+    }
+
+    private float GameplayAmbienceBlockedRetryDelay()
+    {
+        return audioData != null ? Mathf.Max(0.1f, audioData.gameplayAmbienceBlockedRetrySeconds) : 3f;
+    }
+
+    private void PlayBlockingSfx(AudioClip clip, float volume = 1f)
+    {
+        if (clip != null)
+            BlockGameplayAmbience(clip.length);
+
+        PlaySfx(clip, volume);
+    }
+
+    private static AudioClip NextClip(AudioClip[] clips, ref int index)
+    {
+        if (clips == null || clips.Length == 0)
+            return null;
+
+        for (int i = 0; i < clips.Length; i++)
+        {
+            int clipIndex = index % clips.Length;
+            index = (index + 1) % clips.Length;
+
+            if (clips[clipIndex] != null)
+                return clips[clipIndex];
+        }
+
+        return null;
+    }
+
+    private static bool HasPlayableClip(AudioClip[] clips)
+    {
+        if (clips == null)
+            return false;
+
+        for (int i = 0; i < clips.Length; i++)
+        {
+            if (clips[i] != null)
+                return true;
+        }
+
+        return false;
     }
 
     private static void StopLoop(AudioSource source)

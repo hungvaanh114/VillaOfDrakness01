@@ -5,6 +5,11 @@ using UnityEngine;
 [RequireComponent(typeof(CutSceneSequence))]
 public sealed class OuttroCutSceneSequenceBinder : MonoBehaviour
 {
+    private const string DeathVoice01AssetPath = "Assets/MainGame/Audio/Voice/Chapter1/VO_Ch1_MK-DEATH-01.wav";
+    private const string DeathVoice02AssetPath = "Assets/MainGame/Audio/Voice/Chapter1/VO_Ch1_MK-DEATH-02.wav";
+    private const string DeathVoice01Subtitle = "\"Cái gì vậy... ánh sáng trong giếng? Không lẽ... có người bị kẹt dưới đó?\"";
+    private const string DeathVoice02Subtitle = "\"Ơ... cái gì-\"";
+
     [SerializeField] private bool rebuildSequence;
     [SerializeField] private Transform playerPoint01;
     [SerializeField] private Transform playerPoint02;
@@ -12,6 +17,8 @@ public sealed class OuttroCutSceneSequenceBinder : MonoBehaviour
     [SerializeField] private Transform cameraBackHighPoint;
     [SerializeField] private Transform cameraWellMouthPoint;
     [SerializeField] private Transform cameraLookAtPoint;
+    [SerializeField] private AudioClip deathVoice01;
+    [SerializeField] private AudioClip deathVoice02;
 
     private CutSceneSequence sequence;
 
@@ -28,6 +35,10 @@ public sealed class OuttroCutSceneSequenceBinder : MonoBehaviour
     private void OnValidate()
     {
         ResolveReferences();
+#if UNITY_EDITOR
+        deathVoice01 ??= UnityEditor.AssetDatabase.LoadAssetAtPath<AudioClip>(DeathVoice01AssetPath);
+        deathVoice02 ??= UnityEditor.AssetDatabase.LoadAssetAtPath<AudioClip>(DeathVoice02AssetPath);
+#endif
         if (!rebuildSequence && !IsSequenceEmpty())
             return;
 
@@ -48,9 +59,10 @@ public sealed class OuttroCutSceneSequenceBinder : MonoBehaviour
                 name = "Chạy ra sân sau",
                 point = playerPoint01,
                 moveToPoint = true,
-                moveSpeedOverride = 5.8f,
+                moveSpeedOverride = 2.1f,
                 turnSpeedOverride = 720f,
                 overrideText = "\"Khoa tìm đường ra sân sau, hộp nhạc vẫn ôm chặt trong tay.\"",
+                overrideAudioClip = deathVoice01,
                 overrideFallbackDuration = 2.2f,
                 waitAfter = 0.1f,
                 cameraShot = CutSceneCameraShot.BehindShoulder,
@@ -64,9 +76,10 @@ public sealed class OuttroCutSceneSequenceBinder : MonoBehaviour
                 name = "Áp sát giếng",
                 point = playerPoint02,
                 moveToPoint = true,
-                moveSpeedOverride = 5.8f,
+                moveSpeedOverride = 2.1f,
                 turnSpeedOverride = 720f,
                 overrideText = string.Empty,
+                overrideAudioClip = deathVoice02,
                 overrideFallbackDuration = 1.1f,
                 waitAfter = 0.05f,
                 cameraShot = CutSceneCameraShot.DescendBehind,
@@ -83,8 +96,8 @@ public sealed class OuttroCutSceneSequenceBinder : MonoBehaviour
                 moveSpeedOverride = 4.4f,
                 turnSpeedOverride = 720f,
                 overrideText = "\"Cái gì vậy... ánh sáng trong giếng?\"",
-                overrideFallbackDuration = 2.3f,
-                waitAfter = 0.35f,
+                overrideFallbackDuration = 1.15f,
+                waitAfter = 0.175f,
                 cameraShot = CutSceneCameraShot.WindowInspect,
                 cameraPositionOverride = cameraWellMouthPoint,
                 cameraLookAtOverride = cameraLookAtPoint,
@@ -98,8 +111,8 @@ public sealed class OuttroCutSceneSequenceBinder : MonoBehaviour
                 point = playerLookWellPoint,
                 moveToPoint = false,
                 overrideText = "\"Ơ... cái gì-\"",
-                overrideFallbackDuration = 0.85f,
-                waitAfter = 0.75f,
+                overrideFallbackDuration = 0.425f,
+                waitAfter = 0.375f,
                 cameraShot = CutSceneCameraShot.WindowInspect,
                 cameraPositionOverride = cameraWellMouthPoint,
                 cameraLookAtOverride = cameraLookAtPoint,
@@ -109,6 +122,11 @@ public sealed class OuttroCutSceneSequenceBinder : MonoBehaviour
             }
         };
 
+        points[0].overrideText = DeathVoice01Subtitle;
+        points[1].overrideText = DeathVoice02Subtitle;
+        points[2].overrideText = string.Empty;
+        points[3].overrideText = string.Empty;
+
         sequence.Configure("outtro", false, null, false, points);
     }
 
@@ -116,6 +134,16 @@ public sealed class OuttroCutSceneSequenceBinder : MonoBehaviour
     {
         if (sequence == null)
             sequence = GetComponent<CutSceneSequence>();
+
+        if (deathVoice01 == null || deathVoice02 == null)
+        {
+            var audioData = Resources.Load<AudioData>("Audio/AudioData");
+            if (audioData != null)
+            {
+                deathVoice01 ??= audioData.mkDeath01;
+                deathVoice02 ??= audioData.mkDeath02;
+            }
+        }
 
         playerPoint01 ??= FindChild("OuttroPlayerPoint_01");
         playerPoint02 ??= FindChild("OuttroPlayerPoint_02");
