@@ -14,5 +14,5 @@ MonoBehaviour:
   m_EditorClassIdentifier: Assembly-CSharp::FpsHorrorKit.MusicSheetData
   musicSheetID: MusicSheet_05
   index: 5
-  icon: {fileID: 21300000, guid: f67d7e6a936d30647acaa12d378a250d, type: 3}
+  icon: {fileID: 21300000, guid: 8f2fcaa942678704dade39c3b6bb2f8e, type: 3}
   description: "M\u1EA3nh b\u1EA3n nh\u1EA1c cu\u1ED1i c\xF9ng, n\u1ED1t Sol."
