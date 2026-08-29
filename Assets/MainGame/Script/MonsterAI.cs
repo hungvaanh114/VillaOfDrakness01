@@ -54,6 +54,9 @@ public sealed class MonsterAI : MonoBehaviour
     [SerializeField, Min(0.1f)] private float navMeshSnapRadius = 6f;
     [SerializeField, Min(0.1f)] private float navMeshRetryInterval = 0.5f;
     [SerializeField, Min(0.1f)] private float repathInterval = 0.2f;
+    [SerializeField, Min(1f)] private float movementTurnSpeed = 720f;
+    [SerializeField] private Transform visualRoot;
+    [SerializeField] private float visualYawOffset;
 
     [Header("Patrol Points")]
     [SerializeField] private Transform[] patrolPoints;
@@ -70,6 +73,15 @@ public sealed class MonsterAI : MonoBehaviour
     [SerializeField, Range(0f, 10f)] private float caughtCameraShakeAmplitude = 4.2f;
     [SerializeField, Range(0f, 20f)] private float caughtCameraShakeFrequency = 8f;
     [SerializeField, Min(0f)] private float caughtLookHeight = 1.6f;
+    [SerializeField] private Transform caughtCameraTarget;
+    [SerializeField] private string caughtCameraTargetName = "camtagetzom";
+    [SerializeField] private Transform caughtHeadLookTarget;
+    [SerializeField] private string caughtHeadLookTargetName = "head.x";
+    [SerializeField, Min(0.4f)] private float caughtProneMinCameraDistance = 2.2f;
+    [SerializeField, Min(0.05f)] private float caughtProneEyeHeight = 0.42f;
+    [SerializeField] private float caughtProneCameraLocalBackOffset = -0.25f;
+    [SerializeField, Min(0.01f)] private float caughtProneSettleTime = 0.35f;
+    [SerializeField, Min(0f)] private float caughtProneBackAwaySpeed = 5.5f;
     [SerializeField] private bool killPlayerOnHit = true;
 
     [Header("Animation")]
@@ -95,8 +107,10 @@ public sealed class MonsterAI : MonoBehaviour
     [SerializeField, Min(0.1f)] private float voiceMaxInterval = 18f;
     [SerializeField] private bool voiceLinePlaysOnce = true;
     [SerializeField, Range(0f, 1f)] private float voiceLineVolume = 0.85f;
+    [SerializeField, Range(0f, 1f)] private float voiceMinAudibleVolume = 0.22f;
+    [SerializeField, Min(0.1f)] private float voiceFullVolumeDistance = 3f;
+    [SerializeField, Min(0.1f)] private float voiceFadeDistance = 30f;
     [SerializeField, Range(0f, 1f)] private float attackScreamVolume = 0.72f;
-    [SerializeField, Range(0f, 1f)] private float chaseScreamVolume = 0.72f;
 
     [Header("Door Interaction")]
     [SerializeField, Min(0.5f)] private float doorCheckDistance = 2.2f;
@@ -129,8 +143,9 @@ public sealed class MonsterAI : MonoBehaviour
     private Coroutine scriptedRoutine;
     private AudioData fallbackAudioData;
     private bool hasPlayedVoiceLine;
-    private bool hasPlayedChaseScream;
+    private bool suppressRunUntilPlayerEscapesInitialRange;
     private bool caughtDeathSequenceRunning;
+    private Quaternion visualRootBaseLocalRotation = Quaternion.identity;
 
     public bool IsHuntActive => state != MonsterState.Disabled && state != MonsterState.Scripted;
     public bool IsScriptedSequenceRunning => state == MonsterState.Scripted;
@@ -143,6 +158,10 @@ public sealed class MonsterAI : MonoBehaviour
             visionOrigin = transform;
         if (animator == null)
             animator = GetComponentInChildren<Animator>(true);
+        if (visualRoot == null && animator != null)
+            visualRoot = animator.transform;
+        if (visualRoot != null)
+            visualRootBaseLocalRotation = visualRoot.localRotation;
         if (monsterAudioSource == null)
             monsterAudioSource = GetComponent<AudioSource>() ?? gameObject.AddComponent<AudioSource>();
 
@@ -231,7 +250,7 @@ public sealed class MonsterAI : MonoBehaviour
         TickState();
     }
 
-    public void EnableHunt(bool beginSearchNow = false)
+    public void EnableHunt(bool beginSearchNow = false, bool suppressInitialRunIfPlayerInRange = false)
     {
         if (scriptedRoutine != null)
         {
@@ -251,7 +270,7 @@ public sealed class MonsterAI : MonoBehaviour
         nextFootstepTime = Time.time;
         nextSearchTime = Time.time + searchInterval;
         searchEndTime = 0f;
-        hasPlayedChaseScream = false;
+        suppressRunUntilPlayerEscapesInitialRange = suppressInitialRunIfPlayerInRange && IsPlayerInRunDistance();
         caughtDeathSequenceRunning = false;
 
         if (beginSearchNow)
@@ -271,7 +290,7 @@ public sealed class MonsterAI : MonoBehaviour
         }
 
         state = MonsterState.Disabled;
-        hasPlayedChaseScream = false;
+        suppressRunUntilPlayerEscapesInitialRange = false;
         caughtDeathSequenceRunning = false;
         TryStopAgent(resetPath: true);
 
@@ -437,6 +456,7 @@ public sealed class MonsterAI : MonoBehaviour
 
         while (agent.enabled && agent.isOnNavMesh && agent.remainingDistance > stoppingDistance + 0.15f)
         {
+            FaceMovementDirection();
             TickFootsteps(running);
             yield return null;
         }
@@ -484,7 +504,10 @@ public sealed class MonsterAI : MonoBehaviour
             Vector3 nextPosition = Vector3.MoveTowards(transform.position, target, speed * Time.deltaTime);
             Vector3 direction = nextPosition - transform.position;
             if (direction.sqrMagnitude > 0.001f)
+            {
                 transform.rotation = Quaternion.LookRotation(direction.normalized, Vector3.up);
+                ApplyVisualYawOffset();
+            }
 
             transform.position = nextPosition;
             TickManualFootsteps(running);
@@ -537,7 +560,10 @@ public sealed class MonsterAI : MonoBehaviour
     private void TickChasing()
     {
         float distanceToPlayer = player != null ? Vector3.Distance(transform.position, player.position) : float.MaxValue;
-        bool shouldRun = distanceToPlayer <= runDistance;
+        if (suppressRunUntilPlayerEscapesInitialRange && distanceToPlayer > runDistance)
+            suppressRunUntilPlayerEscapesInitialRange = false;
+
+        bool shouldRun = distanceToPlayer <= runDistance && !suppressRunUntilPlayerEscapesInitialRange;
         SetRunAnimation(shouldRun);
 
         if (distanceToPlayer <= attackRange && Time.time >= nextAttackTime)
@@ -552,6 +578,7 @@ public sealed class MonsterAI : MonoBehaviour
         agent.speed = shouldRun ? chaseSpeed : searchSpeed;
         TryResumeAgent();
         TryOpenDoorAhead();
+        FaceMovementDirection();
         TickFootsteps(shouldRun);
 
         if (Time.time < nextRepathTime)
@@ -625,11 +652,22 @@ public sealed class MonsterAI : MonoBehaviour
             originalFrequency = playerController.headBob.FrequencyGain;
         }
 
+        Vector3 originalFollowTargetLocalPosition = playerController != null && playerController.followTarget != null
+            ? playerController.followTarget.localPosition
+            : Vector3.zero;
+        Transform cameraTarget = ResolveCaughtCameraTarget();
+        FacePlayer();
+
         float elapsed = 0f;
         float duration = Mathf.Max(0.1f, caughtDeathDelay);
         while (elapsed < duration)
         {
-            ForcePlayerLookAtMonsterHead(playerController);
+            Vector3 caughtLookTarget = GetCaughtHeadLookPosition();
+            float poseT = Mathf.Clamp01(elapsed / caughtProneSettleTime);
+            ApplyCaughtCameraPose(playerController, cameraTarget, caughtLookTarget, originalFollowTargetLocalPosition, poseT);
+            ForcePlayerLookAtMonsterHead(playerController, caughtLookTarget);
+            ApplyCaughtCameraPose(playerController, cameraTarget, caughtLookTarget, originalFollowTargetLocalPosition, 1f);
+            playerController?.StopCutSceneMovement();
 
             if (hasHeadBob)
             {
@@ -648,31 +686,182 @@ public sealed class MonsterAI : MonoBehaviour
             playerController.headBob.FrequencyGain = originalFrequency;
         }
 
+        AudioManager.Instance?.StopMonsterVoice();
+        StopMonsterAudio(false);
         GameController.Instance?.TriggerDeathWithUIDelay(false, 0f);
     }
 
-    private void ForcePlayerLookAtMonsterHead(FpsHorrorKit.FpsController playerController)
+    private void ApplyCaughtCameraPose(
+        FpsHorrorKit.FpsController playerController,
+        Transform cameraTarget,
+        Vector3 lookTarget,
+        Vector3 originalFollowTargetLocalPosition,
+        float t)
     {
         if (playerController == null)
             return;
 
-        Vector3 eyePosition = playerController.followTarget != null
-            ? playerController.followTarget.position
-            : playerController.transform.position + Vector3.up * 1.55f;
+        if (cameraTarget != null && playerController.followTarget != null)
+        {
+            playerController.followTarget.position = cameraTarget.position;
+            return;
+        }
+
+        ApplyCaughtPronePose(playerController, lookTarget, originalFollowTargetLocalPosition, t);
+    }
+
+    private void ApplyCaughtPronePose(
+        FpsHorrorKit.FpsController playerController,
+        Vector3 lookTarget,
+        Vector3 originalFollowTargetLocalPosition,
+        float t)
+    {
+        if (playerController == null)
+            return;
+
+        MoveCaughtPlayerAwayFromMonster(playerController, lookTarget);
+
+        if (playerController.followTarget == null)
+            return;
+
+        Vector3 proneLocalPosition = originalFollowTargetLocalPosition;
+        proneLocalPosition.y = caughtProneEyeHeight;
+        proneLocalPosition.z += caughtProneCameraLocalBackOffset;
+        playerController.followTarget.localPosition = Vector3.Lerp(
+            originalFollowTargetLocalPosition,
+            proneLocalPosition,
+            Mathf.SmoothStep(0f, 1f, t));
+    }
+
+    private void MoveCaughtPlayerAwayFromMonster(FpsHorrorKit.FpsController playerController, Vector3 lookTarget)
+    {
+        if (caughtProneBackAwaySpeed <= 0f)
+            return;
+
+        Vector3 eyePosition = GetPlayerEyePosition(playerController);
+        Vector3 flatEye = eyePosition;
+        Vector3 flatTarget = lookTarget;
+        flatEye.y = 0f;
+        flatTarget.y = 0f;
+
+        Vector3 away = flatEye - flatTarget;
+        if (away.sqrMagnitude <= 0.01f)
+        {
+            away = playerController.transform.position - transform.position;
+            away.y = 0f;
+        }
+
+        if (away.sqrMagnitude <= 0.01f)
+            away = -playerController.transform.forward;
+
+        float distance = Vector3.Distance(flatEye, flatTarget);
+        float deficit = caughtProneMinCameraDistance - distance;
+        if (deficit <= 0f)
+            return;
+
+        Vector3 motion = away.normalized * Mathf.Min(deficit, caughtProneBackAwaySpeed * Time.deltaTime);
+        var characterController = playerController.GetComponent<CharacterController>();
+        if (characterController != null && characterController.enabled && characterController.gameObject.activeInHierarchy)
+            characterController.Move(motion);
+        else
+            playerController.transform.position += motion;
+    }
+
+    private Vector3 GetStableCaughtLookTarget(FpsHorrorKit.FpsController playerController)
+    {
         Vector3 headPosition = GetLookAtHeadPosition();
+        if (playerController == null)
+            return headPosition;
+
+        Vector3 eyePosition = GetPlayerEyePosition(playerController);
+        Vector3 flatDirection = headPosition - eyePosition;
+        flatDirection.y = 0f;
+        if (flatDirection.sqrMagnitude >= 0.09f)
+            return headPosition;
+
+        Vector3 fallbackDirection = transform.position - playerController.transform.position;
+        fallbackDirection.y = 0f;
+        if (fallbackDirection.sqrMagnitude < 0.09f)
+            fallbackDirection = playerController.transform.forward;
+
+        float height = Mathf.Max(0.2f, headPosition.y - eyePosition.y);
+        return eyePosition + fallbackDirection.normalized * 1.6f + Vector3.up * height;
+    }
+
+    private Vector3 GetCaughtHeadLookPosition()
+    {
+        Transform target = ResolveCaughtHeadLookTarget();
+        return target != null ? target.position : GetLookAtHeadPosition();
+    }
+
+    private Transform ResolveCaughtCameraTarget()
+    {
+        if (caughtCameraTarget != null)
+            return caughtCameraTarget;
+
+        caughtCameraTarget = FindChildTransformByName(transform, caughtCameraTargetName);
+        if (caughtCameraTarget == null && !string.IsNullOrWhiteSpace(caughtCameraTargetName))
+        {
+            GameObject targetObject = GameObject.Find(caughtCameraTargetName);
+            if (targetObject != null)
+                caughtCameraTarget = targetObject.transform;
+        }
+
+        return caughtCameraTarget;
+    }
+
+    private Transform ResolveCaughtHeadLookTarget()
+    {
+        if (caughtHeadLookTarget != null)
+            return caughtHeadLookTarget;
+
+        caughtHeadLookTarget = FindChildTransformByName(transform, caughtHeadLookTargetName);
+        return caughtHeadLookTarget;
+    }
+
+    private static Transform FindChildTransformByName(Transform root, string targetName)
+    {
+        if (root == null || string.IsNullOrWhiteSpace(targetName))
+            return null;
+
+        if (root.name == targetName)
+            return root;
+
+        for (int i = 0; i < root.childCount; i++)
+        {
+            Transform result = FindChildTransformByName(root.GetChild(i), targetName);
+            if (result != null)
+                return result;
+        }
+
+        return null;
+    }
+
+    private void ForcePlayerLookAtMonsterHead(FpsHorrorKit.FpsController playerController, Vector3 headPosition)
+    {
+        if (playerController == null)
+            return;
+
+        Vector3 eyePosition = GetPlayerEyePosition(playerController);
         Vector3 direction = headPosition - eyePosition;
-        if (direction.sqrMagnitude <= 0.001f)
+        if (direction.sqrMagnitude <= 0.01f)
             return;
 
         Vector3 flatDirection = direction;
         flatDirection.y = 0f;
-        if (flatDirection.sqrMagnitude > 0.001f)
+        if (flatDirection.sqrMagnitude > 0.04f)
             playerController.transform.rotation = Quaternion.LookRotation(flatDirection.normalized, Vector3.up);
 
         Vector3 normalized = direction.normalized;
         float pitch = -Mathf.Asin(Mathf.Clamp(normalized.y, -1f, 1f)) * Mathf.Rad2Deg;
         playerController.SetCutSceneCameraPitch(pitch);
-        FacePlayer();
+    }
+
+    private static Vector3 GetPlayerEyePosition(FpsHorrorKit.FpsController playerController)
+    {
+        return playerController.followTarget != null
+            ? playerController.followTarget.position
+            : playerController.transform.position + Vector3.up * 1.55f;
     }
 
     private Vector3 GetLookAtHeadPosition()
@@ -714,6 +903,7 @@ public sealed class MonsterAI : MonoBehaviour
         agent.speed = searchSpeed;
         TryResumeAgent();
         TryOpenDoorAhead();
+        FaceMovementDirection();
         TickFootsteps(false);
 
         if (Time.time >= searchEndTime)
@@ -750,6 +940,7 @@ public sealed class MonsterAI : MonoBehaviour
         SetRunAnimation(runningToPriorityTarget);
         agent.speed = hasPriorityWanderTarget ? priorityWanderSpeed : wanderSpeed;
         TryResumeAgent();
+        FaceMovementDirection();
         TickFootsteps(runningToPriorityTarget);
 
         if (hasPriorityWanderTarget)
@@ -871,11 +1062,11 @@ public sealed class MonsterAI : MonoBehaviour
 
     private bool PlayVoiceLine()
     {
-        if (voiceLinePlaysOnce && hasPlayedVoiceLine)
+        if ((voiceLinePlaysOnce && hasPlayedVoiceLine) || AudioManager.Instance != null && AudioManager.Instance.HasMaVuDaiPatrolPlayed)
             return false;
 
         hasPlayedVoiceLine = true;
-        bool playedVoice = PlayRandomOneShot(voiceClips, voiceLineVolume);
+        bool playedVoice = PlayRandomVoiceOneShot(voiceClips, voiceLineVolume);
         if (playedVoice)
         {
             AudioManager.Instance?.MarkMaVuDaiPatrolPlayed();
@@ -883,14 +1074,23 @@ public sealed class MonsterAI : MonoBehaviour
         }
 
         var data = ResolveAudioData();
-        playedVoice = data != null && PlayClipOneShot(data.maVuDaiPatrolFull, voiceLineVolume);
+        playedVoice = data != null && PlayVoiceClipOneShot(data.maVuDaiPatrolFull, voiceLineVolume);
         if (playedVoice)
         {
             AudioManager.Instance?.MarkMaVuDaiPatrolPlayed();
             return true;
         }
 
-        return AudioManager.Instance != null && AudioManager.Instance.PlayMaVuDaiPatrol() > 0f;
+        return AudioManager.Instance != null && AudioManager.Instance.PlayMaVuDaiPatrol(GetMonsterVoiceVolume(voiceLineVolume)) > 0f;
+    }
+
+    private bool PlayRandomVoiceOneShot(AudioClip[] clips, float volume)
+    {
+        if (clips == null || clips.Length == 0)
+            return false;
+
+        var clip = clips[Random.Range(0, clips.Length)];
+        return PlayVoiceClipOneShot(clip, volume);
     }
 
     private bool PlayRandomOneShot(AudioClip[] clips, float volume)
@@ -910,6 +1110,39 @@ public sealed class MonsterAI : MonoBehaviour
         AudioManager.Instance?.BlockGameplayAmbience(clip.length);
         monsterAudioSource.PlayOneShot(clip, volume);
         return true;
+    }
+
+    private bool PlayVoiceClipOneShot(AudioClip clip, float volume)
+    {
+        if (clip == null)
+            return false;
+
+        float scaledVolume = GetMonsterVoiceVolume(volume);
+        if (AudioManager.Instance != null)
+        {
+            AudioManager.Instance.PlayMonsterVoice(clip, scaledVolume);
+            return true;
+        }
+
+        if (monsterAudioSource == null)
+            return false;
+
+        monsterAudioSource.PlayOneShot(clip, scaledVolume);
+        return true;
+    }
+
+    private float GetMonsterVoiceVolume(float baseVolume)
+    {
+        float volume = Mathf.Clamp01(baseVolume);
+        if (player == null)
+            return Mathf.Max(volume, voiceMinAudibleVolume);
+
+        float distance = Vector3.Distance(transform.position, player.position);
+        float fadeStart = Mathf.Max(0f, voiceFullVolumeDistance);
+        float fadeEnd = Mathf.Max(fadeStart + 0.1f, voiceFadeDistance);
+        float t = Mathf.InverseLerp(fadeStart, fadeEnd, distance);
+        float distanceMultiplier = Mathf.Lerp(1f, voiceMinAudibleVolume, t);
+        return Mathf.Clamp01(volume * distanceMultiplier);
     }
 
     private void ConfigureMonsterAudioSource()
@@ -971,7 +1204,47 @@ public sealed class MonsterAI : MonoBehaviour
         Vector3 direction = player.position - transform.position;
         direction.y = 0f;
         if (direction.sqrMagnitude > 0.001f)
+        {
             transform.rotation = Quaternion.LookRotation(direction.normalized, Vector3.up);
+            ApplyVisualYawOffset();
+        }
+    }
+
+    private void FaceMovementDirection()
+    {
+        if (!HasActiveAgentOnNavMesh())
+            return;
+
+        Vector3 direction = agent.desiredVelocity;
+        direction.y = 0f;
+
+        if (direction.sqrMagnitude <= 0.01f && agent.hasPath)
+        {
+            direction = agent.steeringTarget - transform.position;
+            direction.y = 0f;
+        }
+
+        if (direction.sqrMagnitude <= 0.01f)
+        {
+            ApplyVisualYawOffset();
+            return;
+        }
+
+        Quaternion targetRotation = Quaternion.LookRotation(direction.normalized, Vector3.up);
+        transform.rotation = Quaternion.RotateTowards(
+            transform.rotation,
+            targetRotation,
+            Mathf.Max(1f, movementTurnSpeed) * Time.deltaTime);
+
+        ApplyVisualYawOffset();
+    }
+
+    private void ApplyVisualYawOffset()
+    {
+        if (visualRoot == null || visualRoot == transform)
+            return;
+
+        visualRoot.localRotation = visualRootBaseLocalRotation * Quaternion.Euler(0f, visualYawOffset, 0f);
     }
 
     private void ChooseWanderTarget()
@@ -1154,7 +1427,7 @@ public sealed class MonsterAI : MonoBehaviour
         agent.autoBraking = true;
         agent.autoRepath = true;
         agent.obstacleAvoidanceType = ObstacleAvoidanceType.HighQualityObstacleAvoidance;
-        agent.updateRotation = true;
+        agent.updateRotation = false;
         TryResumeAgent();
     }
 
@@ -1203,13 +1476,18 @@ public sealed class MonsterAI : MonoBehaviour
         if (controller != null && controller.currentChapterPhase < GameController.ChapterPhase.Escape)
             controller.SetChapterPhase(GameController.ChapterPhase.Escape);
 
-        if (!hasPlayedChaseScream)
-        {
-            AudioManager.Instance?.PlayGhostJumpscare(chaseScreamVolume);
-            hasPlayedChaseScream = true;
-        }
+    }
 
-        AudioManager.Instance?.PlayChaseMusic();
+    private bool IsPlayerInRunDistance()
+    {
+        return player != null && Vector3.Distance(transform.position, player.position) <= runDistance;
+    }
+
+    private bool IsPlayerCaughtOrDead()
+    {
+        var controller = GameController.Instance;
+        return caughtDeathSequenceRunning
+            || controller != null && controller.currentGameState == GameController.GameState.Dead;
     }
 
     private void SnapToNavMesh()

@@ -427,6 +427,7 @@ public class GameController : MonoBehaviour
             return;
 
         isDead = true;
+        AudioManager.Instance?.StopMonsterVoice();
         if (playJumpscareAudio)
             AudioManager.Instance?.PlayWellJumpscare();
         AudioManager.Instance?.PlayDeathVoice(3);
@@ -641,11 +642,8 @@ public class GameController : MonoBehaviour
                 break;
             case ChapterPhase.HallEncounter:
             case ChapterPhase.Escape:
-                audio.PlayGhostAmbience();
-                audio.PlayChaseMusic();
                 break;
             case ChapterPhase.Well:
-                audio.PlayGhostAmbience();
                 break;
             case ChapterPhase.Ending:
                 audio.PlayDeathMusic();

@@ -824,6 +824,11 @@ Transform:
   m_CorrespondingSourceObject: {fileID: 469502, guid: 04c36f15bbecd854cab50deedb5c594f, type: 3}
   m_PrefabInstance: {fileID: 31195852}
   m_PrefabAsset: {fileID: 0}
+--- !u!4 &34325784 stripped
+Transform:
+  m_CorrespondingSourceObject: {fileID: 7144799424331272789, guid: f4764a21bb3a8ca4084c8a31149ab67f, type: 3}
+  m_PrefabInstance: {fileID: 919454348}
+  m_PrefabAsset: {fileID: 0}
 --- !u!1 &37019439
 GameObject:
   m_ObjectHideFlags: 0
@@ -1769,6 +1774,9 @@ MonoBehaviour:
   navMeshSnapRadius: 6
   navMeshRetryInterval: 0.5
   repathInterval: 0.2
+  movementTurnSpeed: 720
+  visualRoot: {fileID: 0}
+  visualYawOffset: 0
   patrolPoints: []
   usePatrolPoints: 1
   autoFindPatrolPoints: 1
@@ -1781,6 +1789,15 @@ MonoBehaviour:
   caughtCameraShakeAmplitude: 4.2
   caughtCameraShakeFrequency: 8
   caughtLookHeight: 1.6
+  caughtCameraTarget: {fileID: 0}
+  caughtCameraTargetName: camtagetzom
+  caughtHeadLookTarget: {fileID: 0}
+  caughtHeadLookTargetName: head.x
+  caughtProneMinCameraDistance: 2.2
+  caughtProneEyeHeight: 0.42
+  caughtProneCameraLocalBackOffset: -0.25
+  caughtProneSettleTime: 0.35
+  caughtProneBackAwaySpeed: 5.5
   killPlayerOnHit: 1
   animator: {fileID: 919454350}
   randomFlairMinDelay: 5
@@ -1802,8 +1819,10 @@ MonoBehaviour:
   voiceMaxInterval: 18
   voiceLinePlaysOnce: 1
   voiceLineVolume: 0.85
+  voiceMinAudibleVolume: 0.22
+  voiceFullVolumeDistance: 3
+  voiceFadeDistance: 30
   attackScreamVolume: 0.72
-  chaseScreamVolume: 0.72
   doorCheckDistance: 2.2
   doorCheckRadius: 0.45
 --- !u!195 &119589447
@@ -11676,6 +11695,37 @@ Canvas:
   m_SortingLayerID: 0
   m_SortingOrder: 120
   m_TargetDisplay: 0
+--- !u!1 &692226200
+GameObject:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  serializedVersion: 6
+  m_Component:
+  - component: {fileID: 692226201}
+  m_Layer: 0
+  m_Name: camtagetzom
+  m_TagString: Untagged
+  m_Icon: {fileID: 0}
+  m_NavMeshLayer: 0
+  m_StaticEditorFlags: 0
+  m_IsActive: 1
+--- !u!4 &692226201
+Transform:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 692226200}
+  serializedVersion: 2
+  m_LocalRotation: {x: 0.009355388, y: -0.00003402121, z: 0.00000031827946, w: 0.9999563}
+  m_LocalPosition: {x: 0, y: -0.317, z: 0.635}
+  m_LocalScale: {x: 0.6666668, y: 0.66666615, z: 0.6666664}
+  m_ConstrainProportionsScale: 0
+  m_Children: []
+  m_Father: {fileID: 34325784}
+  m_LocalEulerAnglesHint: {x: 0, y: 0, z: 0}
 --- !u!21 &693759467
 Material:
   serializedVersion: 8
@@ -15609,7 +15659,10 @@ PrefabInstance:
       objectReference: {fileID: 0}
     m_RemovedComponents: []
     m_RemovedGameObjects: []
-    m_AddedGameObjects: []
+    m_AddedGameObjects:
+    - targetCorrespondingSourceObject: {fileID: 7144799424331272789, guid: f4764a21bb3a8ca4084c8a31149ab67f, type: 3}
+      insertIndex: -1
+      addedObject: {fileID: 692226201}
     m_AddedComponents: []
   m_SourcePrefab: {fileID: 100100000, guid: f4764a21bb3a8ca4084c8a31149ab67f, type: 3}
 --- !u!4 &919454349 stripped
@@ -20681,7 +20734,7 @@ MonoBehaviour:
   currentChapterPhase: 0
   playerController: {fileID: 4367792595866955148}
   cutSceneManager: {fileID: 1449414379}
-  playIntroOnStart: 0
+  playIntroOnStart: 1
   gameUI: {fileID: 1389903339}
   pauseUI: {fileID: 944257167}
   settingsUI: {fileID: 1496257095}
@@ -20858,8 +20911,8 @@ MonoBehaviour:
   gramophoneLookAtHeight: 0.75
   gramophoneTurnSpeed: 540
   skipPromptRefreshInterval: 1.2
-  stairMonsterCutscenePoint: {fileID: 0}
-  stairPlayerCutscenePoint: {fileID: 0}
+  stairMonsterCutscenePoint: {fileID: 1088030510}
+  stairPlayerCutscenePoint: {fileID: 688888267}
   stairMonsterCutscenePointName: "V\u1ECB tr\xED qu\xE1i \u1EDF c\u1EA7u thang cutscene"
   stairPlayerCutscenePointName: "V\u1ECB tr\xED nh\xE2n v\u1EADt \u1EDF c\u1EA7u
     thang cutscene"
@@ -20874,7 +20927,9 @@ MonoBehaviour:
   stairCutsceneCameraSmoothTime: 0.18
   stairMonsterScriptedSpeed: 0.9
   stairMonsterScriptedWanderRadius: 3
+  stairMonsterFollowDelayAfterVoice: 15
   stairCutsceneNavMeshSampleRadius: 2.5
+  stairCutsceneMaxMoveTime: 14
   gramophoneHoldPoint: {fileID: 0}
   gramophonePickupDelay: 0.85
   gramophoneHeldLocalPosition: {x: 0.04, y: -0.08, z: 0.32}
@@ -28666,7 +28721,7 @@ GameObject:
   m_Icon: {fileID: 0}
   m_NavMeshLayer: 0
   m_StaticEditorFlags: 0
-  m_IsActive: 1
+  m_IsActive: 0
 --- !u!114 &1812876104
 MonoBehaviour:
   m_ObjectHideFlags: 0
@@ -31474,7 +31529,7 @@ GameObject:
   m_Icon: {fileID: 0}
   m_NavMeshLayer: 0
   m_StaticEditorFlags: 0
-  m_IsActive: 0
+  m_IsActive: 1
 --- !u!114 &1945882722
 MonoBehaviour:
   m_ObjectHideFlags: 0
@@ -55655,7 +55710,7 @@ Transform:
   m_GameObject: {fileID: 7590908442061814866}
   serializedVersion: 2
   m_LocalRotation: {x: 0.0026886275, y: 0.99056387, z: -0.019638933, w: 0.13561107}
-  m_LocalPosition: {x: -34.533463, y: 2.696, z: -0.11493995}
+  m_LocalPosition: {x: 12.716535, y: 2.696, z: 8.68506}
   m_LocalScale: {x: 1, y: 1, z: 1}
   m_ConstrainProportionsScale: 0
   m_Children:
@@ -79427,7 +79482,7 @@ MonoBehaviour:
   m_Script: {fileID: 11500000, guid: ff0abc593d8504d44a74baaaa7220427, type: 3}
   m_Name: 
   m_EditorClassIdentifier: Assembly-CSharp::FpsHorrorKit.PianoInteractable
-  testTreatMusicSheetCompleted: 1
+  testTreatMusicSheetCompleted: 0
   physicalPiano: {fileID: 3278156244835558268}
   interactText: "[E] Ch\u01A1i piano"
   missingMusicSheetText: "T\xECm \u0111\u1EE7 n\u1ED1t nh\u1EA1c"
@@ -110165,7 +110220,7 @@ Transform:
   m_GameObject: {fileID: 5821903314106324260}
   serializedVersion: 2
   m_LocalRotation: {x: 0.002688628, y: 0.99056387, z: -0.019638939, w: 0.13561109}
-  m_LocalPosition: {x: -34.533463, y: 2.696, z: -0.11493995}
+  m_LocalPosition: {x: 12.716535, y: 2.696, z: 8.68506}
   m_LocalScale: {x: 1, y: 1, z: 1}
   m_ConstrainProportionsScale: 0
   m_Children: []
@@ -145024,7 +145079,7 @@ Transform:
   m_GameObject: {fileID: 2925717203521133628}
   serializedVersion: 2
   m_LocalRotation: {x: -0, y: -0.9887564, z: 0, w: -0.14953515}
-  m_LocalPosition: {x: -34.6, y: 1.646, z: 0.1}
+  m_LocalPosition: {x: 12.65, y: 1.646, z: 8.9}
   m_LocalScale: {x: 1.5, y: 1.5, z: 1.5}
   m_ConstrainProportionsScale: 1
   m_Children:

@@ -38,7 +38,6 @@ namespace FpsHorrorKit
             if (!isInteract)
             {
                 AudioManager.Instance?.PlayMaVuDaiPatrol();
-                AudioManager.Instance?.PlayGhostAmbience();
                 StartCoroutine(HandleInteraction(hidingSpeed, Hiding, hidingPoint));
             }
             else

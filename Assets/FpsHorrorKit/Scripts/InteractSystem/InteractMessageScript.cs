@@ -39,6 +39,20 @@ namespace FpsHorrorKit
             HideMessage();
         }
 
+        public void PauseMessageForSeconds(float seconds, System.Func<bool> shouldResume = null)
+        {
+            ResolveReferences();
+            if (interatMessageText == null || interactMessageCanvasGroup == null || !interactMessageCanvasGroup.gameObject.activeSelf)
+                return;
+
+            string message = interatMessageText.text;
+            if (string.IsNullOrWhiteSpace(message))
+                return;
+
+            StopAllCoroutines();
+            StartCoroutine(PauseMessageRoutine(message, Mathf.Max(0f, seconds), shouldResume));
+        }
+
         public void ShowMessage(string message, float displayTime = -1f)
         {
             ResolveReferences();
@@ -76,6 +90,19 @@ namespace FpsHorrorKit
                 interactMessageCanvasGroup.alpha = 0f;
                 interactMessageCanvasGroup.gameObject.SetActive(false);
             }
+        }
+
+        private IEnumerator PauseMessageRoutine(string message, float seconds, System.Func<bool> shouldResume)
+        {
+            HideMessage();
+
+            if (seconds > 0f)
+                yield return new WaitForSeconds(seconds);
+
+            if (shouldResume != null && !shouldResume())
+                yield break;
+
+            ShowMessage(message);
         }
 
         private IEnumerator ShowInfoMessage(float displayDuration)

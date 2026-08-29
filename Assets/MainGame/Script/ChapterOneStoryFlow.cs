@@ -52,7 +52,9 @@ public sealed class ChapterOneStoryFlow : MonoBehaviour
     [SerializeField, Min(0.05f)] private float stairCutsceneCameraSmoothTime = 0.18f;
     [SerializeField, Min(0.1f)] private float stairMonsterScriptedSpeed = 0.9f;
     [SerializeField, Min(0.5f)] private float stairMonsterScriptedWanderRadius = 3f;
+    [SerializeField, Min(0f)] private float stairMonsterFollowDelayAfterVoice = 6f;
     [SerializeField, Min(0.1f)] private float stairCutsceneNavMeshSampleRadius = 2.5f;
+    [SerializeField, Min(1f)] private float stairCutsceneMaxMoveTime = 14f;
 
     [Header("Carry Gramophone")]
     [SerializeField] private Transform gramophoneHoldPoint;
@@ -165,7 +167,6 @@ public sealed class ChapterOneStoryFlow : MonoBehaviour
         if (monster == null || gramophoneTapePlayer == null)
             return false;
 
-        AudioManager.Instance?.ResetMaVuDaiPatrolPlayback();
         studyLetterSequenceStarted = true;
         sequenceRoutine = StartCoroutine(StudyLetterSequence());
         return true;
@@ -390,6 +391,7 @@ public sealed class ChapterOneStoryFlow : MonoBehaviour
             stairMonsterScriptedWanderRadius);
 
         RestoreStairEncounterControl(controller, playerController, changedRaycast, previousRaycast);
+        AudioManager.Instance?.PlayStairEncounterThreatOnce(10f);
 
         float reactionLength = AudioManager.Instance != null ? AudioManager.Instance.PlayHideVoice(1) : 0f;
         float reactionDuration = Mathf.Max(reactionLength, playerReactionDelay);
@@ -400,11 +402,9 @@ public sealed class ChapterOneStoryFlow : MonoBehaviour
         if (ShouldAbortStairEncounter())
             yield break;
 
-        float monsterLineLength = AudioManager.Instance != null ? AudioManager.Instance.PlayMaVuDaiPatrol() : 0f;
-        float monsterLineDuration = Mathf.Max(monsterLineLength, 7f);
-        FpsHorrorKit.InteractMessageScript.Instance?.ClearMessage();
-        if (monsterLineDuration > 0f)
-            yield return new WaitForSeconds(monsterLineDuration);
+        AudioManager.Instance?.PlayMaVuDaiPatrol();
+        if (stairMonsterFollowDelayAfterVoice > 0f)
+            yield return new WaitForSeconds(stairMonsterFollowDelayAfterVoice);
 
         if (ShouldAbortStairEncounter())
             yield break;
@@ -417,7 +417,7 @@ public sealed class ChapterOneStoryFlow : MonoBehaviour
             controller.SetChapterPhase(GameController.ChapterPhase.Escape);
 
         if (monster != null)
-            monster.EnableHunt(true);
+            monster.EnableHunt(true, true);
     }
 
     private bool ShouldAbortStairEncounter()
@@ -626,19 +626,36 @@ public sealed class ChapterOneStoryFlow : MonoBehaviour
     {
         int cornerIndex = 1;
         float nextPathRefreshTime = 0f;
+        float elapsed = 0f;
         Vector3[] corners = null;
+        Vector3 moveGoal = ResolveStairCutsceneMoveGoal(point.position);
 
-        while (HorizontalDistance(playerController.transform.position, point.position) > stairCutsceneArriveDistance)
+        while (HorizontalDistance(playerController.transform.position, moveGoal) > stairCutsceneArriveDistance)
         {
+            elapsed += Time.deltaTime;
+            if (elapsed >= stairCutsceneMaxMoveTime)
+            {
+                Debug.LogWarning($"Stair encounter cutscene movement timed out before reaching {point.name}.");
+                break;
+            }
+
             if (corners == null || cornerIndex >= corners.Length || Time.time >= nextPathRefreshTime)
             {
-                corners = BuildStairCutscenePath(playerController.transform.position, point.position);
-                cornerIndex = corners.Length > 1 ? 1 : 0;
+                moveGoal = ResolveStairCutsceneMoveGoal(point.position);
+                corners = BuildStairCutscenePath(playerController.transform.position, moveGoal);
+                cornerIndex = GetInitialStairPathCornerIndex(playerController.transform.position, corners);
                 nextPathRefreshTime = Time.time + 0.5f;
             }
 
             if (corners.Length == 0)
             {
+                if (TryMoveDirectStairCutsceneFallback(playerController, moveGoal))
+                {
+                    UpdateStairCinematicCamera(playerController, playerController.transform.position + Vector3.up * 1.35f);
+                    yield return null;
+                    continue;
+                }
+
                 playerController.StopCutSceneMovement();
                 UpdateStairCinematicCamera(playerController, point.position + Vector3.up * 1.35f);
                 yield return null;
@@ -647,7 +664,7 @@ public sealed class ChapterOneStoryFlow : MonoBehaviour
 
             Vector3 target = corners.Length > 0 && cornerIndex < corners.Length
                 ? corners[cornerIndex]
-                : point.position;
+                : moveGoal;
 
             Vector3 offset = target - playerController.transform.position;
             offset.y = 0f;
@@ -668,6 +685,27 @@ public sealed class ChapterOneStoryFlow : MonoBehaviour
         UpdateStairCinematicCamera(playerController, GetMonsterLookTarget(), true);
     }
 
+    private Vector3 ResolveStairCutsceneMoveGoal(Vector3 desiredGoal)
+    {
+        float goalSampleRadius = Mathf.Max(stairCutsceneNavMeshSampleRadius * 8f, 6f);
+        if (SampleStairCutsceneNavMesh(desiredGoal, out var goalHit, goalSampleRadius))
+            return goalHit.position;
+
+        if (SampleNearestStairNavMeshPoint(desiredGoal, out var nearestGoal))
+            return nearestGoal;
+
+        Debug.LogWarning("Cannot find a NavMesh point near the stair cutscene player marker; falling back to marker position.");
+        return desiredGoal;
+    }
+
+    private int GetInitialStairPathCornerIndex(Vector3 from, Vector3[] corners)
+    {
+        if (corners == null || corners.Length <= 1)
+            return 0;
+
+        return HorizontalDistance(from, corners[0]) > stairCutsceneArriveDistance * 1.5f ? 0 : 1;
+    }
+
     private static float HorizontalDistance(Vector3 a, Vector3 b)
     {
         a.y = 0f;
@@ -682,35 +720,55 @@ public sealed class ChapterOneStoryFlow : MonoBehaviour
         bool sampledStart = SampleStairCutsceneNavMesh(from, out var startHit, stairCutsceneNavMeshSampleRadius);
         bool sampledEnd = SampleStairCutsceneNavMesh(to, out var endHit, stairCutsceneNavMeshSampleRadius * 6f);
         if (!sampledEnd)
-            return new Vector3[0];
+        {
+            if (!SampleNearestStairNavMeshPoint(to, out var nearestEnd))
+                return IsDirectStairCutsceneSegmentClear(from, to) ? new[] { from, to } : System.Array.Empty<Vector3>();
+
+            endHit.position = nearestEnd;
+        }
 
         if (!sampledStart)
         {
-            if (!SampleNearestVisibleStairNavMeshPoint(from, out var nearestVisibleNavMeshPoint))
-                return new Vector3[0];
+            if (!SampleNearestStairNavMeshPoint(from, out var nearestVisibleNavMeshPoint))
+                return IsDirectStairCutsceneSegmentClear(from, endHit.position)
+                    ? new[] { from, endHit.position }
+                    : System.Array.Empty<Vector3>();
 
-            return new[] { from, nearestVisibleNavMeshPoint };
+            return IsDirectStairCutsceneSegmentClear(from, nearestVisibleNavMeshPoint)
+                ? new[] { from, nearestVisibleNavMeshPoint }
+                : System.Array.Empty<Vector3>();
         }
 
-        if (HorizontalDistance(from, startHit.position) > stairCutsceneArriveDistance * 1.5f)
+        if (NavMesh.CalculatePath(startHit.position, endHit.position, NavMesh.AllAreas, stairCutscenePath)
+            && stairCutscenePath.corners.Length >= 2)
         {
-            if (IsStairNavBridgeClear(from, startHit.position))
-                return new[] { from, startHit.position };
-
-            if (SampleNearestVisibleStairNavMeshPoint(from, out var nearestVisibleNavMeshPoint))
-                return new[] { from, nearestVisibleNavMeshPoint };
-
-            return new Vector3[0];
+            return stairCutscenePath.corners;
         }
 
-        if (!NavMesh.CalculatePath(startHit.position, endHit.position, NavMesh.AllAreas, stairCutscenePath)
-            || stairCutscenePath.status != NavMeshPathStatus.PathComplete
-            || stairCutscenePath.corners.Length < 2)
-        {
-            return new Vector3[0];
-        }
+        return IsDirectStairCutsceneSegmentClear(from, endHit.position)
+            ? new[] { from, endHit.position }
+            : System.Array.Empty<Vector3>();
+    }
 
-        return stairCutscenePath.corners;
+    private bool TryMoveDirectStairCutsceneFallback(FpsHorrorKit.FpsController playerController, Vector3 target)
+    {
+        Vector3 offset = target - playerController.transform.position;
+        offset.y = 0f;
+        if (offset.magnitude <= stairCutsceneArriveDistance)
+            return false;
+
+        if (!IsDirectStairCutsceneSegmentClear(playerController.transform.position, target))
+            return false;
+
+        playerController.MoveCutScene(offset.normalized, stairCutsceneMoveSpeed, true, stairCutsceneTurnSpeed);
+        return true;
+    }
+
+    private static bool IsDirectStairCutsceneSegmentClear(Vector3 from, Vector3 to)
+    {
+        Vector3 origin = from + Vector3.up * 0.85f;
+        Vector3 target = to + Vector3.up * 0.85f;
+        return !Physics.Linecast(origin, target, ~0, QueryTriggerInteraction.Ignore);
     }
 
     private bool SampleStairCutsceneNavMesh(Vector3 position, out NavMeshHit hit, float radius)
@@ -718,15 +776,14 @@ public sealed class ChapterOneStoryFlow : MonoBehaviour
         return NavMesh.SamplePosition(position, out hit, Mathf.Max(0.1f, radius), NavMesh.AllAreas);
     }
 
-    private bool SampleNearestVisibleStairNavMeshPoint(Vector3 from, out Vector3 point)
+    private bool SampleNearestStairNavMeshPoint(Vector3 from, out Vector3 point)
     {
         float baseRadius = Mathf.Max(stairCutsceneNavMeshSampleRadius, 0.5f);
         float maxRadius = baseRadius * 8f;
 
         for (float radius = baseRadius; radius <= maxRadius; radius += baseRadius)
         {
-            if (NavMesh.SamplePosition(from, out var hit, radius, NavMesh.AllAreas)
-                && IsStairNavBridgeClear(from, hit.position))
+            if (NavMesh.SamplePosition(from, out var hit, radius, NavMesh.AllAreas))
             {
                 point = hit.position;
                 return true;
@@ -740,9 +797,6 @@ public sealed class ChapterOneStoryFlow : MonoBehaviour
                 if (!NavMesh.SamplePosition(candidate, out hit, baseRadius * 0.45f, NavMesh.AllAreas))
                     continue;
 
-                if (!IsStairNavBridgeClear(from, hit.position))
-                    continue;
-
                 point = hit.position;
                 return true;
             }
@@ -750,13 +804,6 @@ public sealed class ChapterOneStoryFlow : MonoBehaviour
 
         point = from;
         return false;
-    }
-
-    private static bool IsStairNavBridgeClear(Vector3 from, Vector3 to)
-    {
-        Vector3 origin = from + Vector3.up * 0.6f;
-        Vector3 target = to + Vector3.up * 0.6f;
-        return !Physics.Linecast(origin, target, ~0, QueryTriggerInteraction.Ignore);
     }
 
     private Vector3 GetMonsterLookTarget()
