@@ -11,6 +11,7 @@ namespace FpsHorrorKit
         [SerializeField] private string[] requiredMelody = { "E", "C", "F", "D", "G" };
 
         private readonly List<string> inputMelody = new();
+        private bool completed;
 
         public event Action<string> OnNotePlayed;
         public event Action OnPianoCompleted;
@@ -29,7 +30,7 @@ namespace FpsHorrorKit
 
         public void PlayNote(string note)
         {
-            if (string.IsNullOrWhiteSpace(note))
+            if (completed || string.IsNullOrWhiteSpace(note))
                 return;
 
             inputMelody.Add(note);
@@ -56,10 +57,12 @@ namespace FpsHorrorKit
 
         private void Complete()
         {
+            if (completed)
+                return;
+
+            completed = true;
             inputMelody.Clear();
             GameProgressManager.Instance?.CompletePiano();
-            AudioManager.Instance?.PlayMusicBoxStartup();
-            AudioManager.Instance?.PlayItemUnlock();
             OnPianoCompleted?.Invoke();
         }
     }

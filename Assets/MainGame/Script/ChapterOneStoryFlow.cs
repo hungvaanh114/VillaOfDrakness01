@@ -679,10 +679,29 @@ public sealed class ChapterOneStoryFlow : MonoBehaviour
     {
         stairCutscenePath ??= new NavMeshPath();
 
-        bool sampledStart = NavMesh.SamplePosition(from, out var startHit, stairCutsceneNavMeshSampleRadius, NavMesh.AllAreas);
-        bool sampledEnd = NavMesh.SamplePosition(to, out var endHit, stairCutsceneNavMeshSampleRadius, NavMesh.AllAreas);
-        if (!sampledStart || !sampledEnd)
+        bool sampledStart = SampleStairCutsceneNavMesh(from, out var startHit, stairCutsceneNavMeshSampleRadius);
+        bool sampledEnd = SampleStairCutsceneNavMesh(to, out var endHit, stairCutsceneNavMeshSampleRadius * 6f);
+        if (!sampledEnd)
             return new Vector3[0];
+
+        if (!sampledStart)
+        {
+            if (!SampleNearestVisibleStairNavMeshPoint(from, out var nearestVisibleNavMeshPoint))
+                return new Vector3[0];
+
+            return new[] { from, nearestVisibleNavMeshPoint };
+        }
+
+        if (HorizontalDistance(from, startHit.position) > stairCutsceneArriveDistance * 1.5f)
+        {
+            if (IsStairNavBridgeClear(from, startHit.position))
+                return new[] { from, startHit.position };
+
+            if (SampleNearestVisibleStairNavMeshPoint(from, out var nearestVisibleNavMeshPoint))
+                return new[] { from, nearestVisibleNavMeshPoint };
+
+            return new Vector3[0];
+        }
 
         if (!NavMesh.CalculatePath(startHit.position, endHit.position, NavMesh.AllAreas, stairCutscenePath)
             || stairCutscenePath.status != NavMeshPathStatus.PathComplete
@@ -692,6 +711,52 @@ public sealed class ChapterOneStoryFlow : MonoBehaviour
         }
 
         return stairCutscenePath.corners;
+    }
+
+    private bool SampleStairCutsceneNavMesh(Vector3 position, out NavMeshHit hit, float radius)
+    {
+        return NavMesh.SamplePosition(position, out hit, Mathf.Max(0.1f, radius), NavMesh.AllAreas);
+    }
+
+    private bool SampleNearestVisibleStairNavMeshPoint(Vector3 from, out Vector3 point)
+    {
+        float baseRadius = Mathf.Max(stairCutsceneNavMeshSampleRadius, 0.5f);
+        float maxRadius = baseRadius * 8f;
+
+        for (float radius = baseRadius; radius <= maxRadius; radius += baseRadius)
+        {
+            if (NavMesh.SamplePosition(from, out var hit, radius, NavMesh.AllAreas)
+                && IsStairNavBridgeClear(from, hit.position))
+            {
+                point = hit.position;
+                return true;
+            }
+
+            const int directionCount = 16;
+            for (int i = 0; i < directionCount; i++)
+            {
+                float angle = i * Mathf.PI * 2f / directionCount;
+                Vector3 candidate = from + new Vector3(Mathf.Cos(angle), 0f, Mathf.Sin(angle)) * radius;
+                if (!NavMesh.SamplePosition(candidate, out hit, baseRadius * 0.45f, NavMesh.AllAreas))
+                    continue;
+
+                if (!IsStairNavBridgeClear(from, hit.position))
+                    continue;
+
+                point = hit.position;
+                return true;
+            }
+        }
+
+        point = from;
+        return false;
+    }
+
+    private static bool IsStairNavBridgeClear(Vector3 from, Vector3 to)
+    {
+        Vector3 origin = from + Vector3.up * 0.6f;
+        Vector3 target = to + Vector3.up * 0.6f;
+        return !Physics.Linecast(origin, target, ~0, QueryTriggerInteraction.Ignore);
     }
 
     private Vector3 GetMonsterLookTarget()

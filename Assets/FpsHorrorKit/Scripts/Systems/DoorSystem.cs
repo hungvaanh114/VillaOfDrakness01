@@ -330,14 +330,16 @@ namespace FpsHorrorKit
 
             isLocked = false;
             hasKey = true;
-            AudioManager.Instance?.PlayDoorUnlock();
-            AudioManager.Instance?.RequestGameplayAmbienceMoment();
             OnDoorUnlocked?.Invoke(this);
 
             if (!isOpen && isFinished)
             {
-                StartCoroutine(OpenDoor(endRotation));
+                StartCoroutine(OpenDoor(endRotation, () => AudioManager.Instance?.AllowSanityWarningAfterPianoDoorOpened(true)));
                 isOpen = true;
+            }
+            else
+            {
+                AudioManager.Instance?.AllowSanityWarningAfterPianoDoorOpened(true);
             }
         }
 

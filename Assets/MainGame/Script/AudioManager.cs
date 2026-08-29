@@ -23,6 +23,9 @@ public sealed class AudioManager : MonoBehaviour
     private bool gameplayAmbienceSequenceActive;
     private bool gameplayAmbienceMomentRequested;
     private bool gameplayAmbienceClipPlaying;
+    private bool gameplayAmbienceSuppressed;
+    private bool gameplayAmbienceDisabledByPiano;
+    private bool sanityWarningAllowedAfterPianoDoor;
     private float gameplayAmbienceBlockedUntil;
 
     [RuntimeInitializeOnLoadMethod(RuntimeInitializeLoadType.BeforeSceneLoad)]
@@ -97,6 +100,13 @@ public sealed class AudioManager : MonoBehaviour
 
     public void PlayGameplayAmbience()
     {
+        if (gameplayAmbienceSuppressed || gameplayAmbienceDisabledByPiano || FpsHorrorKit.PhysicalPianoController.IsAnyActive)
+        {
+            StopGameplayAmbienceSequence();
+            StopAmbienceSource();
+            return;
+        }
+
         var clips = audioData != null ? audioData.gameplayAmbiences : null;
         if (HasPlayableClip(clips))
         {
@@ -115,6 +125,9 @@ public sealed class AudioManager : MonoBehaviour
 
     public void PlayIntroAmbience()
     {
+        gameplayAmbienceDisabledByPiano = false;
+        sanityWarningAllowedAfterPianoDoor = false;
+        gameplayAmbienceBlockedUntil = 0f;
         StopMusic();
         StopGameplayAmbienceSequence();
         PlayLoop(ambienceSource, audioData != null ? audioData.introAmbience : null);
@@ -168,6 +181,27 @@ public sealed class AudioManager : MonoBehaviour
         backgroundDuckMultiplier = 1f;
         if (GameData.Instance != null)
             ApplySettings(GameData.Instance.Settings);
+    }
+
+    public void SetGameplayAmbienceSuppressed(bool suppressed)
+    {
+        gameplayAmbienceSuppressed = suppressed;
+        if (!gameplayAmbienceSuppressed)
+            return;
+
+        gameplayAmbienceMomentRequested = false;
+        BlockGameplayAmbience(1f);
+        StopGameplayAmbienceSequence();
+        StopAmbienceSource();
+    }
+
+    public void DisableGameplayAmbienceAfterPiano()
+    {
+        gameplayAmbienceDisabledByPiano = true;
+        gameplayAmbienceMomentRequested = false;
+        BlockGameplayAmbience(1f);
+        StopGameplayAmbienceSequence();
+        StopAmbienceSource();
     }
 
     public void PlayButtonHover()
@@ -265,12 +299,30 @@ public sealed class AudioManager : MonoBehaviour
 
     public void PlayPianoWrong()
     {
+        if (!CanPlaySanityWarningAudio())
+            return;
+
         PlayBlockingSfx(audioData != null ? audioData.pianoWrong : null);
     }
 
     public void PlaySanityWarning()
     {
+        if (!CanPlaySanityWarningAudio())
+            return;
+
         PlayBlockingSfx(audioData != null ? audioData.sanityWarning : null);
+    }
+
+    public bool CanPlaySanityWarningAudio()
+    {
+        return sanityWarningAllowedAfterPianoDoor;
+    }
+
+    public void AllowSanityWarningAfterPianoDoorOpened(bool playOpeningWarning = false)
+    {
+        sanityWarningAllowedAfterPianoDoor = true;
+        if (playOpeningWarning)
+            PlayBlockingSfx(audioData != null ? audioData.pianoWrong : null);
     }
 
     public void PlayGhostJumpscare(float volume = 1f)
@@ -446,6 +498,9 @@ public sealed class AudioManager : MonoBehaviour
 
     public void RequestGameplayAmbienceMoment()
     {
+        if (gameplayAmbienceSuppressed || gameplayAmbienceDisabledByPiano || FpsHorrorKit.PhysicalPianoController.IsAnyActive)
+            return;
+
         gameplayAmbienceMomentRequested = true;
     }
 
@@ -550,6 +605,12 @@ public sealed class AudioManager : MonoBehaviour
             return true;
         if (backgroundDuckMultiplier < 0.99f)
             return true;
+        if (gameplayAmbienceSuppressed)
+            return true;
+        if (gameplayAmbienceDisabledByPiano)
+            return true;
+        if (FpsHorrorKit.PhysicalPianoController.IsAnyActive)
+            return true;
         if (voiceSource != null && voiceSource.isPlaying)
             return true;
         if (musicSource != null && musicSource.isPlaying && musicSource.clip != audioData?.menuMusic)
@@ -621,6 +682,12 @@ public sealed class AudioManager : MonoBehaviour
 
         source.Stop();
         source.clip = null;
+    }
+
+    private void StopAmbienceSource()
+    {
+        StopLoop(ambienceSource);
+        gameplayAmbienceClipPlaying = false;
     }
 
     private void InitializeAsSingleton(AudioData data)

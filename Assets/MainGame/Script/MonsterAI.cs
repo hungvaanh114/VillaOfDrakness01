@@ -296,13 +296,15 @@ public sealed class MonsterAI : MonoBehaviour
         if (agent != null)
             agent.enabled = false;
 
-        transform.SetPositionAndRotation(position, rotation);
+        Vector3 finalPosition = position;
+        bool canPlaceAgent = agent != null
+            && agent.gameObject.activeInHierarchy
+            && TrySampleNavMesh(position, out finalPosition);
 
-        if (agent != null)
-        {
+        transform.SetPositionAndRotation(canPlaceAgent ? finalPosition : position, rotation);
+
+        if (canPlaceAgent)
             agent.enabled = true;
-            EnsureAgentOnNavMesh(force: true);
-        }
 
         wanderCenter = transform.position;
         hasWanderTarget = false;
@@ -792,7 +794,11 @@ public sealed class MonsterAI : MonoBehaviour
         {
             animator?.SetTrigger(FlairHash);
             if (!PlayRandomOneShot(idleHorrorClips, 0.55f))
-                PlayClipOneShot(ResolveAudioData()?.sanityWarning, 0.55f);
+            {
+                var audioManager = AudioManager.Instance;
+                if (audioManager != null && audioManager.CanPlaySanityWarningAudio())
+                    PlayClipOneShot(ResolveAudioData()?.sanityWarning, 0.55f);
+            }
             ScheduleNextFlair();
         }
 
@@ -1213,8 +1219,17 @@ public sealed class MonsterAI : MonoBehaviour
 
     private bool EnsureAgentOnNavMesh(bool force = false)
     {
-        if (agent == null || !agent.isActiveAndEnabled)
+        if (agent == null || !agent.gameObject.activeInHierarchy)
             return false;
+
+        if (!agent.enabled)
+        {
+            if (!force || !TrySampleNavMesh(transform.position, out var sampledPosition))
+                return false;
+
+            transform.position = sampledPosition;
+            agent.enabled = true;
+        }
 
         if (agent.isOnNavMesh)
             return true;

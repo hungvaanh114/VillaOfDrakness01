@@ -130,6 +130,9 @@ public class GameController : MonoBehaviour
 
         if (Keyboard.current.escapeKey.wasPressedThisFrame && !isDead && currentGameState != GameState.Ending)
         {
+            if (PhysicalPianoController.CloseActivePiano())
+                return;
+
             if (InventoryUI.Instance != null && InventoryUI.Instance.IsOpen)
             {
                 InventoryUI.Instance.Close();
