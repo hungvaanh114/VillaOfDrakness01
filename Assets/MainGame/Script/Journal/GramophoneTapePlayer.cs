@@ -99,6 +99,9 @@ namespace FpsHorrorKit
 
         public void SkipTape()
         {
+            if (!isPlayingTape)
+                return;
+
             ResolveReferences();
 
             if (audioSource != null)

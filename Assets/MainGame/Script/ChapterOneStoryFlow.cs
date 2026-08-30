@@ -56,13 +56,6 @@ public sealed class ChapterOneStoryFlow : MonoBehaviour
     [SerializeField, Min(0.1f)] private float stairCutsceneNavMeshSampleRadius = 2.5f;
     [SerializeField, Min(1f)] private float stairCutsceneMaxMoveTime = 14f;
 
-    [Header("Carry Gramophone")]
-    [SerializeField] private Transform gramophoneHoldPoint;
-    [SerializeField, Min(0f)] private float gramophonePickupDelay = 0.85f;
-    [SerializeField] private Vector3 gramophoneHeldLocalPosition = new(0.04f, -0.08f, 0.32f);
-    [SerializeField] private Vector3 gramophoneHeldLocalEuler = new(-12f, 24f, 0f);
-    [SerializeField] private Vector3 gramophoneHeldLocalScale = Vector3.one;
-
     [Header("Closet Objective")]
     [SerializeField, Min(0f)] private float closetObjectiveHoldTime = 1.25f;
     [SerializeField] private bool moveMonsterToSpawnAfterCloset = true;
@@ -97,6 +90,7 @@ public sealed class ChapterOneStoryFlow : MonoBehaviour
     private bool previousStairVirtualCameraEnabled;
     private Vector3 stairCutsceneCameraVelocity;
     private NavMeshPath stairCutscenePath;
+    private bool gramophoneSkipRequested;
 
     private void Awake()
     {
@@ -184,7 +178,6 @@ public sealed class ChapterOneStoryFlow : MonoBehaviour
         gramophoneTapePlayer.PlayTape();
 
         yield return WatchGramophoneUntilTapeEnds();
-        yield return CarryGramophoneInHand();
 
         QueueHuntAfterGramophone();
     }
@@ -205,6 +198,7 @@ public sealed class ChapterOneStoryFlow : MonoBehaviour
         }
 
         float nextPromptTime = 0f;
+        gramophoneSkipRequested = false;
         blockGramophoneSkipUntil = Time.unscaledTime + 0.25f;
         while (gramophoneTapePlayer != null && gramophoneTapePlayer.IsPlayingTape)
         {
@@ -224,11 +218,14 @@ public sealed class ChapterOneStoryFlow : MonoBehaviour
             }
 
             if (allowSkipGramophoneCutscene
+                && !gramophoneSkipRequested
                 && Application.isFocused
                 && Time.unscaledTime >= blockGramophoneSkipUntil
                 && Keyboard.current != null
                 && Keyboard.current.spaceKey.wasPressedThisFrame)
             {
+                gramophoneSkipRequested = true;
+                FpsHorrorKit.FpsAssetsInputs.Instance?.ClearGameplayInput();
                 gramophoneTapePlayer.SkipTape();
                 break;
             }
@@ -238,6 +235,8 @@ public sealed class ChapterOneStoryFlow : MonoBehaviour
 
         if (changedRaycast && FpsHorrorKit.PlayerInteract.Instance != null)
             FpsHorrorKit.PlayerInteract.Instance.sendRaycast = previousRaycast;
+
+        FpsHorrorKit.FpsAssetsInputs.Instance?.ClearGameplayInput();
     }
 
     private void RotatePlayerTowardGramophone(FpsHorrorKit.FpsController playerController)
@@ -254,59 +253,6 @@ public sealed class ChapterOneStoryFlow : MonoBehaviour
         playerController.SetCutSceneCameraPitch(0f);
         playerController.RotateCutSceneTowards(direction, gramophoneTurnSpeed);
         playerController.StopCutSceneMovement();
-    }
-
-    private IEnumerator CarryGramophoneInHand()
-    {
-        Transform holdPoint = ResolveGramophoneHoldPoint();
-        if (gramophoneTapePlayer != null && holdPoint != null)
-        {
-            Transform gramophone = gramophoneTapePlayer.transform;
-            gramophone.SetParent(holdPoint, false);
-            gramophone.localPosition = gramophoneHeldLocalPosition;
-            gramophone.localEulerAngles = gramophoneHeldLocalEuler;
-            gramophone.localScale = gramophoneHeldLocalScale;
-
-            var colliders = gramophone.GetComponentsInChildren<Collider>(true);
-            for (int i = 0; i < colliders.Length; i++)
-            {
-                if (colliders[i] != null)
-                    colliders[i].enabled = false;
-            }
-        }
-
-        if (gramophonePickupDelay > 0f)
-            yield return new WaitForSeconds(gramophonePickupDelay);
-    }
-
-    private Transform ResolveGramophoneHoldPoint()
-    {
-        if (gramophoneHoldPoint != null)
-            return gramophoneHoldPoint;
-
-        Transform leftHand = FindSceneTransform("LeftHandProp") ?? FindSceneTransform("LeftHand");
-        if (leftHand != null)
-            return gramophoneHoldPoint = EnsureCarryPoint(leftHand);
-
-        Transform existingHoldPoint = FindSceneTransform("ItemHoldPoint");
-        if (existingHoldPoint != null)
-            return gramophoneHoldPoint = existingHoldPoint;
-
-        Camera camera = Camera.main;
-        return camera != null ? gramophoneHoldPoint = EnsureCarryPoint(camera.transform) : null;
-    }
-
-    private Transform EnsureCarryPoint(Transform parent)
-    {
-        Transform existing = parent.Find("GramophoneCarryPoint");
-        if (existing != null)
-            return existing;
-
-        var carryPoint = new GameObject("GramophoneCarryPoint").transform;
-        carryPoint.SetParent(parent, false);
-        carryPoint.localPosition = Vector3.zero;
-        carryPoint.localRotation = Quaternion.identity;
-        return carryPoint;
     }
 
     private void HandleTapeFinished()

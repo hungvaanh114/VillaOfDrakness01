@@ -16,7 +16,9 @@ public struct GameSettings
         new(1920, 1080),
         new(1600, 900),
         new(1366, 768),
-        new(1280, 720)
+        new(1280, 720),
+        new(2560, 1440),
+        new(3840, 2160)
     };
 
     public static readonly string[] ResolutionLabels =
@@ -24,7 +26,9 @@ public struct GameSettings
         "1920x1080",
         "1600x900",
         "1366x768",
-        "1280x720"
+        "1280x720",
+        "2560x1440",
+        "3840x2160"
     };
 
     public static readonly string[] DisplayModeLabels =
@@ -48,7 +52,7 @@ public struct GameSettings
     {
         1 => FullScreenMode.Windowed,
         2 => FullScreenMode.FullScreenWindow,
-        _ => FullScreenMode.ExclusiveFullScreen
+        _ => FullScreenMode.FullScreenWindow
     };
 
     public readonly Vector2Int Resolution => SupportedResolutions[Mathf.Clamp(ResolutionIndex, 0, SupportedResolutions.Length - 1)];

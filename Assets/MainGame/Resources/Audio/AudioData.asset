@@ -42,7 +42,7 @@ MonoBehaviour:
   itemUnlock: {fileID: 8300000, guid: 727fb1361283fc549842ec39b71e9f52, type: 3}
   musicBoxStartup: {fileID: 8300000, guid: bdecdb100e48b3f4a911f9bfad935a4e, type: 3}
   pianoWrong: {fileID: 8300000, guid: cafeac1e291de0a44ae5d05f361b7f6a, type: 3}
-  sanityWarning: {fileID: 8300000, guid: 4894c20b9e97adf4c843d7f0a016a07d, type: 3}
+  sanityWarning: {fileID: 0}
   ghostJumpscare: {fileID: 8300000, guid: c052b9de3347aca43a03715dbd5680dd, type: 3}
   wellJumpscare: {fileID: 8300000, guid: 7b317219f13a5bd42ab12a6d6cfda83a, type: 3}
   clothTearOff: {fileID: 8300000, guid: 994ed9127919f634fb2febbbbb85a196, type: 3}

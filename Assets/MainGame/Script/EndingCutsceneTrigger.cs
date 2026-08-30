@@ -8,7 +8,6 @@ public sealed class EndingCutsceneTrigger : MonoBehaviour
 
     [Header("Ending")]
     [SerializeField] private WellEndingTrigger ending;
-    [SerializeField] private FpsHorrorKit.GramophoneTapePlayer gramophoneTapePlayer;
     [SerializeField] private bool armedOnStart;
 
     private bool isArmed;
@@ -76,7 +75,7 @@ public sealed class EndingCutsceneTrigger : MonoBehaviour
             return;
 
         hasTriggered = true;
-        ending.BeginExitDoorEnding(gramophoneTapePlayer != null ? gramophoneTapePlayer.transform : null);
+        ending.BeginExitDoorEnding(null);
     }
 
     private void ResolveReferences()
@@ -88,8 +87,5 @@ public sealed class EndingCutsceneTrigger : MonoBehaviour
                 ? wellObject.GetComponent<WellEndingTrigger>()
                 : FindFirstObjectByType<WellEndingTrigger>(FindObjectsInactive.Include);
         }
-
-        if (gramophoneTapePlayer == null)
-            gramophoneTapePlayer = FindFirstObjectByType<FpsHorrorKit.GramophoneTapePlayer>(FindObjectsInactive.Include);
     }
 }

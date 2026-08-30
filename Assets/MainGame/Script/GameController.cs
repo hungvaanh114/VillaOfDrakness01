@@ -68,6 +68,7 @@ public class GameController : MonoBehaviour
     private GameState previousGameState;
     private bool isPaused = false;
     private bool isDead = false;
+    private bool cutsceneFlashlightForced;
 
     private void Awake()
     {
@@ -202,6 +203,20 @@ public class GameController : MonoBehaviour
                 SetCursor(false);
                 break;
         }
+
+        ApplyCutsceneFlashlightState(currentGameState == GameState.Cutscene || currentGameState == GameState.Ending);
+    }
+
+    private void ApplyCutsceneFlashlightState(bool forceOn)
+    {
+        if (cutsceneFlashlightForced == forceOn)
+            return;
+
+        cutsceneFlashlightForced = forceOn;
+        if (ItemUsageSystem.Instance != null)
+            ItemUsageSystem.Instance.SetCutsceneFlashlightForced(forceOn);
+        else
+            InventoryManager.Instance?.SetCutsceneFallbackFlashlightForced(forceOn);
     }
 
     public void SetChapterPhase(ChapterPhase newPhase)

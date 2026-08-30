@@ -45,6 +45,12 @@ namespace FpsHorrorKit
             if (itemFlashLight == null)
                 return;
 
+            if (ItemUsageSystem.Instance != null && ItemUsageSystem.Instance.IsCutsceneFlashlightForced)
+            {
+                SetBatteryPercent(itemFlashLight.energyLevel);
+                return;
+            }
+
             if (!IsFlashlightLightOn())
             {
                 SetBatteryPercent(itemFlashLight.energyLevel);

@@ -35,6 +35,12 @@ public sealed class WellEndingTrigger : MonoBehaviour
     [SerializeField, Min(0f)] private float normalGlowIntensity = 4500f;
     [SerializeField, Min(0.1f)] private float flashDuration = 1.2f;
 
+    [Header("Terrain Hole")]
+    [SerializeField] private bool carveTerrainHoleOnAwake = true;
+    [SerializeField] private Terrain terrainToCarve;
+    [SerializeField, Min(0.1f)] private float terrainHoleRadius = 1.55f;
+    [SerializeField] private Vector3 terrainHoleOffset;
+
     [Header("Jumpscare")]
     [SerializeField] private Texture2D jumpscareTexture;
     [SerializeField, Min(0.05f)] private float jumpscarePopDuration = 0.16f;
@@ -95,6 +101,7 @@ public sealed class WellEndingTrigger : MonoBehaviour
     private bool isArmed;
     private bool hasTriggered;
     private Texture2D circularBackdropTexture;
+    private bool terrainHoleCarved;
 
 #if UNITY_EDITOR
     private void OnValidate()
@@ -117,6 +124,8 @@ public sealed class WellEndingTrigger : MonoBehaviour
         if (jumpscareTexture == null)
             jumpscareTexture = Resources.Load<Texture2D>(FallbackJumpscareResourcePath);
 
+        EnsureTerrainHole();
+
         if (armedOnStart)
             ActivateEndingSetup();
         else
@@ -131,12 +140,13 @@ public sealed class WellEndingTrigger : MonoBehaviour
         testEnding = false;
         hasTriggered = false;
         ActivateEndingSetup();
-        BeginExitDoorEnding(ResolveCarriedGramophone());
+        BeginExitDoorEnding(null);
     }
 
     public void ActivateEndingSetup()
     {
         ResolveReferences();
+        EnsureTerrainHole();
         isArmed = true;
         EnsureWellGlow();
         SetWellLightActive(true, normalGlowIntensity);
@@ -159,7 +169,6 @@ public sealed class WellEndingTrigger : MonoBehaviour
         if (player == null)
             return;
 
-        carriedGramophone ??= ResolveCarriedGramophone();
         hasTriggered = true;
         StartCoroutine(ExitDoorEndingRoutine(carriedGramophone));
     }
@@ -174,7 +183,7 @@ public sealed class WellEndingTrigger : MonoBehaviour
             return;
 
         hasTriggered = true;
-        StartCoroutine(ExitDoorEndingRoutine(ResolveCarriedGramophone()));
+        StartCoroutine(ExitDoorEndingRoutine(null));
     }
 
     private IEnumerator ExitDoorEndingRoutine(Transform carriedGramophone)
@@ -645,6 +654,77 @@ public sealed class WellEndingTrigger : MonoBehaviour
         wellLight.enabled = active;
         wellLight.color = wellFlashColor;
         wellLight.intensity = intensity;
+    }
+
+    private void EnsureTerrainHole()
+    {
+        if (!carveTerrainHoleOnAwake || terrainHoleCarved)
+            return;
+
+        Vector3 worldCenter = transform.position + terrainHoleOffset;
+        Terrain terrain = ResolveTerrainForHole(worldCenter);
+        if (terrain == null || terrain.terrainData == null)
+            return;
+
+        TerrainData data = terrain.terrainData;
+        int resolution = data.holesResolution;
+        if (resolution <= 0 || data.size.x <= 0f || data.size.z <= 0f)
+            return;
+
+        Vector3 localCenter = worldCenter - terrain.transform.position;
+        float normalizedX = localCenter.x / data.size.x;
+        float normalizedZ = localCenter.z / data.size.z;
+        int centerX = Mathf.RoundToInt(normalizedX * (resolution - 1));
+        int centerY = Mathf.RoundToInt(normalizedZ * (resolution - 1));
+        if (centerX < 0 || centerX >= resolution || centerY < 0 || centerY >= resolution)
+            return;
+
+        int radiusX = Mathf.Max(1, Mathf.CeilToInt((terrainHoleRadius / data.size.x) * (resolution - 1)));
+        int radiusY = Mathf.Max(1, Mathf.CeilToInt((terrainHoleRadius / data.size.z) * (resolution - 1)));
+        int xMin = Mathf.Clamp(centerX - radiusX, 0, resolution - 1);
+        int yMin = Mathf.Clamp(centerY - radiusY, 0, resolution - 1);
+        int xMax = Mathf.Clamp(centerX + radiusX, 0, resolution - 1);
+        int yMax = Mathf.Clamp(centerY + radiusY, 0, resolution - 1);
+        int width = xMax - xMin + 1;
+        int height = yMax - yMin + 1;
+        if (width <= 0 || height <= 0)
+            return;
+
+        bool[,] holes = data.GetHoles(xMin, yMin, width, height);
+        for (int y = 0; y < height; y++)
+        {
+            for (int x = 0; x < width; x++)
+            {
+                float dx = (xMin + x - centerX) / (float)radiusX;
+                float dy = (yMin + y - centerY) / (float)radiusY;
+                if (dx * dx + dy * dy <= 1f)
+                    holes[y, x] = false;
+            }
+        }
+
+        data.SetHoles(xMin, yMin, holes);
+        terrainHoleCarved = true;
+    }
+
+    private Terrain ResolveTerrainForHole(Vector3 worldCenter)
+    {
+        if (terrainToCarve != null)
+            return terrainToCarve;
+
+        foreach (var terrain in Terrain.activeTerrains)
+        {
+            if (terrain == null || terrain.terrainData == null)
+                continue;
+
+            Vector3 position = terrain.transform.position;
+            Vector3 size = terrain.terrainData.size;
+            bool containsX = worldCenter.x >= position.x && worldCenter.x <= position.x + size.x;
+            bool containsZ = worldCenter.z >= position.z && worldCenter.z <= position.z + size.z;
+            if (containsX && containsZ)
+                return terrain;
+        }
+
+        return Terrain.activeTerrain ?? FindFirstObjectByType<Terrain>(FindObjectsInactive.Exclude);
     }
 
     private void ResolveReferences()

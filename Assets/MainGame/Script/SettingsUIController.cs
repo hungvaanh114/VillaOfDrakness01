@@ -1,10 +1,13 @@
 using TMPro;
 using UnityEngine;
+using UnityEngine.EventSystems;
 using UnityEngine.InputSystem;
 using UnityEngine.UI;
 
 public sealed class SettingsUIController : MonoBehaviour
 {
+    private const int SettingsUiSortingOrder = 30000;
+    private const int SettingsDropdownSortingOrder = 30001;
     private const string SettingsPageTitle = "C\u00c0I \u0110\u1eb6T";
     private const string ControlsPageTitle = "PH\u00cdM";
 
@@ -49,16 +52,34 @@ public sealed class SettingsUIController : MonoBehaviour
     public GameObject panelToHide;
     public GameObject backTargetPanel;
 
+    [Header("Layout Sync")]
+    [SerializeField] private bool syncSettingsLayoutWithMenuScene = true;
+
+    [Header("Static Drop Views")]
+    public GameObject sharedDropView;
+    public GameObject resolutionDropView;
+    public GameObject displayModeDropView;
+    public Button[] sharedDropViewButtons = System.Array.Empty<Button>();
+    public Button[] resolutionDropViewButtons = System.Array.Empty<Button>();
+    public Button[] displayModeDropViewButtons = System.Array.Empty<Button>();
+
     private GameSettings editingSettings;
     private bool suppressEvents;
     private bool wired;
     private int enabledFrame = -1;
+    private StaticDropViewKind activeDropViewKind;
+    private ScrollRect[] dropdownParentScrollRects = System.Array.Empty<ScrollRect>();
+    private bool[] dropdownParentScrollRectStates = System.Array.Empty<bool>();
 
     private void Awake()
     {
         ResolveOptionalReferences();
         PopulateDropdowns();
+        ApplyMenuSceneSettingsLayout();
+        NormalizeSettingsCanvasLayers();
+        CacheDropdownParentScrollRects();
         WireEvents();
+        HideStaticDropViews();
         LoadFromGameData();
         ShowSettingsPage();
     }
@@ -68,18 +89,30 @@ public sealed class SettingsUIController : MonoBehaviour
         enabledFrame = Time.frameCount;
         ResolveOptionalReferences();
         PopulateDropdowns();
+        ApplyMenuSceneSettingsLayout();
+        NormalizeSettingsCanvasLayers();
+        CacheDropdownParentScrollRects();
+        HideStaticDropViews();
         LoadFromGameData();
         ShowSettingsPage();
     }
 
     private void Update()
     {
+        if (Time.frameCount == enabledFrame)
+            return;
+
+        HandleStaticDropViewPointerClose();
+
         var keyboard = Keyboard.current;
         if (keyboard == null)
             return;
 
-        if (Time.frameCount == enabledFrame)
+        if (keyboard.escapeKey.wasPressedThisFrame && activeDropViewKind != StaticDropViewKind.None)
+        {
+            HideStaticDropViews();
             return;
+        }
 
         if (keyboard.escapeKey.wasPressedThisFrame)
             Back();
@@ -87,6 +120,12 @@ public sealed class SettingsUIController : MonoBehaviour
             Apply();
         else if (keyboard.rKey.wasPressedThisFrame)
             ResetDefaults();
+    }
+
+    private void LateUpdate()
+    {
+        NormalizeSettingsCanvasLayers();
+        UpdateDropdownParentScrollLock();
     }
 
     public void Apply()
@@ -107,6 +146,7 @@ public sealed class SettingsUIController : MonoBehaviour
 
     public void Back()
     {
+        HideStaticDropViews();
         AudioManager.Instance?.PlayBack();
 
         if (panelToHide != null)
@@ -132,6 +172,7 @@ public sealed class SettingsUIController : MonoBehaviour
 
     public void ShowSettingsPage()
     {
+        HideStaticDropViews();
         if (settingsPage != null)
             settingsPage.SetActive(true);
         if (controlsPage != null)
@@ -144,6 +185,7 @@ public sealed class SettingsUIController : MonoBehaviour
 
     public void ShowControlsPage()
     {
+        HideStaticDropViews();
         if (settingsPage != null)
             settingsPage.SetActive(false);
         if (controlsPage != null)
@@ -173,6 +215,7 @@ public sealed class SettingsUIController : MonoBehaviour
         if (masterVolumeSlider != null) masterVolumeSlider.onValueChanged.AddListener(_ => RefreshPreview());
         if (musicVolumeSlider != null) musicVolumeSlider.onValueChanged.AddListener(_ => RefreshPreview());
         if (sfxVolumeSlider != null) sfxVolumeSlider.onValueChanged.AddListener(_ => RefreshPreview());
+        WireStaticDropViewControls();
     }
 
     private void ResolveOptionalReferences()
@@ -189,6 +232,7 @@ public sealed class SettingsUIController : MonoBehaviour
             pageTitleText = FindChildComponent<TMP_Text>("SettingsTitleText");
         if (controlsPage == null)
             controlsPage = FindChild("ControlsPage");
+        ResolveStaticDropViewReferences();
         if (controlsTabButton == null)
             controlsTabButton = FindChildComponent<Button>("ControlsTabButton");
         if (controlsTabGraphic == null && controlsTabButton != null)
@@ -204,6 +248,49 @@ public sealed class SettingsUIController : MonoBehaviour
     {
         SetOptions(resolutionDropdown, GameSettings.ResolutionLabels);
         SetOptions(displayModeDropdown, GameSettings.DisplayModeLabels);
+        ConfigureDropdownForSettingsUi(resolutionDropdown, HasStaticDropView(StaticDropViewKind.Resolution));
+        ConfigureDropdownForSettingsUi(displayModeDropdown, HasStaticDropView(StaticDropViewKind.DisplayMode));
+        ConfigureStaticDropViewOptions(StaticDropViewKind.Resolution);
+        ConfigureStaticDropViewOptions(StaticDropViewKind.DisplayMode);
+    }
+
+    private void ApplyMenuSceneSettingsLayout()
+    {
+        if (!syncSettingsLayoutWithMenuScene || settingsPage == null || controlsPage == null)
+            return;
+
+        SetText("ResolutionDropdownLabelText", "\u0110\u1ed9 ph\u00e2n gi\u1ea3i");
+        SetText("DisplayModeDropdownLabelText", "Ch\u1ebf \u0111\u1ed9 hi\u1ec3n th\u1ecb");
+        SetText("BrightnessSliderLabelText", "\u0110\u1ed9 s\u00e1ng");
+        SetText("MasterVolumeSliderLabelText", "\u00c2m l\u01b0\u1ee3ng t\u1ed5ng");
+        SetText("MusicVolumeSliderLabelText", "\u00c2m nh\u1ea1c");
+        SetText("SfxVolumeSliderLabelText", "Hi\u1ec7u \u1ee9ng");
+        SetButtonText(applyButton, "\u00c1P D\u1ee4NG");
+        SetButtonText(resetButton, "KH\u00d4I PH\u1ee4C");
+        SetButtonText(backButton, "QUAY L\u1ea0I");
+
+        HideIfFound(settingsPage.transform, "VisualSectionTitleText");
+        HideIfFound(settingsPage.transform, "AudioSectionTitleText");
+        HideIfFound(settingsPage.transform, "VisualSeparator");
+        HideIfFound(settingsPage.transform, "AudioSeparator");
+
+        PositionSettingLabel("ResolutionDropdownLabelText", 0);
+        PositionSettingLabel("DisplayModeDropdownLabelText", 1);
+        PositionSettingLabel("BrightnessSliderLabelText", 2);
+        PositionSettingLabel("MasterVolumeSliderLabelText", 4);
+        PositionSettingLabel("MusicVolumeSliderLabelText", 5);
+        PositionSettingLabel("SfxVolumeSliderLabelText", 6);
+
+        PositionDropdownLikeMenu(resolutionDropdown, 0);
+        PositionDropdownLikeMenu(displayModeDropdown, 1);
+        PositionSliderLikeMenu(brightnessSlider, brightnessValueText, 2);
+        PositionSliderLikeMenu(masterVolumeSlider, masterVolumeValueText, 4);
+        PositionSliderLikeMenu(musicVolumeSlider, musicVolumeValueText, 5);
+        PositionSliderLikeMenu(sfxVolumeSlider, sfxVolumeValueText, 6);
+
+        PositionButtonLikeMenu(applyButton, new Vector2(-300f, 44f));
+        PositionButtonLikeMenu(resetButton, new Vector2(0f, 44f));
+        PositionButtonLikeMenu(backButton, new Vector2(300f, 44f));
     }
 
     private void RefreshPreview()
@@ -422,6 +509,145 @@ public sealed class SettingsUIController : MonoBehaviour
             label.color = selected ? SelectedTextColor : NormalTextColor;
     }
 
+    private void PositionSettingLabel(string objectName, int row)
+    {
+        var label = FindSettingsPageText(objectName);
+        if (label == null)
+            return;
+
+        label.gameObject.SetActive(true);
+        label.alignment = TextAlignmentOptions.Left;
+        SetRect(label.rectTransform, new Vector2(0f, 1f), new Vector2(300f, 32f), new Vector2(70f, -126f - row * 62f));
+    }
+
+    private void PositionDropdownLikeMenu(TMP_Dropdown dropdown, int row)
+    {
+        if (dropdown == null)
+            return;
+
+        var rect = dropdown.GetComponent<RectTransform>();
+        SetRect(rect, new Vector2(1f, 1f), new Vector2(360f, 46f), new Vector2(-84f, -124f - row * 62f));
+
+        if (dropdown.captionText != null)
+        {
+            dropdown.captionText.alignment = TextAlignmentOptions.Center;
+            SetStretch(dropdown.captionText.rectTransform, new Vector2(36f, 0f), new Vector2(-50f, 0f));
+        }
+
+        var arrow = FindChildText(dropdown.transform, "ArrowText");
+        if (arrow != null)
+        {
+            arrow.alignment = TextAlignmentOptions.Center;
+            SetRect(arrow.rectTransform, new Vector2(1f, 0.5f), new Vector2(32f, 32f), new Vector2(-22f, 0f));
+        }
+
+        if (dropdown.template != null)
+            SetRect(dropdown.template, new Vector2(0.5f, 0f), new Vector2(360f, 176f), new Vector2(0f, -90f));
+    }
+
+    private void PositionSliderLikeMenu(Slider slider, TMP_Text valueText, int row)
+    {
+        if (slider == null)
+            return;
+
+        var rect = slider.GetComponent<RectTransform>();
+        SetRect(rect, new Vector2(1f, 1f), new Vector2(400f, 32f), new Vector2(-128f, -130f - row * 62f));
+
+        if (slider.handleRect != null)
+            SetRect(slider.handleRect, new Vector2(0.5f, 0.5f), new Vector2(30f, 44f), Vector2.zero);
+
+        if (valueText != null)
+        {
+            valueText.alignment = TextAlignmentOptions.Right;
+            SetRect(valueText.rectTransform, new Vector2(1f, 1f), new Vector2(50f, 30f), new Vector2(-60f, -128f - row * 62f));
+        }
+    }
+
+    private static void PositionButtonLikeMenu(Button button, Vector2 anchoredPosition)
+    {
+        if (button == null)
+            return;
+
+        SetRect(button.GetComponent<RectTransform>(), new Vector2(0.5f, 0f), new Vector2(240f, 58f), anchoredPosition);
+        var label = button.GetComponentInChildren<TMP_Text>(true);
+        if (label != null)
+        {
+            label.alignment = TextAlignmentOptions.Center;
+            SetStretch(label.rectTransform, new Vector2(12f, 0f), new Vector2(-12f, 0f));
+        }
+    }
+
+    private void SetText(string objectName, string text)
+    {
+        var label = FindSettingsPageText(objectName);
+        if (label != null)
+            label.text = text;
+    }
+
+    private static void SetButtonText(Button button, string text)
+    {
+        var label = button != null ? button.GetComponentInChildren<TMP_Text>(true) : null;
+        if (label != null)
+            label.text = text;
+    }
+
+    private TMP_Text FindSettingsPageText(string objectName)
+    {
+        return settingsPage != null ? FindChildText(settingsPage.transform, objectName) : null;
+    }
+
+    private static TMP_Text FindChildText(Transform parent, string objectName)
+    {
+        if (parent == null)
+            return null;
+
+        foreach (var text in parent.GetComponentsInChildren<TMP_Text>(true))
+        {
+            if (text != null && text.name == objectName)
+                return text;
+        }
+
+        return null;
+    }
+
+    private static void HideIfFound(Transform parent, string objectName)
+    {
+        if (parent == null)
+            return;
+
+        foreach (Transform child in parent.GetComponentsInChildren<Transform>(true))
+        {
+            if (child != null && child.name == objectName)
+                child.gameObject.SetActive(false);
+        }
+    }
+
+    private static void SetRect(RectTransform rect, Vector2 anchor, Vector2 size, Vector2 position)
+    {
+        if (rect == null)
+            return;
+
+        rect.anchorMin = anchor;
+        rect.anchorMax = anchor;
+        rect.pivot = anchor;
+        rect.sizeDelta = size;
+        rect.anchoredPosition = position;
+        rect.localScale = Vector3.one;
+    }
+
+    private static void SetStretch(RectTransform rect, Vector2 minOffset, Vector2 maxOffset)
+    {
+        if (rect == null)
+            return;
+
+        rect.anchorMin = Vector2.zero;
+        rect.anchorMax = Vector2.one;
+        rect.pivot = new Vector2(0.5f, 0.5f);
+        rect.offsetMin = minOffset;
+        rect.offsetMax = maxOffset;
+        rect.localScale = Vector3.one;
+    }
+
     private static void SetOptions(TMP_Dropdown dropdown, string[] options)
     {
         if (dropdown == null || options == null)
@@ -440,6 +666,476 @@ public sealed class SettingsUIController : MonoBehaviour
         foreach (var option in options)
             dropdown.options.Add(new TMP_Dropdown.OptionData(option));
         dropdown.RefreshShownValue();
+    }
+
+    private static void ConfigureDropdownForSettingsUi(TMP_Dropdown dropdown, bool useStaticDropView)
+    {
+        if (dropdown == null)
+            return;
+
+        dropdown.enabled = !useStaticDropView;
+        dropdown.interactable = true;
+        if (dropdown.targetGraphic is Image targetImage)
+            targetImage.raycastTarget = true;
+
+        var template = dropdown.template;
+        if (template == null)
+            return;
+
+        template.gameObject.SetActive(false);
+        if (useStaticDropView)
+            return;
+
+        template.SetAsLastSibling();
+
+        var templateImage = template.GetComponent<Image>();
+        if (templateImage != null)
+            templateImage.raycastTarget = true;
+
+        var group = template.GetComponent<CanvasGroup>();
+        if (group == null)
+            group = template.gameObject.AddComponent<CanvasGroup>();
+        group.interactable = true;
+        group.blocksRaycasts = true;
+        group.ignoreParentGroups = false;
+
+        var scrollRect = template.GetComponent<ScrollRect>();
+        if (scrollRect != null)
+        {
+            scrollRect.horizontal = false;
+            scrollRect.vertical = true;
+            scrollRect.movementType = ScrollRect.MovementType.Clamped;
+            scrollRect.scrollSensitivity = 24f;
+            scrollRect.inertia = false;
+
+            var viewportImage = scrollRect.viewport != null ? scrollRect.viewport.GetComponent<Image>() : null;
+            if (viewportImage != null)
+                viewportImage.raycastTarget = true;
+        }
+
+        foreach (var selectable in template.GetComponentsInChildren<Selectable>(true))
+            selectable.interactable = true;
+
+        foreach (var graphic in template.GetComponentsInChildren<MaskableGraphic>(true))
+        {
+            if (graphic is TMP_Text)
+                graphic.raycastTarget = false;
+        }
+
+        foreach (var toggle in template.GetComponentsInChildren<Toggle>(true))
+        {
+            if (toggle.targetGraphic != null)
+                toggle.targetGraphic.raycastTarget = true;
+            if (toggle.graphic != null)
+                toggle.graphic.raycastTarget = false;
+        }
+    }
+
+    public void OpenResolutionDropView()
+    {
+        ShowStaticDropView(StaticDropViewKind.Resolution);
+    }
+
+    public void OpenDisplayModeDropView()
+    {
+        ShowStaticDropView(StaticDropViewKind.DisplayMode);
+    }
+
+    public void CloseDropView()
+    {
+        HideStaticDropViews();
+    }
+
+    private void ResolveStaticDropViewReferences()
+    {
+        if (sharedDropView == null)
+            sharedDropView = FindChild("DropView") ?? FindChild("Drop View") ?? FindChild("dropView") ?? FindChild("drop view") ?? FindChild("DropdownView") ?? FindChild("Dropdown View");
+        if (resolutionDropView == null)
+            resolutionDropView = FindChild("ResolutionDropView") ?? FindChild("Resolution Drop View") ?? FindChild("resolutionDropView") ?? FindChild("resolution drop view") ?? FindChild("ResolutionDropdownDropView");
+        if (displayModeDropView == null)
+            displayModeDropView = FindChild("DisplayModeDropView") ?? FindChild("Display Mode Drop View") ?? FindChild("displayModeDropView") ?? FindChild("display mode drop view") ?? FindChild("DisplayModeDropdownDropView");
+    }
+
+    private void WireStaticDropViewControls()
+    {
+        ConfigureStaticDropdownClickRelay(resolutionDropdown, StaticDropViewKind.Resolution);
+        ConfigureStaticDropdownClickRelay(displayModeDropdown, StaticDropViewKind.DisplayMode);
+
+        var wiredButtons = new System.Collections.Generic.HashSet<Button>();
+        WireStaticDropViewButtons(sharedDropView, sharedDropViewButtons, wiredButtons);
+        WireStaticDropViewButtons(resolutionDropView, resolutionDropViewButtons, wiredButtons);
+        WireStaticDropViewButtons(displayModeDropView, displayModeDropViewButtons, wiredButtons);
+    }
+
+    private void ConfigureStaticDropdownClickRelay(TMP_Dropdown dropdown, StaticDropViewKind kind)
+    {
+        if (dropdown == null || !HasStaticDropView(kind))
+            return;
+
+        var relay = dropdown.GetComponent<StaticDropdownClickRelay>();
+        if (relay == null)
+            relay = dropdown.gameObject.AddComponent<StaticDropdownClickRelay>();
+        relay.Initialize(this, kind);
+    }
+
+    private void WireStaticDropViewButtons(GameObject dropView, Button[] assignedButtons, System.Collections.Generic.HashSet<Button> wiredButtons)
+    {
+        var buttons = GetDropViewButtons(dropView, assignedButtons);
+        for (int i = 0; i < buttons.Length; i++)
+        {
+            var button = buttons[i];
+            if (button == null || wiredButtons.Contains(button))
+                continue;
+
+            int index = i;
+            wiredButtons.Add(button);
+            button.onClick.AddListener(() => SelectStaticDropViewItem(index));
+        }
+    }
+
+    private void ConfigureStaticDropViewOptions(StaticDropViewKind kind)
+    {
+        if (!HasStaticDropView(kind))
+            return;
+
+        var options = GetStaticDropViewOptions(kind);
+        var buttons = GetStaticDropViewButtons(kind);
+        for (int i = 0; i < buttons.Length; i++)
+        {
+            var button = buttons[i];
+            if (button == null)
+                continue;
+
+            bool visible = i < options.Length;
+            button.gameObject.SetActive(visible);
+            if (!visible)
+                continue;
+
+            button.interactable = true;
+            var label = button.GetComponentInChildren<TMP_Text>(true);
+            if (label != null)
+                label.text = options[i];
+        }
+    }
+
+    private void ToggleStaticDropView(StaticDropViewKind kind)
+    {
+        if (!HasStaticDropView(kind))
+            return;
+
+        if (activeDropViewKind == kind)
+        {
+            HideStaticDropViews();
+            return;
+        }
+
+        ShowStaticDropView(kind);
+    }
+
+    private void ShowStaticDropView(StaticDropViewKind kind)
+    {
+        if (!HasStaticDropView(kind))
+            return;
+
+        HideStaticDropViews();
+        ConfigureStaticDropViewOptions(kind);
+
+        var dropView = GetStaticDropView(kind);
+        if (dropView == null)
+            return;
+
+        activeDropViewKind = kind;
+        dropView.SetActive(true);
+        PrepareStaticDropViewForFront(dropView);
+        dropView.transform.SetAsLastSibling();
+    }
+
+    private void SelectStaticDropViewItem(int index)
+    {
+        if (activeDropViewKind == StaticDropViewKind.None)
+            return;
+
+        var dropdown = GetStaticDropViewDropdown(activeDropViewKind);
+        var options = GetStaticDropViewOptions(activeDropViewKind);
+        if (dropdown == null || index < 0 || index >= options.Length)
+            return;
+
+        dropdown.SetValueWithoutNotify(index);
+        dropdown.RefreshShownValue();
+        RefreshPreview();
+        HideStaticDropViews();
+    }
+
+    private void HideStaticDropViews()
+    {
+        activeDropViewKind = StaticDropViewKind.None;
+        SetDropViewActive(sharedDropView, false);
+        SetDropViewActive(resolutionDropView, false);
+        SetDropViewActive(displayModeDropView, false);
+    }
+
+    private void HandleStaticDropViewPointerClose()
+    {
+        if (activeDropViewKind == StaticDropViewKind.None || !PointerPressedThisFrame(out Vector2 screenPosition))
+            return;
+
+        if (PointerIsOverActiveDropViewOrDropdown(screenPosition))
+            return;
+
+        HideStaticDropViews();
+    }
+
+    private bool PointerIsOverActiveDropViewOrDropdown(Vector2 screenPosition)
+    {
+        var dropView = GetStaticDropView(activeDropViewKind);
+        var dropdown = GetStaticDropViewDropdown(activeDropViewKind);
+
+        if (EventSystem.current != null)
+        {
+            var eventData = new PointerEventData(EventSystem.current) { position = screenPosition };
+            var results = new System.Collections.Generic.List<RaycastResult>();
+            EventSystem.current.RaycastAll(eventData, results);
+            foreach (var result in results)
+            {
+                if (IsSelfOrChildOf(result.gameObject, dropView) || IsSelfOrChildOf(result.gameObject, dropdown != null ? dropdown.gameObject : null))
+                    return true;
+            }
+        }
+
+        return IsScreenPointInside(dropView, screenPosition) || IsScreenPointInside(dropdown != null ? dropdown.gameObject : null, screenPosition);
+    }
+
+    private bool HasStaticDropView(StaticDropViewKind kind)
+    {
+        return GetStaticDropView(kind) != null;
+    }
+
+    private GameObject GetStaticDropView(StaticDropViewKind kind)
+    {
+        return kind switch
+        {
+            StaticDropViewKind.Resolution => resolutionDropView != null ? resolutionDropView : sharedDropView != null ? sharedDropView : displayModeDropView,
+            StaticDropViewKind.DisplayMode => displayModeDropView != null ? displayModeDropView : sharedDropView != null ? sharedDropView : resolutionDropView,
+            _ => null
+        };
+    }
+
+    private TMP_Dropdown GetStaticDropViewDropdown(StaticDropViewKind kind)
+    {
+        return kind switch
+        {
+            StaticDropViewKind.Resolution => resolutionDropdown,
+            StaticDropViewKind.DisplayMode => displayModeDropdown,
+            _ => null
+        };
+    }
+
+    private string[] GetStaticDropViewOptions(StaticDropViewKind kind)
+    {
+        return kind switch
+        {
+            StaticDropViewKind.Resolution => GameSettings.ResolutionLabels,
+            StaticDropViewKind.DisplayMode => GameSettings.DisplayModeLabels,
+            _ => System.Array.Empty<string>()
+        };
+    }
+
+    private Button[] GetStaticDropViewButtons(StaticDropViewKind kind)
+    {
+        if (kind == StaticDropViewKind.Resolution && resolutionDropView != null)
+            return GetDropViewButtons(resolutionDropView, resolutionDropViewButtons);
+        if (kind == StaticDropViewKind.DisplayMode && displayModeDropView != null)
+            return GetDropViewButtons(displayModeDropView, displayModeDropViewButtons);
+        if (sharedDropView == null && kind == StaticDropViewKind.DisplayMode && resolutionDropView != null)
+            return GetDropViewButtons(resolutionDropView, resolutionDropViewButtons);
+        if (sharedDropView == null && kind == StaticDropViewKind.Resolution && displayModeDropView != null)
+            return GetDropViewButtons(displayModeDropView, displayModeDropViewButtons);
+
+        return GetDropViewButtons(sharedDropView, sharedDropViewButtons);
+    }
+
+    private static void PrepareStaticDropViewForFront(GameObject dropView)
+    {
+        if (dropView == null)
+            return;
+
+        var canvas = dropView.GetComponent<Canvas>();
+        if (canvas == null)
+            canvas = dropView.AddComponent<Canvas>();
+        canvas.overrideSorting = true;
+        canvas.sortingOrder = SettingsDropdownSortingOrder;
+
+        var raycaster = dropView.GetComponent<GraphicRaycaster>();
+        if (raycaster == null)
+            raycaster = dropView.AddComponent<GraphicRaycaster>();
+        raycaster.enabled = true;
+
+        var group = dropView.GetComponent<CanvasGroup>();
+        if (group == null)
+            group = dropView.AddComponent<CanvasGroup>();
+        group.alpha = 1f;
+        group.interactable = true;
+        group.blocksRaycasts = true;
+        group.ignoreParentGroups = true;
+
+        foreach (var graphic in dropView.GetComponentsInChildren<MaskableGraphic>(true))
+        {
+            if (graphic == null)
+                continue;
+
+            graphic.maskable = false;
+        }
+    }
+
+    private void NormalizeSettingsCanvasLayers()
+    {
+        foreach (var canvas in GetComponentsInChildren<Canvas>(true))
+        {
+            if (canvas == null)
+                continue;
+
+            if (IsSettingsDropdownCanvas(canvas.gameObject))
+            {
+                canvas.overrideSorting = true;
+                canvas.sortingOrder = SettingsDropdownSortingOrder;
+                EnsureRaycaster(canvas.gameObject);
+                continue;
+            }
+
+            if (canvas.overrideSorting && canvas.sortingOrder >= SettingsDropdownSortingOrder)
+                canvas.sortingOrder = SettingsUiSortingOrder;
+        }
+    }
+
+    private bool IsSettingsDropdownCanvas(GameObject target)
+    {
+        if (target == null)
+            return false;
+
+        return target.name.Contains("Dropdown List")
+            || target.name.Contains("DropView")
+            || target.name.Contains("Drop View")
+            || target == sharedDropView
+            || target == resolutionDropView
+            || target == displayModeDropView;
+    }
+
+    private static void EnsureRaycaster(GameObject target)
+    {
+        if (target == null)
+            return;
+
+        var raycaster = target.GetComponent<GraphicRaycaster>();
+        if (raycaster == null)
+            raycaster = target.AddComponent<GraphicRaycaster>();
+        raycaster.enabled = true;
+    }
+
+    private static Button[] GetDropViewButtons(GameObject dropView, Button[] assignedButtons)
+    {
+        if (assignedButtons != null && assignedButtons.Length > 0)
+            return assignedButtons;
+
+        return dropView != null ? dropView.GetComponentsInChildren<Button>(true) : System.Array.Empty<Button>();
+    }
+
+    private static void SetDropViewActive(GameObject dropView, bool active)
+    {
+        if (dropView != null && dropView.activeSelf != active)
+            dropView.SetActive(active);
+    }
+
+    private static bool PointerPressedThisFrame(out Vector2 screenPosition)
+    {
+        var mouse = Mouse.current;
+        if (mouse != null && mouse.leftButton.wasPressedThisFrame)
+        {
+            screenPosition = mouse.position.ReadValue();
+            return true;
+        }
+
+        var touch = Touchscreen.current;
+        if (touch != null && touch.primaryTouch.press.wasPressedThisFrame)
+        {
+            screenPosition = touch.primaryTouch.position.ReadValue();
+            return true;
+        }
+
+        screenPosition = default;
+        return false;
+    }
+
+    private static bool IsSelfOrChildOf(GameObject candidate, GameObject root)
+    {
+        if (candidate == null || root == null)
+            return false;
+
+        return candidate == root || candidate.transform.IsChildOf(root.transform);
+    }
+
+    private static bool IsScreenPointInside(GameObject target, Vector2 screenPosition)
+    {
+        if (target == null)
+            return false;
+
+        var rect = target.GetComponent<RectTransform>();
+        if (rect == null)
+            return false;
+
+        return RectTransformUtility.RectangleContainsScreenPoint(rect, screenPosition, GetUiCamera(rect));
+    }
+
+    private static Camera GetUiCamera(RectTransform rect)
+    {
+        var canvas = rect != null ? rect.GetComponentInParent<Canvas>(true) : null;
+        if (canvas == null || canvas.renderMode == RenderMode.ScreenSpaceOverlay)
+            return null;
+
+        return canvas.worldCamera != null ? canvas.worldCamera : Camera.main;
+    }
+
+    private void CacheDropdownParentScrollRects()
+    {
+        var scrollRects = new System.Collections.Generic.List<ScrollRect>();
+        AddParentScrollRects(resolutionDropdown, scrollRects);
+        AddParentScrollRects(displayModeDropdown, scrollRects);
+
+        dropdownParentScrollRects = scrollRects.ToArray();
+        dropdownParentScrollRectStates = new bool[dropdownParentScrollRects.Length];
+        for (int i = 0; i < dropdownParentScrollRects.Length; i++)
+            dropdownParentScrollRectStates[i] = dropdownParentScrollRects[i] != null && dropdownParentScrollRects[i].enabled;
+    }
+
+    private static void AddParentScrollRects(TMP_Dropdown dropdown, System.Collections.Generic.List<ScrollRect> scrollRects)
+    {
+        if (dropdown == null)
+            return;
+
+        foreach (var scrollRect in dropdown.GetComponentsInParent<ScrollRect>(true))
+        {
+            if (scrollRect == null || scrollRects.Contains(scrollRect))
+                continue;
+
+            scrollRects.Add(scrollRect);
+        }
+    }
+
+    private void UpdateDropdownParentScrollLock()
+    {
+        if (dropdownParentScrollRects == null || dropdownParentScrollRects.Length == 0)
+            return;
+
+        bool dropdownOpen = activeDropViewKind != StaticDropViewKind.None;
+        for (int i = 0; i < dropdownParentScrollRects.Length; i++)
+        {
+            var scrollRect = dropdownParentScrollRects[i];
+            if (scrollRect == null)
+                continue;
+
+            bool targetEnabled = dropdownOpen ? false : dropdownParentScrollRectStates[i];
+            if (scrollRect.enabled != targetEnabled)
+                scrollRect.enabled = targetEnabled;
+        }
     }
 
     private static int SliderInt(Slider slider, int fallback)
@@ -469,8 +1165,42 @@ public sealed class SettingsUIController : MonoBehaviour
         if (dropdown == null)
             return;
 
+        if (dropdown.options == null || dropdown.options.Count == 0)
+            return;
+
         dropdown.value = Mathf.Clamp(value, 0, dropdown.options.Count - 1);
         dropdown.RefreshShownValue();
     }
 
+    private enum StaticDropViewKind
+    {
+        None,
+        Resolution,
+        DisplayMode
+    }
+
+    private sealed class StaticDropdownClickRelay : MonoBehaviour, IPointerClickHandler, ISubmitHandler
+    {
+        private SettingsUIController owner;
+        private StaticDropViewKind kind;
+
+        public void Initialize(SettingsUIController owner, StaticDropViewKind kind)
+        {
+            this.owner = owner;
+            this.kind = kind;
+        }
+
+        public void OnPointerClick(PointerEventData eventData)
+        {
+            if (eventData != null && eventData.button != PointerEventData.InputButton.Left)
+                return;
+
+            owner?.ToggleStaticDropView(kind);
+        }
+
+        public void OnSubmit(BaseEventData eventData)
+        {
+            owner?.ToggleStaticDropView(kind);
+        }
+    }
 }

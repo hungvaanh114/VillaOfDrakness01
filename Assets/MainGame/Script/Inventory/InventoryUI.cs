@@ -8,7 +8,7 @@ namespace FpsHorrorKit
 {
     public sealed class InventoryUI : MonoBehaviour
     {
-        private const int InventorySortingOrder = 32100;
+        private const int InventorySortingOrder = 20000;
 
         private enum InventoryTab
         {

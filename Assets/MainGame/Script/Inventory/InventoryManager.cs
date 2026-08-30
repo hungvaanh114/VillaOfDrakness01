@@ -24,6 +24,9 @@ namespace FpsHorrorKit
         private TextMeshProUGUI fallbackBatteryPercentText;
         private bool fallbackFlashlightOn;
         private bool hasSyncedFallbackFlashlight;
+        private bool cutsceneFallbackFlashlightForced;
+        private bool savedFallbackFlashlightOn;
+        private bool savedFallbackFlashlightActive;
 
         public event Action OnInventoryChanged;
         public event Action<ItemData, int> OnItemAdded;
@@ -245,6 +248,13 @@ namespace FpsHorrorKit
             InitializeFallbackFlashlight();
             SyncFallbackFlashlightStateFromScene();
 
+            if (cutsceneFallbackFlashlightForced)
+            {
+                SetFallbackFlashlightActive(true);
+                UpdateFallbackFlashlightUi();
+                return;
+            }
+
             if (GameController.IsGameplayInputLocked())
             {
                 UpdateFallbackFlashlightUi();
@@ -293,6 +303,36 @@ namespace FpsHorrorKit
             fallbackFlashlightOn = !IsFallbackFlashlightLightActive();
             SetFallbackFlashlightActive(fallbackFlashlightOn);
             AudioManager.Instance?.PlayFlashlightToggle();
+        }
+
+        public void SetCutsceneFallbackFlashlightForced(bool forced)
+        {
+            if (ItemUsageSystem.Instance != null)
+                return;
+
+            InitializeFallbackFlashlight();
+
+            if (forced)
+            {
+                if (!cutsceneFallbackFlashlightForced)
+                {
+                    savedFallbackFlashlightOn = fallbackFlashlightOn;
+                    savedFallbackFlashlightActive = IsFallbackFlashlightLightActive();
+                }
+
+                cutsceneFallbackFlashlightForced = true;
+                SetFallbackFlashlightActive(true);
+                UpdateFallbackFlashlightUi();
+                return;
+            }
+
+            if (!cutsceneFallbackFlashlightForced)
+                return;
+
+            cutsceneFallbackFlashlightForced = false;
+            fallbackFlashlightOn = savedFallbackFlashlightOn;
+            SetFallbackFlashlightActive(savedFallbackFlashlightActive);
+            UpdateFallbackFlashlightUi();
         }
 
         private void InitializeFallbackFlashlight()

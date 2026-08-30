@@ -77,6 +77,7 @@ public sealed class MonsterAI : MonoBehaviour
     [SerializeField] private string caughtCameraTargetName = "camtagetzom";
     [SerializeField] private Transform caughtHeadLookTarget;
     [SerializeField] private string caughtHeadLookTargetName = "head.x";
+    [SerializeField] private bool hidePlayerModelDuringCaughtCamera = true;
     [SerializeField, Min(0.4f)] private float caughtProneMinCameraDistance = 2.2f;
     [SerializeField, Min(0.05f)] private float caughtProneEyeHeight = 0.42f;
     [SerializeField] private float caughtProneCameraLocalBackOffset = -0.25f;
@@ -656,6 +657,8 @@ public sealed class MonsterAI : MonoBehaviour
             ? playerController.followTarget.localPosition
             : Vector3.zero;
         Transform cameraTarget = ResolveCaughtCameraTarget();
+        if (hidePlayerModelDuringCaughtCamera && cameraTarget != null)
+            SetCaughtPlayerModelVisible(playerController, false);
         FacePlayer();
 
         float elapsed = 0f;
@@ -689,6 +692,50 @@ public sealed class MonsterAI : MonoBehaviour
         AudioManager.Instance?.StopMonsterVoice();
         StopMonsterAudio(false);
         GameController.Instance?.TriggerDeathWithUIDelay(false, 0f);
+    }
+
+    private static void SetCaughtPlayerModelVisible(FpsHorrorKit.FpsController playerController, bool visible)
+    {
+        if (playerController == null)
+            return;
+
+        bool handledVisualRoot = false;
+        if (playerController.playerAnimator != null)
+        {
+            SetRenderersVisible(playerController.playerAnimator.transform, visible);
+            handledVisualRoot = true;
+        }
+
+        if (playerController.detachedHairRoot != null)
+        {
+            SetRenderersVisible(playerController.detachedHairRoot, visible);
+            handledVisualRoot = true;
+        }
+
+        if (handledVisualRoot)
+            return;
+
+        var renderers = playerController.GetComponentsInChildren<Renderer>(true);
+        for (int i = 0; i < renderers.Length; i++)
+        {
+            Renderer itemRenderer = renderers[i];
+            if (itemRenderer != null)
+                itemRenderer.enabled = visible;
+        }
+    }
+
+    private static void SetRenderersVisible(Transform root, bool visible)
+    {
+        if (root == null)
+            return;
+
+        var renderers = root.GetComponentsInChildren<Renderer>(true);
+        for (int i = 0; i < renderers.Length; i++)
+        {
+            Renderer itemRenderer = renderers[i];
+            if (itemRenderer != null)
+                itemRenderer.enabled = visible;
+        }
     }
 
     private void ApplyCaughtCameraPose(
