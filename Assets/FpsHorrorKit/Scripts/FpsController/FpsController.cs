@@ -397,10 +397,36 @@ namespace FpsHorrorKit
 
         public void StopCutSceneMovement()
         {
-            velocity.x = 0f;
-            velocity.z = 0f;
+            velocity = Vector3.zero;
+            jumpCooldownTimer = 0f;
             cutSceneFootstepTimer = 0f;
+            footstepTimer = 0f;
+            if (_input != null)
+                _input.ClearGameplayInput();
             UpdateCutSceneAnimation(false);
+        }
+
+        public void ForceIdleState(bool freezeHeadBob = true)
+        {
+            velocity = Vector3.zero;
+            jumpCooldownTimer = 0f;
+            cutSceneFootstepTimer = 0f;
+            footstepTimer = 0f;
+
+            if (_input != null)
+                _input.ClearGameplayInput();
+
+            if (playerAnimator != null)
+            {
+                playerAnimator.SetBool("isRun", false);
+                playerAnimator.SetFloat("speed", 0f);
+            }
+
+            if (freezeHeadBob && headBob != null)
+            {
+                headBob.AmplitudeGain = 0f;
+                headBob.FrequencyGain = 0f;
+            }
         }
 
         public void TeleportCutScene(Transform point)
@@ -408,6 +434,11 @@ namespace FpsHorrorKit
             if (point == null)
                 return;
 
+            TeleportCutScene(point.position, point.rotation);
+        }
+
+        public void TeleportCutScene(Vector3 position, Quaternion rotation)
+        {
             if (characterController == null)
                 characterController = GetComponent<CharacterController>();
 
@@ -415,7 +446,7 @@ namespace FpsHorrorKit
             if (characterController != null)
                 characterController.enabled = false;
 
-            transform.SetPositionAndRotation(point.position, point.rotation);
+            transform.SetPositionAndRotation(position, rotation);
             velocity = Vector3.zero;
 
             if (characterController != null)

@@ -224,7 +224,7 @@ namespace FpsHorrorKit
             pageImage.preserveAspect = false;
             pageImage.raycastTarget = false;
 
-            AddText(root.transform, "Hint", "E / TAB / ESC - Đóng", 22, new Color(0.92f, 0.88f, 0.78f), TextAlignmentOptions.Center, new Vector2(0.24f, 0.02f), new Vector2(0.76f, 0.07f));
+            AddText(root.transform, "Hint", "E / TAB / ESC - Đóng.", 22, new Color(0.92f, 0.88f, 0.78f), TextAlignmentOptions.Center, new Vector2(0.24f, 0.02f), new Vector2(0.76f, 0.07f));
 
             var close = CreateButton(root.transform, "CloseButton", closeButtonSprite, "X", 34);
             var closeRect = close.GetComponent<RectTransform>();

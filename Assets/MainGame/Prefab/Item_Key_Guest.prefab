@@ -106,7 +106,7 @@ MonoBehaviour:
   m_EditorClassIdentifier: Assembly-CSharp::FpsHorrorKit.ItemPickup
   itemData: {fileID: 11400000, guid: a295420727ae5f740b031e7ea9e875ef, type: 2}
   amount: 1
-  interactText: "[E] Nh\u1EB7t Ch\xECa Ti\u1EC7p Kh\xE1ch"
+  interactText: "[E] Nh\u1EB7t Ch\xECa Ph\xF2ng Kh\xE1ch"
 --- !u!64 &8034382690831762534
 MeshCollider:
   m_ObjectHideFlags: 0

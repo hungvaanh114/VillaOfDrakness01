@@ -13,6 +13,9 @@ public sealed class MirrorReflectionCamera : MonoBehaviour
     [SerializeField] private int textureSize = 1024;
     [SerializeField] private int mirrorLayer = 31;
     [SerializeField] private bool renderEveryFrame = true;
+    [SerializeField] private bool keepReflectionCameraFixed = true;
+    [SerializeField, Min(0f)] private float fixedCameraOffsetFromMirror = 0.08f;
+    [SerializeField, Min(1f)] private float fixedCheckFieldOfView = 80f;
 
     private RenderTexture reflectionTexture;
     private Texture2D bloodTexture;
@@ -21,6 +24,46 @@ public sealed class MirrorReflectionCamera : MonoBehaviour
     private Transform surfaceVisual;
     private Transform bloodOverlay;
     private Material frameMaterial;
+    private bool reflectionCameraCreatedAtRuntime;
+    private bool fixedCameraPoseCaptured;
+    private Vector3 fixedCameraLocalPosition;
+    private Quaternion fixedCameraLocalRotation;
+
+    public Camera SourceCamera
+    {
+        get
+        {
+            ResolveSourceCamera();
+            return sourceCamera;
+        }
+    }
+
+    public Camera ReflectionCamera
+    {
+        get
+        {
+            EnsureCamera();
+            return reflectionCamera;
+        }
+    }
+
+    public Camera RefreshReflection(Camera sourceOverride)
+    {
+        if (sourceOverride != null && sourceOverride != reflectionCamera)
+            sourceCamera = sourceOverride;
+
+        ResolveSourceCamera();
+        EnsureCamera();
+        if (reflectionCamera == null)
+            return null;
+
+        if (keepReflectionCameraFixed)
+            ApplyFixedCameraPose();
+        else if (sourceCamera != null)
+            UpdateReflectionCamera(sourceCamera);
+
+        return reflectionCamera;
+    }
 
     private void Awake()
     {
@@ -34,10 +77,16 @@ public sealed class MirrorReflectionCamera : MonoBehaviour
     private void LateUpdate()
     {
         ResolveSourceCamera();
-        if (!renderEveryFrame || reflectionCamera == null || sourceCamera == null)
+        if (!renderEveryFrame || reflectionCamera == null)
             return;
 
-        UpdateReflectionCamera(sourceCamera);
+        if (keepReflectionCameraFixed)
+            ApplyFixedCameraPose();
+        else if (sourceCamera != null)
+            UpdateReflectionCamera(sourceCamera);
+        else
+            return;
+
         reflectionCamera.targetTexture = reflectionTexture;
         ApplyReflectionTextureToMaterial();
     }
@@ -232,6 +281,7 @@ public sealed class MirrorReflectionCamera : MonoBehaviour
             var cameraObject = new GameObject("ReflectionCamera");
             cameraObject.transform.SetParent(transform, false);
             reflectionCamera = cameraObject.AddComponent<Camera>();
+            reflectionCameraCreatedAtRuntime = true;
         }
 
         reflectionCamera.enabled = true;
@@ -248,7 +298,28 @@ public sealed class MirrorReflectionCamera : MonoBehaviour
         if (listener != null)
             Destroy(listener);
 
+        EnsureReflectionTexture();
+        reflectionCamera.targetTexture = reflectionTexture;
+        ApplyReflectionTextureToMaterial();
+
+        if (keepReflectionCameraFixed)
+            ApplyFixedCameraPose();
+    }
+
+    private void EnsureReflectionTexture()
+    {
         int safeSize = Mathf.Clamp(textureSize, 256, 2048);
+        if (reflectionTexture != null
+            && reflectionTexture.width == safeSize
+            && reflectionTexture.height == safeSize)
+            return;
+
+        if (reflectionTexture != null)
+        {
+            reflectionTexture.Release();
+            Destroy(reflectionTexture);
+        }
+
         reflectionTexture = new RenderTexture(safeSize, safeSize, 24, RenderTextureFormat.ARGB32)
         {
             name = "MirrorReflectionTexture",
@@ -258,8 +329,6 @@ public sealed class MirrorReflectionCamera : MonoBehaviour
             wrapMode = TextureWrapMode.Clamp
         };
         reflectionTexture.Create();
-        reflectionCamera.targetTexture = reflectionTexture;
-        ApplyReflectionTextureToMaterial();
     }
 
     private void ApplyReflectionTextureToMaterial()
@@ -367,6 +436,12 @@ public sealed class MirrorReflectionCamera : MonoBehaviour
 
     private void UpdateReflectionCamera(Camera sourceCamera)
     {
+        if (keepReflectionCameraFixed)
+        {
+            ApplyFixedCameraPose();
+            return;
+        }
+
         Vector3 planePosition = mirrorSurface != null ? mirrorSurface.position : transform.position;
         Vector3 planeNormal = mirrorSurface != null ? mirrorSurface.forward : transform.forward;
         planeNormal.Normalize();
@@ -382,6 +457,49 @@ public sealed class MirrorReflectionCamera : MonoBehaviour
         reflectionCamera.nearClipPlane = sourceCamera.nearClipPlane;
         reflectionCamera.farClipPlane = sourceCamera.farClipPlane;
         reflectionCamera.aspect = sourceCamera.aspect;
+    }
+
+    private void ApplyFixedCameraPose()
+    {
+        CaptureFixedCameraPose();
+        if (!fixedCameraPoseCaptured || reflectionCamera == null)
+            return;
+
+        reflectionCamera.transform.localPosition = fixedCameraLocalPosition;
+        reflectionCamera.transform.localRotation = fixedCameraLocalRotation;
+    }
+
+    private void CaptureFixedCameraPose()
+    {
+        if (fixedCameraPoseCaptured || reflectionCamera == null)
+            return;
+
+        if (reflectionCameraCreatedAtRuntime)
+            PlaceRuntimeFixedCamera();
+
+        fixedCameraLocalPosition = reflectionCamera.transform.localPosition;
+        fixedCameraLocalRotation = reflectionCamera.transform.localRotation;
+        fixedCameraPoseCaptured = true;
+    }
+
+    private void PlaceRuntimeFixedCamera()
+    {
+        Transform reference = mirrorSurface != null ? mirrorSurface : transform;
+        Vector3 forward = reference.forward;
+        if (forward.sqrMagnitude < 0.001f)
+            forward = transform.forward;
+
+        forward.Normalize();
+        Vector3 up = Vector3.ProjectOnPlane(Vector3.up, forward);
+        if (up.sqrMagnitude < 0.001f)
+            up = Vector3.ProjectOnPlane(transform.up, forward);
+        if (up.sqrMagnitude < 0.001f)
+            up = Vector3.right;
+
+        reflectionCamera.transform.position = reference.position + forward * fixedCameraOffsetFromMirror;
+        reflectionCamera.transform.rotation = Quaternion.LookRotation(forward, up.normalized);
+        reflectionCamera.fieldOfView = fixedCheckFieldOfView;
+        reflectionCamera.nearClipPlane = 0.01f;
     }
 
     private static Vector3 ReflectPoint(Vector3 point, Vector3 planePosition, Vector3 planeNormal)

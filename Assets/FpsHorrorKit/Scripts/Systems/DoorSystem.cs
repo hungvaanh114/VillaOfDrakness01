@@ -134,6 +134,17 @@ namespace FpsHorrorKit
             }
         }
 
+        public void CloseFromStory()
+        {
+            lockedByGramophoneTape = false;
+
+            if (isOpen && isFinished)
+            {
+                StartCoroutine(OpenDoor(startRotation));
+                isOpen = false;
+            }
+        }
+
         public void UnlockAndOpenFromStory()
         {
             lockedByGramophoneTape = false;
@@ -148,6 +159,14 @@ namespace FpsHorrorKit
                 StartCoroutine(OpenDoor(endRotation, () => OnPlayerOpened?.Invoke(this)));
                 isOpen = true;
             }
+        }
+
+        public void UnlockFromStory()
+        {
+            lockedByGramophoneTape = false;
+            isLocked = false;
+            hasKey = true;
+            OnDoorUnlocked?.Invoke(this);
         }
 
         public void Highlight()
@@ -233,19 +252,36 @@ namespace FpsHorrorKit
 
         public static void LockDoorsMarkedForGramophoneTape()
         {
-            gramophoneTapeLockActive = true;
+            CloseDoorsMarkedForGramophoneTape();
+        }
+
+        public static void CloseDoorsMarkedForGramophoneTape()
+        {
+            gramophoneTapeLockActive = false;
 
             var doors = FindObjectsByType<DoorSystem>(FindObjectsInactive.Exclude, FindObjectsSortMode.None);
             foreach (var door in doors)
             {
                 if (door != null && door.closeAndLockWhenGramophoneTapePlays)
-                    door.LockFromGramophoneTape();
+                    door.CloseFromGramophoneTape();
             }
         }
 
-        private void LockFromGramophoneTape()
+        private void CloseFromGramophoneTape()
         {
-            CloseAndLockFromStory();
+            CloseFromStory();
+        }
+
+        public static void CloseAllDoorsFromStory()
+        {
+            gramophoneTapeLockActive = false;
+
+            var doors = FindObjectsByType<DoorSystem>(FindObjectsInactive.Exclude, FindObjectsSortMode.None);
+            foreach (var door in doors)
+            {
+                if (door != null)
+                    door.CloseFromStory();
+            }
         }
 
         private IEnumerator SubscribeToPianoCompletion()

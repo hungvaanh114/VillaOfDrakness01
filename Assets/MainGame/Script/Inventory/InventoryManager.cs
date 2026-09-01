@@ -125,6 +125,20 @@ namespace FpsHorrorKit
             return Find(item) != null;
         }
 
+        public void ResetToStartingItems()
+        {
+            items.Clear();
+            CurrentEquippedItem = null;
+            HeldItemController.Instance?.Clear();
+
+            if (startingFlashlight != null)
+                AddItem(startingFlashlight, 1);
+
+            ItemUsageSystem.Instance?.GrantFlashlightItem(false);
+            OnItemEquipped?.Invoke(null);
+            OnInventoryChanged?.Invoke();
+        }
+
         public InventoryItem Find(ItemData item)
         {
             return items.Find(entry => entry.Data == item);
@@ -181,6 +195,9 @@ namespace FpsHorrorKit
             {
                 if (playGenericUseSound)
                     AudioManager.Instance?.PlayGenericInteract();
+
+                if (item.itemType != ItemType.Flashlight && CurrentEquippedItem?.itemType != ItemType.Flashlight)
+                    HeldItemController.Instance?.HideCurrentVisual();
 
                 OnItemUsed?.Invoke(item);
                 OnInventoryChanged?.Invoke();

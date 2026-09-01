@@ -60,6 +60,12 @@ namespace FpsHorrorKit
             currentVisual = null;
         }
 
+        public void HideCurrentVisual()
+        {
+            if (currentVisual != null)
+                currentVisual.SetActive(false);
+        }
+
         private void EnsureHoldPoint()
         {
             if (itemHoldPoint != null)

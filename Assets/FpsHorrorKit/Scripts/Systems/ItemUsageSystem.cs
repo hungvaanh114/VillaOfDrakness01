@@ -267,8 +267,8 @@ namespace FpsHorrorKit
             itemLantern.isUsingItem = true;
             itemLantern.isEnergyEnough = itemLantern.energyLevel > 0f;
 
-            lantern.SetActive(true);
-            _lanternCanvas.SetActive(true);
+            lantern.SetActive(false);
+            _lanternCanvas.SetActive(false);
             SetFlashlightLightActive(true);
         }
 

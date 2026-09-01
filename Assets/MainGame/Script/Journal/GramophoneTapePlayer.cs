@@ -74,8 +74,6 @@ namespace FpsHorrorKit
             if (activateCuasoOnPlay)
                 ResolveCuasoObject()?.SetActive(true);
 
-            DoorSystem.LockDoorsMarkedForGramophoneTape();
-
             audioSource.Stop();
             audioSource.clip = tapeClip;
             audioSource.loop = false;
@@ -126,6 +124,8 @@ namespace FpsHorrorKit
                 AudioManager.Instance?.ClearBackgroundDuck();
                 duckedBackground = false;
             }
+
+            DoorSystem.CloseDoorsMarkedForGramophoneTape();
 
             if (notifyFinished)
                 TapeFinished?.Invoke();

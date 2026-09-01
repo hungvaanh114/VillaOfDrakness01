@@ -53,6 +53,28 @@ namespace FpsHorrorKit
             return true;
         }
 
+        public void ResetCollectedSilently()
+        {
+            collected.Clear();
+            MusicSheetCompleted = false;
+        }
+
+        public void RestoreAllCollectedSilently()
+        {
+            foreach (var sheet in sheets)
+            {
+                if (sheet == null || string.IsNullOrWhiteSpace(sheet.musicSheetID))
+                    continue;
+
+                collected.Add(sheet.musicSheetID);
+                OnMusicSheetCollected?.Invoke(sheet);
+            }
+
+            MusicSheetCompleted = CollectedMusicSheetCount >= requiredMusicSheetCount;
+            if (MusicSheetCompleted)
+                OnMusicSheetCompleted?.Invoke();
+        }
+
         public bool IsCollected(MusicSheetData sheet)
         {
             return sheet != null && collected.Contains(sheet.musicSheetID);

@@ -35,7 +35,10 @@ public sealed class ChapterOneStoryFlow : MonoBehaviour
     [SerializeField] private bool allowSkipGramophoneCutscene = true;
     [SerializeField, Min(0f)] private float gramophoneLookAtHeight = 0.75f;
     [SerializeField, Min(0.1f)] private float gramophoneTurnSpeed = 540f;
+    [SerializeField, Min(0f)] private float gramophoneSkipAvailableDelay = 3f;
     [SerializeField, Min(0.2f)] private float skipPromptRefreshInterval = 1.2f;
+    [SerializeField] private bool debugSpaceSpamCutscene = true;
+    [SerializeField, Min(0.05f)] private float debugMoveLogInterval = 0.35f;
 
     [Header("Stair Encounter Cutscene")]
     [SerializeField] private Transform stairMonsterCutscenePoint;
@@ -47,12 +50,15 @@ public sealed class ChapterOneStoryFlow : MonoBehaviour
     [SerializeField, Min(0.1f)] private float stairCutsceneMoveSpeed = 3.2f;
     [SerializeField, Min(0.1f)] private float stairCutsceneTurnSpeed = 540f;
     [SerializeField, Min(0.05f)] private float stairCutsceneArriveDistance = 0.22f;
-    [SerializeField, Min(0f)] private float stairCutsceneLookHoldTime = 0.5f;
+    [SerializeField, Min(0f)] private float stairCutsceneLookHoldTime = 1f;
     [SerializeField] private Vector3 stairCutsceneCameraOffset = new(0.55f, 2.05f, -3.25f);
     [SerializeField, Min(0.05f)] private float stairCutsceneCameraSmoothTime = 0.18f;
-    [SerializeField, Min(0.1f)] private float stairMonsterScriptedSpeed = 0.9f;
-    [SerializeField, Min(0.5f)] private float stairMonsterScriptedWanderRadius = 3f;
-    [SerializeField, Min(0f)] private float stairMonsterFollowDelayAfterVoice = 6f;
+    [SerializeField, Min(0f)] private int stairMonsterFlickerCount = 2;
+    [SerializeField, Min(0.02f)] private float stairMonsterFlickerInterval = 0.08f;
+    [SerializeField, Min(0f)] private float stairMonsterTeleportDelay = 0f;
+    [SerializeField, Min(0.35f)] private float stairMonsterCameraTeleportDistance = 1.1f;
+    [SerializeField, Min(0f)] private float stairMonsterCameraHoldTime = 0.5f;
+    [SerializeField, Min(0f)] private float stairMonsterHiddenBeforeChase = 10f;
     [SerializeField, Min(0.1f)] private float stairCutsceneNavMeshSampleRadius = 2.5f;
     [SerializeField, Min(1f)] private float stairCutsceneMaxMoveTime = 14f;
 
@@ -91,6 +97,9 @@ public sealed class ChapterOneStoryFlow : MonoBehaviour
     private Vector3 stairCutsceneCameraVelocity;
     private NavMeshPath stairCutscenePath;
     private bool gramophoneSkipRequested;
+    private bool blockSpaceUntilPostGramophoneCutsceneEnds;
+    private int debugGramophoneSpacePressCount;
+    private float nextStairMoveDebugLogTime;
 
     private void Awake()
     {
@@ -197,27 +206,43 @@ public sealed class ChapterOneStoryFlow : MonoBehaviour
             changedRaycast = true;
         }
 
-        float nextPromptTime = 0f;
+        bool canSkipGramophone = allowSkipGramophoneCutscene;
         gramophoneSkipRequested = false;
-        blockGramophoneSkipUntil = Time.unscaledTime + 0.25f;
+        debugGramophoneSpacePressCount = 0;
+        float skipAllowedTime = Time.unscaledTime + gramophoneSkipAvailableDelay;
+        float nextPromptTime = skipAllowedTime;
+        blockGramophoneSkipUntil = skipAllowedTime;
+        bool skippedWithSpace = false;
+        LogSpaceSpamDebug(
+            $"GramophoneWatchStart skipEnabled={canSkipGramophone} skipAllowedAt={skipAllowedTime:F2} delay={gramophoneSkipAvailableDelay:F2} tapePlaying={IsGramophoneTapePlaying()} player={FormatPlayerDebug(playerController)}");
         while (gramophoneTapePlayer != null && gramophoneTapePlayer.IsPlayingTape)
         {
             RotatePlayerTowardGramophone(playerController);
 
             if (!Application.isFocused)
             {
-                blockGramophoneSkipUntil = Time.unscaledTime + 0.5f;
+                blockGramophoneSkipUntil = Mathf.Max(blockGramophoneSkipUntil, Time.unscaledTime + 0.5f);
+                nextPromptTime = Mathf.Max(nextPromptTime, blockGramophoneSkipUntil);
                 yield return null;
                 continue;
             }
 
-            if (allowSkipGramophoneCutscene && Time.time >= nextPromptTime)
+            if (Keyboard.current != null && Keyboard.current.spaceKey.wasPressedThisFrame)
             {
-                FpsHorrorKit.InteractMessageScript.Instance?.ShowMessage("Đang nghe gramophone... nhấn SPACE để bỏ qua.", skipPromptRefreshInterval + 0.15f);
-                nextPromptTime = Time.time + skipPromptRefreshInterval;
+                debugGramophoneSpacePressCount++;
+                LogSpaceSpamDebug(
+                    $"SpacePressedDuringGramophone count={debugGramophoneSpacePressCount} time={Time.unscaledTime:F2} skipEnabled={canSkipGramophone} canSkipNow={canSkipGramophone && Time.unscaledTime >= blockGramophoneSkipUntil} blockUntil={blockGramophoneSkipUntil:F2} tapePlaying={IsGramophoneTapePlaying()} player={FormatPlayerDebug(playerController)}");
             }
 
-            if (allowSkipGramophoneCutscene
+            if (canSkipGramophone
+                && Time.unscaledTime >= blockGramophoneSkipUntil
+                && Time.unscaledTime >= nextPromptTime)
+            {
+                FpsHorrorKit.InteractMessageScript.Instance?.ShowMessage("Đang nghe gramophone... nhấn SPACE để bỏ qua.", skipPromptRefreshInterval + 0.15f);
+                nextPromptTime = Time.unscaledTime + skipPromptRefreshInterval;
+            }
+
+            if (canSkipGramophone
                 && !gramophoneSkipRequested
                 && Application.isFocused
                 && Time.unscaledTime >= blockGramophoneSkipUntil
@@ -225,16 +250,44 @@ public sealed class ChapterOneStoryFlow : MonoBehaviour
                 && Keyboard.current.spaceKey.wasPressedThisFrame)
             {
                 gramophoneSkipRequested = true;
+                skippedWithSpace = true;
+                SetPostGramophoneSpaceBlocked(true);
                 FpsHorrorKit.FpsAssetsInputs.Instance?.ClearGameplayInput();
+                LogSpaceSpamDebug($"GramophoneSkipAccepted count={debugGramophoneSpacePressCount} time={Time.unscaledTime:F2}");
                 gramophoneTapePlayer.SkipTape();
                 break;
             }
+
+            if (Keyboard.current != null && Keyboard.current.spaceKey.isPressed)
+                FpsHorrorKit.FpsAssetsInputs.Instance?.ClearGameplayInput();
 
             yield return null;
         }
 
         if (changedRaycast && FpsHorrorKit.PlayerInteract.Instance != null)
             FpsHorrorKit.PlayerInteract.Instance.sendRaycast = previousRaycast;
+
+        if (skippedWithSpace)
+        {
+            LogSpaceSpamDebug("WaitingForSpaceReleaseAfterGramophoneSkip");
+            yield return WaitForSpaceReleased();
+        }
+
+        playerController?.StopCutSceneMovement();
+        FpsHorrorKit.FpsAssetsInputs.Instance?.ClearGameplayInput();
+        LogSpaceSpamDebug(
+            $"GramophoneWatchEnd skipped={skippedWithSpace} tapePlaying={IsGramophoneTapePlaying()} player={FormatPlayerDebug(playerController)}");
+    }
+
+    private static IEnumerator WaitForSpaceReleased()
+    {
+        var keyboard = Keyboard.current;
+        while (keyboard != null && keyboard.spaceKey.isPressed)
+        {
+            FpsHorrorKit.FpsAssetsInputs.Instance?.ClearGameplayInput();
+            yield return null;
+            keyboard = Keyboard.current;
+        }
 
         FpsHorrorKit.FpsAssetsInputs.Instance?.ClearGameplayInput();
     }
@@ -262,10 +315,13 @@ public sealed class ChapterOneStoryFlow : MonoBehaviour
 
     private void QueueHuntAfterGramophone()
     {
+        LogSpaceSpamDebug(
+            $"QueueHuntAfterGramophone requested huntStarted={huntStarted} huntStartQueued={huntStartQueued} spacePressed={IsSpacePressed()}");
         if (huntStarted || huntStartQueued)
             return;
 
         huntStartQueued = true;
+        LogSpaceSpamDebug("QueueHuntAfterGramophone accepted");
         StartCoroutine(StartPostGramophoneStairEncounterRoutine());
     }
 
@@ -277,6 +333,10 @@ public sealed class ChapterOneStoryFlow : MonoBehaviour
 
         ResolveReferences();
         ResolveStairEncounterPoints();
+        LogSpaceSpamDebug(
+            $"PostGramophoneStairStart monsterMarker={FormatTransformDebug(stairMonsterCutscenePoint)} playerMarker={FormatTransformDebug(stairPlayerCutscenePoint)} spacePressed={IsSpacePressed()}");
+        SetPostGramophoneSpaceBlocked(true);
+        SuppressBlockedGramophoneSpaceInput();
         AudioManager.Instance?.BlockGameplayAmbience(postGramophoneSilence + 30f);
 
         var controller = GameController.Instance;
@@ -307,20 +367,30 @@ public sealed class ChapterOneStoryFlow : MonoBehaviour
 
         monster.DisableHunt(false);
         monster.TeleportTo(stairMonsterCutscenePoint);
-        monster.SetMeshVisible(true);
+        monster.SetMeshVisible(false);
 
         if (ShouldAbortStairEncounter())
+        {
+            huntStartQueued = false;
+            RestoreStairEncounterControl(controller, playerController, changedRaycast, previousRaycast);
             yield break;
+        }
 
         if (playerController != null && openedDoor != null)
             yield return RotatePlayerTowardTarget(playerController, openedDoor.position, 0.2f);
 
+        SuppressBlockedGramophoneSpaceInput();
         BeginStairCinematicCamera(playerController, playerController.transform.position + Vector3.up * 1.35f);
 
         if (playerController != null && stairPlayerCutscenePoint != null)
             yield return MovePlayerToCutscenePoint(playerController, stairPlayerCutscenePoint);
 
+        SuppressBlockedGramophoneSpaceInput();
         playerController.StopCutSceneMovement();
+        FpsHorrorKit.DoorSystem.CloseAllDoorsFromStory();
+
+        if (monster != null)
+            monster.SetMeshVisible(true);
 
         if (playerController != null && monster != null)
             yield return RotatePlayerTowardTarget(playerController, GetMonsterLookTarget(), stairCutsceneLookHoldTime);
@@ -328,15 +398,26 @@ public sealed class ChapterOneStoryFlow : MonoBehaviour
         yield return WaitUntilMonsterVisibleInCutscene(playerController);
 
         if (ShouldAbortStairEncounter())
+        {
+            huntStartQueued = false;
+            RestoreStairEncounterControl(controller, playerController, changedRaycast, previousRaycast);
             yield break;
+        }
 
         monsterSeenBeforeCloset = true;
-        monster.PlayScriptedApproachThenWander(
-            stairPlayerCutscenePoint,
-            stairMonsterScriptedSpeed,
-            stairMonsterScriptedWanderRadius);
-
+        Camera scareCamera = stairCutsceneCamera != null ? stairCutsceneCamera : Camera.main;
         RestoreStairEncounterControl(controller, playerController, changedRaycast, previousRaycast);
+
+        yield return monster.PlayCutsceneBlinkTeleportScare(
+            scareCamera != null ? scareCamera : Camera.main,
+            stairMonsterCutscenePoint,
+            stairMonsterFlickerCount,
+            stairMonsterFlickerInterval,
+            stairMonsterTeleportDelay,
+            stairMonsterCameraTeleportDistance,
+            stairMonsterCameraHoldTime,
+            0f);
+
         AudioManager.Instance?.PlayStairEncounterThreatOnce(10f);
 
         float reactionLength = AudioManager.Instance != null ? AudioManager.Instance.PlayHideVoice(1) : 0f;
@@ -346,14 +427,31 @@ public sealed class ChapterOneStoryFlow : MonoBehaviour
             yield return new WaitForSeconds(reactionDuration);
 
         if (ShouldAbortStairEncounter())
+        {
+            huntStartQueued = false;
+            SetPostGramophoneSpaceBlocked(false);
             yield break;
+        }
 
-        AudioManager.Instance?.PlayMaVuDaiPatrol();
-        if (stairMonsterFollowDelayAfterVoice > 0f)
-            yield return new WaitForSeconds(stairMonsterFollowDelayAfterVoice);
+        float remainingHiddenTime = Mathf.Max(0f, stairMonsterHiddenBeforeChase - reactionDuration);
+        if (remainingHiddenTime > 0f)
+            yield return new WaitForSeconds(remainingHiddenTime);
 
         if (ShouldAbortStairEncounter())
+        {
+            huntStartQueued = false;
+            SetPostGramophoneSpaceBlocked(false);
             yield break;
+        }
+
+        AudioManager.Instance?.PlayMaVuDaiPatrol();
+
+        if (ShouldAbortStairEncounter())
+        {
+            huntStartQueued = false;
+            SetPostGramophoneSpaceBlocked(false);
+            yield break;
+        }
 
         huntStarted = true;
         huntStartQueued = false;
@@ -423,6 +521,9 @@ public sealed class ChapterOneStoryFlow : MonoBehaviour
 
         if (restoreRaycast && FpsHorrorKit.PlayerInteract.Instance != null)
             FpsHorrorKit.PlayerInteract.Instance.sendRaycast = raycastValue;
+
+        SetPostGramophoneSpaceBlocked(false);
+        FpsHorrorKit.FpsAssetsInputs.Instance?.ClearGameplayInput();
     }
 
     private void EndStairCinematicCamera()
@@ -485,6 +586,7 @@ public sealed class ChapterOneStoryFlow : MonoBehaviour
     {
         while (!IsMonsterVisibleToCamera(stairCutsceneCamera))
         {
+            SuppressBlockedGramophoneSpaceInput();
             Vector3 lookTarget = GetMonsterLookTarget();
             playerController.RotateCutSceneTowards(lookTarget - playerController.transform.position, stairCutsceneTurnSpeed);
             playerController.StopCutSceneMovement();
@@ -514,7 +616,7 @@ public sealed class ChapterOneStoryFlow : MonoBehaviour
             {
                 var doorsToLock = FindDoorsByExactName(studyDoorsToLockNames[i]);
                 for (int doorIndex = 0; doorIndex < doorsToLock.Count; doorIndex++)
-                    doorsToLock[doorIndex]?.CloseAndLockFromStory();
+                    doorsToLock[doorIndex]?.CloseFromStory();
             }
         }
 
@@ -545,6 +647,7 @@ public sealed class ChapterOneStoryFlow : MonoBehaviour
 
         while (elapsed < timeout)
         {
+            SuppressBlockedGramophoneSpaceInput();
             Vector3 direction = targetPosition - playerController.transform.position;
             direction.y = 0f;
             bool aligned = playerController.RotateCutSceneTowards(direction, stairCutsceneTurnSpeed);
@@ -573,11 +676,15 @@ public sealed class ChapterOneStoryFlow : MonoBehaviour
         int cornerIndex = 1;
         float nextPathRefreshTime = 0f;
         float elapsed = 0f;
+        int pathFailureCount = 0;
         Vector3[] corners = null;
         Vector3 moveGoal = ResolveStairCutsceneMoveGoal(point.position);
+        LogSpaceSpamDebug(
+            $"MoveToStairPointStart point={FormatTransformDebug(point)} goal={moveGoal} player={FormatPlayerDebug(playerController)}");
 
         while (HorizontalDistance(playerController.transform.position, moveGoal) > stairCutsceneArriveDistance)
         {
+            SuppressBlockedGramophoneSpaceInput();
             elapsed += Time.deltaTime;
             if (elapsed >= stairCutsceneMaxMoveTime)
             {
@@ -585,25 +692,27 @@ public sealed class ChapterOneStoryFlow : MonoBehaviour
                 break;
             }
 
-            if (corners == null || cornerIndex >= corners.Length || Time.time >= nextPathRefreshTime)
+            if (corners == null || (corners.Length > 0 && cornerIndex >= corners.Length) || Time.time >= nextPathRefreshTime)
             {
                 moveGoal = ResolveStairCutsceneMoveGoal(point.position);
                 corners = BuildStairCutscenePath(playerController.transform.position, moveGoal);
                 cornerIndex = GetInitialStairPathCornerIndex(playerController.transform.position, corners);
+                pathFailureCount = corners == null || corners.Length == 0 ? pathFailureCount + 1 : 0;
                 nextPathRefreshTime = Time.time + 0.5f;
+                LogSpaceSpamDebug(
+                    $"PathRefresh failures={pathFailureCount} corners={(corners != null ? corners.Length : -1)} cornerIndex={cornerIndex} playerPos={playerController.transform.position} moveGoal={moveGoal} marker={point.position}");
             }
 
-            if (corners.Length == 0)
+            if (corners == null || corners.Length == 0)
             {
-                if (TryMoveDirectStairCutsceneFallback(playerController, moveGoal))
-                {
-                    UpdateStairCinematicCamera(playerController, playerController.transform.position + Vector3.up * 1.35f);
-                    yield return null;
-                    continue;
-                }
-
                 playerController.StopCutSceneMovement();
                 UpdateStairCinematicCamera(playerController, point.position + Vector3.up * 1.35f);
+
+                if (pathFailureCount == 2)
+                {
+                    Debug.LogWarning($"Stair encounter cutscene could not build a complete NavMesh path to {point.name}; waiting instead of snapping player to the cutscene marker.");
+                }
+
                 yield return null;
                 continue;
             }
@@ -624,10 +733,18 @@ public sealed class ChapterOneStoryFlow : MonoBehaviour
 
             playerController.MoveCutScene(offset.normalized, stairCutsceneMoveSpeed, true, stairCutsceneTurnSpeed);
             UpdateStairCinematicCamera(playerController, playerController.transform.position + Vector3.up * 1.35f);
+            if (Time.unscaledTime >= nextStairMoveDebugLogTime)
+            {
+                nextStairMoveDebugLogTime = Time.unscaledTime + debugMoveLogInterval;
+                LogSpaceSpamDebug(
+                    $"MoveStep target={target} offset={offset} dist={offset.magnitude:F2} player={FormatPlayerDebug(playerController)}");
+            }
             yield return null;
         }
 
         playerController.StopCutSceneMovement();
+        LogSpaceSpamDebug(
+            $"MoveToStairPointEnd player={FormatPlayerDebug(playerController)} goal={moveGoal} marker={point.position}");
         UpdateStairCinematicCamera(playerController, GetMonsterLookTarget(), true);
     }
 
@@ -641,6 +758,7 @@ public sealed class ChapterOneStoryFlow : MonoBehaviour
             return nearestGoal;
 
         Debug.LogWarning("Cannot find a NavMesh point near the stair cutscene player marker; falling back to marker position.");
+        LogSpaceSpamDebug($"ResolveMoveGoalFailed desired={desiredGoal} sampleRadius={goalSampleRadius:F2}");
         return desiredGoal;
     }
 
@@ -663,12 +781,21 @@ public sealed class ChapterOneStoryFlow : MonoBehaviour
     {
         stairCutscenePath ??= new NavMeshPath();
 
-        bool sampledStart = SampleStairCutsceneNavMesh(from, out var startHit, stairCutsceneNavMeshSampleRadius);
+        float startSampleRadius = Mathf.Max(stairCutsceneNavMeshSampleRadius, stairCutsceneArriveDistance * 8f, 1.5f);
+        bool sampledStart = SampleStairCutsceneNavMesh(from, out var startHit, startSampleRadius);
         bool sampledEnd = SampleStairCutsceneNavMesh(to, out var endHit, stairCutsceneNavMeshSampleRadius * 6f);
+        if (sampledStart && HorizontalDistance(from, startHit.position) > startSampleRadius)
+        {
+            LogSpaceSpamDebug($"BuildPathRejected start sample is too far from player startDistance={HorizontalDistance(from, startHit.position):F2}");
+            return BuildDirectStairCutsceneFallback(from, to, "start sample too far");
+        }
+
+        LogSpaceSpamDebug(
+            $"BuildPath from={from} to={to} sampledStart={sampledStart} sampledEnd={sampledEnd} startHit={(sampledStart ? startHit.position.ToString() : "none")} endHit={(sampledEnd ? endHit.position.ToString() : "none")}");
         if (!sampledEnd)
         {
             if (!SampleNearestStairNavMeshPoint(to, out var nearestEnd))
-                return IsDirectStairCutsceneSegmentClear(from, to) ? new[] { from, to } : System.Array.Empty<Vector3>();
+                return BuildDirectStairCutsceneFallback(from, to, "end not on NavMesh");
 
             endHit.position = nearestEnd;
         }
@@ -676,38 +803,86 @@ public sealed class ChapterOneStoryFlow : MonoBehaviour
         if (!sampledStart)
         {
             if (!SampleNearestStairNavMeshPoint(from, out var nearestVisibleNavMeshPoint))
-                return IsDirectStairCutsceneSegmentClear(from, endHit.position)
-                    ? new[] { from, endHit.position }
-                    : System.Array.Empty<Vector3>();
+                return BuildDirectStairCutsceneFallback(from, endHit.position, "start not on NavMesh");
 
-            return IsDirectStairCutsceneSegmentClear(from, nearestVisibleNavMeshPoint)
-                ? new[] { from, nearestVisibleNavMeshPoint }
-                : System.Array.Empty<Vector3>();
+            return new[] { from, nearestVisibleNavMeshPoint, endHit.position };
         }
 
         if (NavMesh.CalculatePath(startHit.position, endHit.position, NavMesh.AllAreas, stairCutscenePath)
+            && stairCutscenePath.status == NavMeshPathStatus.PathComplete
             && stairCutscenePath.corners.Length >= 2)
         {
+            LogSpaceSpamDebug($"BuildPathSuccess status={stairCutscenePath.status} corners={stairCutscenePath.corners.Length}");
+            if (HorizontalDistance(from, startHit.position) > stairCutsceneArriveDistance)
+            {
+                var cornersWithStart = new Vector3[stairCutscenePath.corners.Length + 1];
+                cornersWithStart[0] = from;
+                System.Array.Copy(stairCutscenePath.corners, 0, cornersWithStart, 1, stairCutscenePath.corners.Length);
+                return cornersWithStart;
+            }
+
             return stairCutscenePath.corners;
         }
 
-        return IsDirectStairCutsceneSegmentClear(from, endHit.position)
-            ? new[] { from, endHit.position }
-            : System.Array.Empty<Vector3>();
+        LogSpaceSpamDebug($"BuildPathFailed status={(stairCutscenePath != null ? stairCutscenePath.status.ToString() : "null")}");
+        return BuildDirectStairCutsceneFallback(from, endHit.position, "NavMesh path failed");
     }
 
-    private bool TryMoveDirectStairCutsceneFallback(FpsHorrorKit.FpsController playerController, Vector3 target)
+    private Vector3[] BuildDirectStairCutsceneFallback(Vector3 from, Vector3 to, string reason)
     {
-        Vector3 offset = target - playerController.transform.position;
-        offset.y = 0f;
-        if (offset.magnitude <= stairCutsceneArriveDistance)
-            return false;
+        LogSpaceSpamDebug($"BuildPathFallback direct movement accepted reason={reason} from={from} to={to}");
+        return new[] { from, to };
+    }
 
-        if (!IsDirectStairCutsceneSegmentClear(playerController.transform.position, target))
-            return false;
+    private bool IsGramophoneTapePlaying()
+    {
+        return gramophoneTapePlayer != null && gramophoneTapePlayer.IsPlayingTape;
+    }
 
-        playerController.MoveCutScene(offset.normalized, stairCutsceneMoveSpeed, true, stairCutsceneTurnSpeed);
-        return true;
+    private void SuppressBlockedGramophoneSpaceInput()
+    {
+        if (!blockSpaceUntilPostGramophoneCutsceneEnds)
+            return;
+
+        if (Keyboard.current != null && Keyboard.current.spaceKey.wasPressedThisFrame)
+            LogSpaceSpamDebug("SpaceIgnoredAfterGramophoneSkip");
+
+        FpsHorrorKit.FpsAssetsInputs.Instance?.ClearGameplayInput();
+    }
+
+    private void SetPostGramophoneSpaceBlocked(bool blocked)
+    {
+        blockSpaceUntilPostGramophoneCutsceneEnds = blocked;
+        CutSceneManager.SuppressSpaceSkipInput = blocked;
+        FpsHorrorKit.FpsAssetsInputs.Instance?.ClearGameplayInput();
+    }
+
+    private static bool IsSpacePressed()
+    {
+        return Keyboard.current != null && Keyboard.current.spaceKey.isPressed;
+    }
+
+    private void LogSpaceSpamDebug(string message)
+    {
+        if (!debugSpaceSpamCutscene)
+            return;
+
+        Debug.Log($"[SpaceSpamDebug] {message}");
+    }
+
+    private static string FormatTransformDebug(Transform target)
+    {
+        return target != null
+            ? $"{target.name} pos={target.position} rot={target.rotation.eulerAngles}"
+            : "null";
+    }
+
+    private static string FormatPlayerDebug(FpsHorrorKit.FpsController playerController)
+    {
+        if (playerController == null)
+            return "null";
+
+        return $"pos={playerController.transform.position} rot={playerController.transform.rotation.eulerAngles} cutscene={playerController.isCutScene} interacting={playerController.isInteracting}";
     }
 
     private static bool IsDirectStairCutsceneSegmentClear(Vector3 from, Vector3 to)
@@ -881,7 +1056,7 @@ public sealed class ChapterOneStoryFlow : MonoBehaviour
         if (ShouldAbortClosetObjective())
             yield break;
 
-        OpenEscapeRouteDoors();
+        UnlockEscapeRouteDoors();
         closet.SetExitAllowed(true);
         monster?.DisableHunt(true);
         ResolveReferences();
@@ -955,12 +1130,12 @@ public sealed class ChapterOneStoryFlow : MonoBehaviour
         yield return new WaitForSeconds(duration);
     }
 
-    private void OpenEscapeRouteDoors()
+    private void UnlockEscapeRouteDoors()
     {
         if (doorsToOpenAfterCloset != null)
         {
             for (int i = 0; i < doorsToOpenAfterCloset.Length; i++)
-                doorsToOpenAfterCloset[i]?.UnlockAndOpenFromStory();
+                doorsToOpenAfterCloset[i]?.UnlockFromStory();
         }
 
         var doors = FindObjectsByType<FpsHorrorKit.DoorSystem>(FindObjectsInactive.Exclude, FindObjectsSortMode.None);
@@ -970,7 +1145,7 @@ public sealed class ChapterOneStoryFlow : MonoBehaviour
                 continue;
 
             if (door.openWhenPianoCompleted || door.closeAndLockWhenGramophoneTapePlays || ShouldOpenRouteDoor(door.name))
-                door.UnlockAndOpenFromStory();
+                door.UnlockFromStory();
         }
     }
 

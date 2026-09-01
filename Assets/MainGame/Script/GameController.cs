@@ -3,7 +3,6 @@ using UnityEngine.InputSystem;
 using UnityEngine.SceneManagement;
 using UnityEngine.Events;
 using UnityEngine.UI;
-using TMPro;
 using FpsHorrorKit;
 
 public class GameController : MonoBehaviour
@@ -55,6 +54,7 @@ public class GameController : MonoBehaviour
     [Header("Death")]
     public GameObject deathUI;
     public float deathUIShowDelay = 1.5f;
+    [SerializeField, Min(0f)] private float jumpscareAutoRespawnDelay = 2.5f;
 
     [Header("Ending")]
     public GameObject endingUI;
@@ -68,6 +68,8 @@ public class GameController : MonoBehaviour
     private GameState previousGameState;
     private bool isPaused = false;
     private bool isDead = false;
+    private bool isJumpscareRespawnPending;
+    private bool endingDeathScreenPresentation;
     private bool cutsceneFlashlightForced;
 
     private void Awake()
@@ -88,8 +90,14 @@ public class GameController : MonoBehaviour
         ResolveUiReferences();
         ResolveDeathUI();
 
-        if (playIntroOnStart)
+        var checkpointManager = ChapterOneCheckpointManager.Instance
+            ?? FindFirstObjectByType<ChapterOneCheckpointManager>(FindObjectsInactive.Include);
+        bool restoredCheckpoint = checkpointManager != null && checkpointManager.ApplySavedState(this);
+
+        if (playIntroOnStart && !restoredCheckpoint && !ChapterOneCheckpointManager.HasCompletedIntroCutscenes)
             ResetForIntroStart();
+        else if (ChapterOneCheckpointManager.HasCompletedIntroCutscenes)
+            playIntroOnStart = false;
 
         EnsureGameUiCanRender();
         if (gameUI != null) gameUI.SetActive(true);
@@ -101,7 +109,10 @@ public class GameController : MonoBehaviour
         ApplyChapterAudio();
         SetGameState(currentGameState);
 
-        bool shouldPlayIntro = playIntroOnStart && currentChapterPhase == ChapterPhase.Intro && cutSceneManager != null;
+        bool shouldPlayIntro = playIntroOnStart
+            && !ChapterOneCheckpointManager.HasCompletedIntroCutscenes
+            && currentChapterPhase == ChapterPhase.Intro
+            && cutSceneManager != null;
         if (!shouldPlayIntro)
             HideStartupNarration();
 
@@ -234,7 +245,10 @@ public class GameController : MonoBehaviour
         playerController.isInteracting = !canControl;
 
         if (!canControl)
+        {
+            playerController.ForceIdleState();
             FpsAssetsInputs.Instance?.ClearGameplayInput();
+        }
     }
 
     public bool CanUseGameplayInput()
@@ -438,23 +452,124 @@ public class GameController : MonoBehaviour
 
     public void TriggerDeathWithUIDelay(bool playJumpscareAudio, float uiShowDelay)
     {
-        if (isDead)
+        if (isDead || isJumpscareRespawnPending)
             return;
 
         isDead = true;
         AudioManager.Instance?.StopMonsterVoice();
+        float deathSequenceDelay = Mathf.Max(0f, uiShowDelay);
         if (playJumpscareAudio)
-            AudioManager.Instance?.PlayWellJumpscare();
-        AudioManager.Instance?.PlayDeathVoice(3);
-        AudioManager.Instance?.PlayDeathMusic();
+        {
+            float jumpscareDuration = AudioManager.Instance?.PlayWellJumpscare() ?? 0f;
+            if (jumpscareDuration > 0f)
+                deathSequenceDelay = jumpscareDuration;
+        }
         SetGameState(GameState.Dead);
         onDeath?.Invoke();
 
+        CancelInvoke(nameof(FinishDeathSequence));
         CancelInvoke(nameof(ShowDeathUI));
-        if (uiShowDelay <= 0f)
-            ShowDeathUI();
+        if (deathSequenceDelay <= 0f)
+            FinishDeathSequence();
         else
-            Invoke(nameof(ShowDeathUI), uiShowDelay);
+            Invoke(nameof(FinishDeathSequence), deathSequenceDelay);
+    }
+
+    public void TriggerDeathAfterExternalJumpscare(float remainingJumpscareSeconds)
+    {
+        TriggerDeathWithUIDelay(false, Mathf.Max(0f, remainingJumpscareSeconds));
+    }
+
+    public void TriggerJumpscareCheckpointRespawn()
+    {
+        TriggerJumpscareCheckpointRespawn(jumpscareAutoRespawnDelay, true);
+    }
+
+    public void TriggerJumpscareCheckpointRespawn(bool playDeathVoiceImmediately, int deathVoiceIndex = 3)
+    {
+        TriggerJumpscareCheckpointRespawn(jumpscareAutoRespawnDelay, playDeathVoiceImmediately, deathVoiceIndex);
+    }
+
+    public void TriggerJumpscareCheckpointRespawn(float delaySeconds)
+    {
+        TriggerJumpscareCheckpointRespawn(delaySeconds, true);
+    }
+
+    public void TriggerJumpscareCheckpointRespawn(float delaySeconds, bool playDeathVoiceImmediately, int deathVoiceIndex = 3)
+    {
+        if (isJumpscareRespawnPending)
+            return;
+
+        isJumpscareRespawnPending = true;
+        isDead = true;
+        Time.timeScale = 1f;
+
+        AudioManager.Instance?.StopMonsterVoice();
+        if (playDeathVoiceImmediately)
+            AudioManager.Instance?.PlayDeathVoice(deathVoiceIndex);
+
+        ResolveUiReferences();
+        ResolveDeathUI();
+        HideSceneObject("InventoryOverlay");
+        HideSceneObject("PianoPuzzleOverlay");
+
+        if (gameUI != null)
+            gameUI.SetActive(false);
+        if (pauseUI != null)
+            pauseUI.SetActive(false);
+        if (settingsUI != null)
+            settingsUI.SetActive(false);
+        if (deathUI != null)
+            deathUI.SetActive(false);
+
+        HideFirstPersonFlashlightViewModel();
+        SetGameState(GameState.Dead);
+        SetCursor(false);
+
+        CancelInvoke(nameof(FinishDeathSequence));
+        CancelInvoke(nameof(ShowDeathUI));
+        CancelInvoke(nameof(RestartGame));
+        Invoke(nameof(RestartGame), Mathf.Max(0f, delaySeconds));
+    }
+
+    public void ShowEndingDeathScreenPresentation()
+    {
+        isJumpscareRespawnPending = false;
+        endingDeathScreenPresentation = true;
+        isDead = true;
+        Time.timeScale = 1f;
+
+        ResolveUiReferences();
+        ResolveDeathUI();
+        HideSceneObject("InventoryOverlay");
+        HideSceneObject("PianoPuzzleOverlay");
+        HideSceneObject("DebtBookOverlay");
+
+        if (gameUI != null)
+            gameUI.SetActive(false);
+        if (pauseUI != null)
+            pauseUI.SetActive(false);
+        if (settingsUI != null)
+            settingsUI.SetActive(false);
+
+        SetGameState(GameState.Dead);
+        ShowDeathUI();
+        SetCursor(false);
+    }
+
+    public void HideEndingDeathScreenPresentation()
+    {
+        endingDeathScreenPresentation = false;
+        if (deathUI != null)
+            deathUI.SetActive(false);
+        SetCursor(false);
+    }
+
+    private void FinishDeathSequence()
+    {
+        AudioManager.Instance?.PlayDeathVoice(3);
+        AudioManager.Instance?.PlayDeathMusic();
+        ShowDeathUI();
     }
 
     private void ShowDeathUI()
@@ -470,109 +585,9 @@ public class GameController : MonoBehaviour
             return;
 
         deathUI = FindSceneGameObject("DeathUI");
-        if (deathUI == null)
-            deathUI = CreateRuntimeDeathUI();
 
         if (deathUI != null)
             deathUI.SetActive(false);
-    }
-
-    private GameObject CreateRuntimeDeathUI()
-    {
-        var canvasObject = new GameObject("DeathUI", typeof(RectTransform), typeof(Canvas), typeof(CanvasScaler), typeof(GraphicRaycaster));
-        var canvas = canvasObject.GetComponent<Canvas>();
-        canvas.renderMode = RenderMode.ScreenSpaceOverlay;
-        canvas.sortingOrder = 500;
-
-        var scaler = canvasObject.GetComponent<CanvasScaler>();
-        scaler.uiScaleMode = CanvasScaler.ScaleMode.ScaleWithScreenSize;
-        scaler.referenceResolution = new Vector2(1920f, 1080f);
-        scaler.screenMatchMode = CanvasScaler.ScreenMatchMode.MatchWidthOrHeight;
-        scaler.matchWidthOrHeight = 0.5f;
-
-        var background = CreateUiImage("DeathBackground", canvasObject.transform, new Color(0.005f, 0.015f, 0.03f, 0.96f));
-        StretchFullScreen(background.rectTransform);
-
-        var title = CreateUiText("DeathTitle", canvasObject.transform, "BẠN ĐÃ CHẾT", 76, TextAlignmentOptions.Center);
-        title.rectTransform.anchorMin = new Vector2(0.1f, 0.58f);
-        title.rectTransform.anchorMax = new Vector2(0.9f, 0.78f);
-        title.rectTransform.offsetMin = Vector2.zero;
-        title.rectTransform.offsetMax = Vector2.zero;
-        title.color = new Color(0.78f, 0.89f, 1f, 1f);
-        title.fontStyle = FontStyles.Bold;
-        title.outlineWidth = 0.18f;
-        title.outlineColor = new Color(0.02f, 0.08f, 0.14f, 1f);
-
-        var line = CreateUiImage("TitleLine", canvasObject.transform, new Color(0.54f, 0.75f, 0.9f, 0.85f));
-        line.rectTransform.anchorMin = new Vector2(0.39f, 0.555f);
-        line.rectTransform.anchorMax = new Vector2(0.61f, 0.56f);
-        line.rectTransform.offsetMin = Vector2.zero;
-        line.rectTransform.offsetMax = Vector2.zero;
-
-        var restartButton = CreateDeathButton(canvasObject.transform, "Chơi lại", 0.42f, 0.43f);
-        restartButton.onClick.AddListener(RestartGame);
-        var menuButton = CreateDeathButton(canvasObject.transform, "Về menu chính", 0.42f, 0.32f);
-        menuButton.onClick.AddListener(LoadMainMenu);
-
-        return canvasObject;
-    }
-
-    private static Image CreateUiImage(string objectName, Transform parent, Color color)
-    {
-        var objectRoot = new GameObject(objectName, typeof(RectTransform), typeof(CanvasRenderer), typeof(Image));
-        objectRoot.transform.SetParent(parent, false);
-        var image = objectRoot.GetComponent<Image>();
-        image.color = color;
-        return image;
-    }
-
-    private static TextMeshProUGUI CreateUiText(string objectName, Transform parent, string text, int fontSize, TextAlignmentOptions alignment)
-    {
-        var objectRoot = new GameObject(objectName, typeof(RectTransform), typeof(CanvasRenderer), typeof(TextMeshProUGUI));
-        objectRoot.transform.SetParent(parent, false);
-        var label = objectRoot.GetComponent<TextMeshProUGUI>();
-        label.text = text;
-        label.fontSize = fontSize;
-        label.alignment = alignment;
-        label.enableWordWrapping = false;
-        label.raycastTarget = false;
-        return label;
-    }
-
-    private static Button CreateDeathButton(Transform parent, string labelText, float centerX, float centerY)
-    {
-        var buttonImage = CreateUiImage(labelText + "Button", parent, new Color(0.015f, 0.06f, 0.1f, 0.94f));
-        var rect = buttonImage.rectTransform;
-        rect.anchorMin = new Vector2(centerX, centerY);
-        rect.anchorMax = new Vector2(centerX + 0.16f, centerY + 0.075f);
-        rect.offsetMin = Vector2.zero;
-        rect.offsetMax = Vector2.zero;
-
-        var button = buttonImage.gameObject.AddComponent<Button>();
-        button.targetGraphic = buttonImage;
-        var colors = button.colors;
-        colors.normalColor = new Color(0.015f, 0.06f, 0.1f, 0.94f);
-        colors.highlightedColor = new Color(0.06f, 0.2f, 0.3f, 1f);
-        colors.pressedColor = new Color(0.1f, 0.3f, 0.42f, 1f);
-        colors.selectedColor = colors.highlightedColor;
-        button.colors = colors;
-
-        var outline = buttonImage.gameObject.AddComponent<Outline>();
-        outline.effectColor = new Color(0.47f, 0.75f, 0.9f, 0.8f);
-        outline.effectDistance = new Vector2(2f, 2f);
-
-        var label = CreateUiText("Label", buttonImage.transform, labelText, 28, TextAlignmentOptions.Center);
-        StretchFullScreen(label.rectTransform);
-        label.color = new Color(0.83f, 0.92f, 1f, 1f);
-        return button;
-    }
-
-    private static void StretchFullScreen(RectTransform rectTransform)
-    {
-        rectTransform.anchorMin = Vector2.zero;
-        rectTransform.anchorMax = Vector2.one;
-        rectTransform.offsetMin = Vector2.zero;
-        rectTransform.offsetMax = Vector2.zero;
     }
 
     private static GameObject FindSceneGameObject(string objectName)
@@ -607,6 +622,9 @@ public class GameController : MonoBehaviour
     public void RestartGame()
     {
         Time.timeScale = 1f;
+        CancelInvoke(nameof(FinishDeathSequence));
+        CancelInvoke(nameof(ShowDeathUI));
+        CancelInvoke(nameof(RestartGame));
         SceneManager.LoadScene(SceneManager.GetActiveScene().buildIndex);
     }
 
@@ -629,6 +647,8 @@ public class GameController : MonoBehaviour
 
     public bool ShouldKeepCursorVisibleForUI()
     {
+        if (isJumpscareRespawnPending || endingDeathScreenPresentation)
+            return false;
         if (isPaused || isDead)
             return true;
         if (InventoryUI.Instance != null && InventoryUI.Instance.IsOpen)
@@ -645,6 +665,20 @@ public class GameController : MonoBehaviour
             return true;
 
         return false;
+    }
+
+    private static void HideFirstPersonFlashlightViewModel()
+    {
+        var viewModel = FindSceneGameObject("FirstPersonFlashlightViewModel");
+        if (viewModel != null)
+            viewModel.SetActive(false);
+    }
+
+    private static void HideSceneObject(string objectName)
+    {
+        var sceneObject = FindSceneGameObject(objectName);
+        if (sceneObject != null)
+            sceneObject.SetActive(false);
     }
 
     private void ApplyChapterAudio()

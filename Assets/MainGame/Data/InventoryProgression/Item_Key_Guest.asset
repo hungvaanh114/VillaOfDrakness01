@@ -13,7 +13,7 @@ MonoBehaviour:
   m_Name: Item_Key_Guest
   m_EditorClassIdentifier: Assembly-CSharp::FpsHorrorKit.ItemData
   id: Item_Key_Guest
-  itemName: "Ch\xECa Ti\u1EC7p Kh\xE1ch"
+  itemName: "Ch\xECa Ph\xF2ng Kh\xE1ch"
   description: "Ch\xECa kh\xF3a c\u0169 c\xF3 k\xFD hi\u1EC7u ph\xF2ng ti\u1EBFp
     kh\xE1ch."
   icon: {fileID: 21300000, guid: fc25dcd7bb82d3c4799b2d947e8383e2, type: 3}

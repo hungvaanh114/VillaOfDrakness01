@@ -7,6 +7,8 @@ namespace FpsHorrorKit
         [SerializeField] private MusicSheetData musicSheetData;
         [SerializeField] private string interactText = "[E] Nhặt mảnh nhạc";
 
+        public MusicSheetData MusicSheetData => musicSheetData;
+
         public void Interact()
         {
             if (MusicSheetManager.Instance == null || musicSheetData == null)

@@ -11,6 +11,8 @@ public static class CutSceneSceneUpdater
     private const string DataFolder = "Assets/MainGame/Data";
     private const string IntroDialogueDataPath = DataFolder + "/IntroCutSceneDialogueData.asset";
     private const string LegacyIntroDataPath = DataFolder + "/IntroCutSceneData.asset";
+    private const string IntroCutSceneId = "intro";
+    private const string IntroWindowEntryCutSceneId = "intro_window_entry";
 
     private static readonly string[] IntroDialogueIds =
     {
@@ -44,23 +46,34 @@ public static class CutSceneSceneUpdater
 
         var managerObject = EnsureCutSceneManager();
         var sequenceRoot = EnsureChild(managerObject.transform, "IntroCutSceneSequence");
+        var windowEntrySequenceRoot = EnsureChild(managerObject.transform, "IntroWindowEntryCutSceneSequence");
         var pointsRoot = EnsurePointsRoot(managerObject.transform, sequenceRoot);
 
-        var forestStart = EnsurePoint(pointsRoot, "ForestStartPoint", new Vector3(-9.52f, 1.07f, -58f), Vector3.forward);
-        var gateApproach = EnsurePoint(pointsRoot, "GateApproachPoint", new Vector3(-9.52f, 1.07f, -40f), Vector3.forward);
-        var frontDoor = EnsurePoint(pointsRoot, "FrontDoorPoint", new Vector3(-9.52f, 1.07f, -25f), Vector3.forward);
-        var fenceWalk = EnsurePoint(pointsRoot, "FenceWalkPoint", new Vector3(-2.25f, 1.07f, -34f), new Vector3(0.6f, 0f, 1f));
-        var diningWindow = EnsurePoint(pointsRoot, "DiningWindowPoint", new Vector3(-2.2f, 1.07f, -18f), Vector3.forward);
-        var diningRoom = EnsurePoint(pointsRoot, "DiningRoomPoint", new Vector3(-2.2f, 1.07f, -12.5f), Vector3.forward);
+        var forestStart = EnsurePoint(pointsRoot, "ForestStartPoint", new Vector3(-6f, 1.07f, -81.8f), Vector3.forward);
+        var gateApproach = EnsurePoint(pointsRoot, "GateApproachPoint", new Vector3(-8.68f, 1.07f, -47.41f), Vector3.forward);
+        var frontDoor = EnsurePoint(pointsRoot, "FrontDoorPoint", new Vector3(-28.78f, 0.66f, -19.79f), Quaternion.Euler(0f, -12.03f, 0f) * Vector3.forward);
+        var fenceWalk = EnsurePoint(pointsRoot, "FenceWalkPoint", new Vector3(-4.7f, 1.07f, -23.42f), Vector3.forward);
+        var diningWindow = EnsurePoint(pointsRoot, "DiningWindowPoint", new Vector3(-31.93f, 1.07f, -8.78f), Quaternion.Euler(0f, 47.8f, 0f) * Vector3.forward);
+        var diningRoom = EnsurePoint(pointsRoot, "DiningRoomPoint", new Vector3(-29.94f, 1.07f, -6.24f), Vector3.right);
 
         var sequence = sequenceRoot.GetComponent<CutSceneSequence>() ?? sequenceRoot.gameObject.AddComponent<CutSceneSequence>();
         sequence.Configure(
-            "intro",
+            IntroCutSceneId,
             true,
             forestStart,
             true,
-            CreateIntroRoute(gateApproach, frontDoor, fenceWalk, diningWindow, diningRoom));
+            CreateIntroOpeningRoute(gateApproach, frontDoor, fenceWalk));
         EditorUtility.SetDirty(sequence);
+
+        var windowEntrySequence = windowEntrySequenceRoot.GetComponent<CutSceneSequence>()
+            ?? windowEntrySequenceRoot.gameObject.AddComponent<CutSceneSequence>();
+        windowEntrySequence.Configure(
+            IntroWindowEntryCutSceneId,
+            true,
+            diningWindow,
+            false,
+            CreateIntroWindowEntryRoute(diningWindow, diningRoom));
+        EditorUtility.SetDirty(windowEntrySequence);
 
         var manager = managerObject.GetComponent<CutSceneManager>() ?? managerObject.AddComponent<CutSceneManager>();
         var voiceSource = managerObject.GetComponent<AudioSource>() ?? managerObject.AddComponent<AudioSource>();
@@ -68,10 +81,13 @@ public static class CutSceneSceneUpdater
         voiceSource.loop = false;
 
         var fps = player.GetComponent<FpsHorrorKit.FpsController>();
+        WireFollowCamera(followCamera, fps);
+
         var controller = FindFirstObject<GameController>();
         WireCutSceneManager(
             manager,
             sequence,
+            windowEntrySequence,
             player,
             fps,
             mainCamera,
@@ -79,13 +95,34 @@ public static class CutSceneSceneUpdater
             narrationPanel,
             narrationText,
             voiceSource);
+        EnsureIntroWindowTrigger(managerObject.transform, diningWindow, manager);
 
         if (controller != null)
             WireGameController(controller, manager);
 
         EditorSceneManager.MarkSceneDirty(EditorSceneManager.GetActiveScene());
         EditorSceneManager.SaveScene(EditorSceneManager.GetActiveScene());
-        Debug.Log("Intro cut scene sequence applied. Edit IntroCutSceneSequence points directly to change dialogue text and voice clips.");
+        Debug.Log("Intro cut scenes applied. Edit IntroCutSceneSequence and IntroWindowEntryCutSceneSequence points directly to change dialogue text and voice clips.");
+    }
+
+    private static void WireFollowCamera(Transform followCamera, FpsHorrorKit.FpsController fps)
+    {
+        if (followCamera == null || fps == null)
+            return;
+
+        var cinemachineCamera = followCamera.GetComponent<CinemachineCamera>();
+        if (cinemachineCamera == null)
+            return;
+
+        if (fps.virtualCamera == null)
+        {
+            fps.virtualCamera = cinemachineCamera;
+            EditorUtility.SetDirty(fps);
+        }
+
+        var target = fps.followTarget != null ? fps.followTarget : fps.transform;
+        cinemachineCamera.Target.TrackingTarget = target;
+        EditorUtility.SetDirty(cinemachineCamera);
     }
 
     private static CutSceneDialogueData EnsureIntroDialogueData()
@@ -166,26 +203,31 @@ public static class CutSceneSceneUpdater
         return new CutSceneDialogueLine(id, text, duration, DefaultDialogueClip(id));
     }
 
-    private static IEnumerable<CutScenePoint> CreateIntroRoute(
+    private static IEnumerable<CutScenePoint> CreateIntroOpeningRoute(
         Transform gateApproach,
         Transform frontDoor,
-        Transform fenceWalk,
-        Transform diningWindow,
-        Transform diningRoom)
+        Transform fenceWalk)
     {
         return new[]
         {
-            Point("Đi tới cổng", gateApproach, IntroDialogueIds[0], true, CutSceneCameraShot.OverheadFollow),
-            Point("Dừng trước cổng", gateApproach, IntroDialogueIds[1], false, CutSceneCameraShot.DescendBehind),
-            Point("Soi bảng Đỗ Gia", gateApproach, IntroDialogueIds[2], false, CutSceneCameraShot.SignClose),
-            Point("Lịch sử biệt thự", gateApproach, IntroDialogueIds[3], false, CutSceneCameraShot.SignClose),
-            Point("Khoa mỉm cười", gateApproach, IntroDialogueIds[4], false, CutSceneCameraShot.BehindShoulder),
-            Point("Đề tài tốt nghiệp", gateApproach, IntroDialogueIds[5], false, CutSceneCameraShot.BehindShoulder),
-            Point("Đi vòng hàng rào", fenceWalk, IntroDialogueIds[6], true, CutSceneCameraShot.DescendBehind),
-            Point("Tới cửa chính", frontDoor, IntroDialogueIds[7], true, CutSceneCameraShot.BehindShoulder),
-            Point("Thấy cửa sổ phòng ăn", diningWindow, IntroDialogueIds[8], true, CutSceneCameraShot.WindowInspect),
-            Point("Quyết định chui vào", diningWindow, IntroDialogueIds[9], false, CutSceneCameraShot.WindowInspect),
-            Point("Vào phòng ăn", diningRoom, IntroDialogueIds[10], true, CutSceneCameraShot.InteriorSettle)
+            Point("Walk to gate", gateApproach, IntroDialogueIds[0], true, CutSceneCameraShot.OverheadFollow),
+            Point("Stop at gate", gateApproach, IntroDialogueIds[1], false, CutSceneCameraShot.DescendBehind),
+            Point("Read Do Gia sign", gateApproach, IntroDialogueIds[2], false, CutSceneCameraShot.SignClose),
+            Point("Villa history", gateApproach, IntroDialogueIds[3], false, CutSceneCameraShot.SignClose),
+            Point("Khoa smiles", gateApproach, IntroDialogueIds[4], false, CutSceneCameraShot.BehindShoulder),
+            Point("Thesis note", gateApproach, IntroDialogueIds[5], false, CutSceneCameraShot.BehindShoulder),
+            Point("Walk around fence", fenceWalk, IntroDialogueIds[6], true, CutSceneCameraShot.DescendBehind),
+            Point("Stop at front door", frontDoor, IntroDialogueIds[7], true, CutSceneCameraShot.BehindShoulder)
+        };
+    }
+
+    private static IEnumerable<CutScenePoint> CreateIntroWindowEntryRoute(Transform diningWindow, Transform diningRoom)
+    {
+        return new[]
+        {
+            Point("Find dining window", diningWindow, IntroDialogueIds[8], false, CutSceneCameraShot.WindowInspect),
+            Point("Decide to climb in", diningWindow, IntroDialogueIds[9], false, CutSceneCameraShot.WindowInspect),
+            Point("Enter dining room", diningRoom, IntroDialogueIds[10], true, CutSceneCameraShot.InteriorSettle)
         };
     }
 
@@ -257,6 +299,7 @@ public static class CutSceneSceneUpdater
     private static void WireCutSceneManager(
         CutSceneManager manager,
         CutSceneSequence introSequence,
+        CutSceneSequence introWindowEntrySequence,
         Transform player,
         FpsHorrorKit.FpsController fps,
         Camera mainCamera,
@@ -266,9 +309,10 @@ public static class CutSceneSceneUpdater
         AudioSource voiceSource)
     {
         var serialized = new SerializedObject(manager);
-        Set(serialized, "introCutSceneId", "intro");
+        Set(serialized, "introCutSceneId", IntroCutSceneId);
+        Set(serialized, "introWindowEntryCutSceneId", IntroWindowEntryCutSceneId);
         Set(serialized, "autoResolveSequences", true);
-        SetSequenceList(serialized, introSequence);
+        SetSequenceList(serialized, introSequence, introWindowEntrySequence);
         Set(serialized, "playerController", fps);
         Set(serialized, "playerRoot", player);
         Set(serialized, "cinematicCamera", mainCamera);
@@ -279,6 +323,32 @@ public static class CutSceneSceneUpdater
         Set(serialized, "voiceSource", voiceSource);
         serialized.ApplyModifiedPropertiesWithoutUndo();
         EditorUtility.SetDirty(manager);
+    }
+
+    private static void EnsureIntroWindowTrigger(Transform parent, Transform diningWindow, CutSceneManager manager)
+    {
+        if (diningWindow == null)
+            return;
+
+        var triggerTransform = EnsureChild(parent, "IntroWindowCutsceneTrigger");
+        triggerTransform.position = diningWindow.position;
+        triggerTransform.rotation = diningWindow.rotation;
+
+        var collider = triggerTransform.GetComponent<BoxCollider>() ?? triggerTransform.gameObject.AddComponent<BoxCollider>();
+        collider.isTrigger = true;
+        collider.center = new Vector3(0f, 1.1f, 0f);
+        collider.size = new Vector3(2.8f, 2.2f, 2.8f);
+        EditorUtility.SetDirty(collider);
+
+        var trigger = triggerTransform.GetComponent<IntroWindowCutsceneTrigger>()
+            ?? triggerTransform.gameObject.AddComponent<IntroWindowCutsceneTrigger>();
+        var serialized = new SerializedObject(trigger);
+        Set(serialized, "cutSceneManager", manager);
+        Set(serialized, "cutSceneId", IntroWindowEntryCutSceneId);
+        Set(serialized, "triggerOnce", true);
+        Set(serialized, "requireIntroPhase", true);
+        serialized.ApplyModifiedPropertiesWithoutUndo();
+        EditorUtility.SetDirty(trigger);
     }
 
     private static void WireGameController(GameController controller, CutSceneManager manager)
@@ -376,14 +446,15 @@ public static class CutSceneSceneUpdater
             AssetDatabase.CreateFolder(parent, folderName);
     }
 
-    private static void SetSequenceList(SerializedObject serialized, CutSceneSequence sequence)
+    private static void SetSequenceList(SerializedObject serialized, params CutSceneSequence[] sequences)
     {
         var property = serialized.FindProperty("sequences");
         if (property == null)
             return;
 
-        property.arraySize = 1;
-        property.GetArrayElementAtIndex(0).objectReferenceValue = sequence;
+        property.arraySize = sequences.Length;
+        for (var i = 0; i < sequences.Length; i++)
+            property.GetArrayElementAtIndex(i).objectReferenceValue = sequences[i];
     }
 
     private static void Set(SerializedObject serialized, string propertyName, Object value)

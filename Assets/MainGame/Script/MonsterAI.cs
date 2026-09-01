@@ -21,6 +21,9 @@ public sealed class MonsterAI : MonoBehaviour
     private static readonly int IsRunHash = Animator.StringToHash("isRun");
     private static readonly int SwipingHash = Animator.StringToHash("swiping");
     private static readonly int FlairHash = Animator.StringToHash("flair");
+    private static readonly int BaseColorProperty = Shader.PropertyToID("_BaseColor");
+    private static readonly int ColorProperty = Shader.PropertyToID("_Color");
+    private static readonly int EmissionColorProperty = Shader.PropertyToID("_EmissionColor");
 
     [Header("Target")]
     [SerializeField] private Transform player;
@@ -57,6 +60,12 @@ public sealed class MonsterAI : MonoBehaviour
     [SerializeField, Min(1f)] private float movementTurnSpeed = 720f;
     [SerializeField] private Transform visualRoot;
     [SerializeField] private float visualYawOffset;
+
+    [Header("Cutscene Camera Scare")]
+    [SerializeField] private float cutsceneCameraScareYawOffset;
+    [SerializeField] private float cutsceneCameraScareVerticalOffset = -0.75f;
+    [SerializeField, Min(0.35f)] private float testCutsceneCameraScareDistance = 1.1f;
+    [SerializeField, Min(0f)] private float testCutsceneCameraScareHoldSeconds = 0.5f;
 
     [Header("Patrol Points")]
     [SerializeField] private Transform[] patrolPoints;
@@ -147,6 +156,7 @@ public sealed class MonsterAI : MonoBehaviour
     private bool suppressRunUntilPlayerEscapesInitialRange;
     private bool caughtDeathSequenceRunning;
     private Quaternion visualRootBaseLocalRotation = Quaternion.identity;
+    private Vector3 visualRootBaseLocalPosition;
 
     public bool IsHuntActive => state != MonsterState.Disabled && state != MonsterState.Scripted;
     public bool IsScriptedSequenceRunning => state == MonsterState.Scripted;
@@ -162,7 +172,10 @@ public sealed class MonsterAI : MonoBehaviour
         if (visualRoot == null && animator != null)
             visualRoot = animator.transform;
         if (visualRoot != null)
+        {
             visualRootBaseLocalRotation = visualRoot.localRotation;
+            visualRootBaseLocalPosition = visualRoot.localPosition;
+        }
         if (monsterAudioSource == null)
             monsterAudioSource = GetComponent<AudioSource>() ?? gameObject.AddComponent<AudioSource>();
 
@@ -396,6 +409,255 @@ public sealed class MonsterAI : MonoBehaviour
             if (itemRenderer != null)
                 itemRenderer.enabled = visible;
         }
+    }
+
+    [ContextMenu("Test Cutscene Camera Scare")]
+    private void TestCutsceneCameraScare()
+    {
+        if (!Application.isPlaying)
+        {
+            Debug.LogWarning("Test Cutscene Camera Scare only runs in Play Mode.");
+            return;
+        }
+
+        Camera targetCamera = Camera.main;
+        if (targetCamera == null)
+            targetCamera = FindFirstObjectByType<Camera>();
+
+        if (targetCamera == null)
+        {
+            Debug.LogWarning("Cannot test cutscene camera scare because no camera was found.");
+            return;
+        }
+
+        if (scriptedRoutine != null)
+        {
+            StopCoroutine(scriptedRoutine);
+            scriptedRoutine = null;
+        }
+
+        StartCoroutine(PlayCutsceneBlinkTeleportScare(
+            targetCamera,
+            transform,
+            0,
+            0.08f,
+            0f,
+            testCutsceneCameraScareDistance,
+            testCutsceneCameraScareHoldSeconds,
+            0f));
+    }
+
+    public IEnumerator PlayCutsceneBlinkTeleportScare(
+        Camera targetCamera,
+        Transform returnPoint,
+        int flickerCount,
+        float flickerInterval,
+        float teleportDelay,
+        float cameraDistance,
+        float cameraHoldSeconds,
+        float hiddenSeconds)
+    {
+        if (scriptedRoutine != null)
+        {
+            StopCoroutine(scriptedRoutine);
+            scriptedRoutine = null;
+        }
+
+        state = MonsterState.Scripted;
+        ConfigureAgent();
+        TryStopAgent(resetPath: true);
+        SetRunAnimation(false);
+
+        Vector3 returnPosition = returnPoint != null ? returnPoint.position : transform.position;
+        Quaternion returnRotation = returnPoint != null ? returnPoint.rotation : transform.rotation;
+        var savedBlocks = CaptureRendererPropertyBlocks();
+
+        yield return FlickerNoiseRoutine(
+            Mathf.Max(0, flickerCount),
+            Mathf.Max(0.02f, flickerInterval));
+
+        if (teleportDelay > 0f)
+            yield return new WaitForSeconds(teleportDelay);
+
+        if (targetCamera != null)
+        {
+            Vector3 scarePosition = targetCamera.transform.position
+                + targetCamera.transform.forward * Mathf.Max(0.35f, cameraDistance);
+            scarePosition.y = targetCamera.transform.position.y + cutsceneCameraScareVerticalOffset;
+
+            Quaternion scareRotation = GetCameraScareFacingRotation(scarePosition, targetCamera);
+            if (agent != null)
+                agent.enabled = false;
+
+            transform.SetPositionAndRotation(scarePosition, scareRotation);
+            ApplyVisualYawOffset(cutsceneCameraScareYawOffset);
+            SetMeshVisible(true);
+            ApplyNoiseFrame(0.1f, 0.65f, cutsceneCameraScareYawOffset);
+            PlayCutsceneRoar();
+
+            if (cameraHoldSeconds > 0f)
+                yield return new WaitForSeconds(cameraHoldSeconds);
+        }
+
+        RestoreRendererPropertyBlocks(savedBlocks);
+        RestoreVisualRootNoise();
+        TeleportTo(returnPosition, returnRotation);
+        SetMeshVisible(false);
+        TryStopAgent(resetPath: true);
+
+        if (hiddenSeconds > 0f)
+            yield return new WaitForSeconds(hiddenSeconds);
+
+        TeleportTo(returnPosition, returnRotation);
+        RestoreRendererPropertyBlocks(savedBlocks);
+        RestoreVisualRootNoise();
+        scriptedRoutine = null;
+        state = MonsterState.Disabled;
+    }
+
+    private IEnumerator FlickerNoiseRoutine(int count, float interval)
+    {
+        if (count <= 0)
+        {
+            SetMeshVisible(true);
+            yield break;
+        }
+
+        for (int i = 0; i < count; i++)
+        {
+            SetMeshVisible(false);
+            yield return new WaitForSeconds(interval * 0.75f);
+
+            SetMeshVisible(true);
+            ApplyNoiseFrame(0.045f, 0.45f);
+            yield return new WaitForSeconds(interval * 1.25f);
+        }
+
+        SetMeshVisible(true);
+        RestoreVisualRootNoise();
+    }
+
+    private void PlayCutsceneRoar()
+    {
+        AudioClip roarClip = PickRandomClip(attackClips);
+        float roarVolume = attackScreamVolume;
+
+        var data = ResolveAudioData();
+        if (roarClip == null && data != null)
+            roarClip = data.ghostJumpscare;
+
+        if (roarClip == null)
+        {
+            roarClip = PickRandomClip(voiceClips);
+            roarVolume = voiceLineVolume;
+        }
+
+        if (roarClip == null && data != null)
+        {
+            roarClip = data.maVuDaiPatrolFull;
+            roarVolume = voiceLineVolume;
+        }
+
+        if (roarClip == null)
+            return;
+
+        PlayClipOneShot(roarClip, roarVolume);
+    }
+
+    private MaterialPropertyBlock[] CaptureRendererPropertyBlocks()
+    {
+        if (renderers == null || renderers.Length == 0)
+            renderers = GetComponentsInChildren<Renderer>(true);
+
+        var blocks = new MaterialPropertyBlock[renderers.Length];
+        for (int i = 0; i < renderers.Length; i++)
+        {
+            if (renderers[i] == null)
+                continue;
+
+            blocks[i] = new MaterialPropertyBlock();
+            renderers[i].GetPropertyBlock(blocks[i]);
+        }
+
+        return blocks;
+    }
+
+    private void RestoreRendererPropertyBlocks(MaterialPropertyBlock[] blocks)
+    {
+        if (renderers == null || blocks == null)
+            return;
+
+        int count = Mathf.Min(renderers.Length, blocks.Length);
+        for (int i = 0; i < count; i++)
+        {
+            if (renderers[i] != null)
+                renderers[i].SetPropertyBlock(blocks[i]);
+        }
+    }
+
+    private void ApplyNoiseFrame(float jitterAmount, float colorNoise)
+    {
+        ApplyNoiseFrame(jitterAmount, colorNoise, 0f);
+    }
+
+    private void ApplyNoiseFrame(float jitterAmount, float colorNoise, float extraYawOffset)
+    {
+        ApplyVisualNoise(jitterAmount, extraYawOffset);
+
+        if (renderers == null || renderers.Length == 0)
+            return;
+
+        Color noiseColor = Color.Lerp(
+            new Color(0.5f, 0.85f, 1f, 1f),
+            Color.white,
+            Random.Range(0f, 1f));
+        noiseColor *= 1f + Random.Range(0f, Mathf.Max(0f, colorNoise));
+        noiseColor.a = 1f;
+
+        var block = new MaterialPropertyBlock();
+        for (int i = 0; i < renderers.Length; i++)
+        {
+            if (renderers[i] == null)
+                continue;
+
+            renderers[i].GetPropertyBlock(block);
+            block.SetColor(BaseColorProperty, noiseColor);
+            block.SetColor(ColorProperty, noiseColor);
+            block.SetColor(EmissionColorProperty, noiseColor * 1.35f);
+            renderers[i].SetPropertyBlock(block);
+            block.Clear();
+        }
+    }
+
+    private void ApplyVisualNoise(float amount)
+    {
+        ApplyVisualNoise(amount, 0f);
+    }
+
+    private void ApplyVisualNoise(float amount, float extraYawOffset)
+    {
+        if (visualRoot == null || visualRoot == transform)
+            return;
+
+        visualRoot.localPosition = visualRootBaseLocalPosition + new Vector3(
+            Random.Range(-amount, amount),
+            Random.Range(-amount, amount),
+            Random.Range(-amount, amount));
+
+        visualRoot.localRotation = visualRootBaseLocalRotation
+            * Quaternion.Euler(
+                Random.Range(-2f, 2f),
+                visualYawOffset + extraYawOffset + Random.Range(-4f, 4f),
+                Random.Range(-2f, 2f));
+    }
+
+    private void RestoreVisualRootNoise()
+    {
+        if (visualRoot == null || visualRoot == transform)
+            return;
+
+        visualRoot.localPosition = visualRootBaseLocalPosition;
+        ApplyVisualYawOffset();
     }
 
     private IEnumerator ScriptedHallCrossingRoutine(Transform[] route, Transform hideAtDoorPoint, bool playVoice)
@@ -643,6 +905,7 @@ public sealed class MonsterAI : MonoBehaviour
             : FindFirstObjectByType<FpsHorrorKit.FpsController>();
 
         controller?.SetGameState(GameController.GameState.Cutscene);
+        controller?.TriggerJumpscareCheckpointRespawn(true);
 
         float originalAmplitude = 0f;
         float originalFrequency = 0f;
@@ -691,7 +954,7 @@ public sealed class MonsterAI : MonoBehaviour
 
         AudioManager.Instance?.StopMonsterVoice();
         StopMonsterAudio(false);
-        GameController.Instance?.TriggerDeathWithUIDelay(false, 0f);
+        GameController.Instance?.TriggerJumpscareCheckpointRespawn(0f);
     }
 
     private static void SetCaughtPlayerModelVisible(FpsHorrorKit.FpsController playerController, bool visible)
@@ -1145,8 +1408,23 @@ public sealed class MonsterAI : MonoBehaviour
         if (clips == null || clips.Length == 0 || monsterAudioSource == null)
             return false;
 
-        var clip = clips[Random.Range(0, clips.Length)];
+        var clip = PickRandomClip(clips);
         return PlayClipOneShot(clip, volume);
+    }
+
+    private static AudioClip PickRandomClip(AudioClip[] clips)
+    {
+        if (clips == null || clips.Length == 0)
+            return null;
+
+        for (int attempts = 0; attempts < clips.Length; attempts++)
+        {
+            var clip = clips[Random.Range(0, clips.Length)];
+            if (clip != null)
+                return clip;
+        }
+
+        return null;
     }
 
     private bool PlayClipOneShot(AudioClip clip, float volume)
@@ -1154,6 +1432,7 @@ public sealed class MonsterAI : MonoBehaviour
         if (clip == null || monsterAudioSource == null)
             return false;
 
+        AudioManager.Instance?.PauseMonsterVoiceForRoar(clip.length);
         AudioManager.Instance?.BlockGameplayAmbience(clip.length);
         monsterAudioSource.PlayOneShot(clip, volume);
         return true;
@@ -1288,10 +1567,31 @@ public sealed class MonsterAI : MonoBehaviour
 
     private void ApplyVisualYawOffset()
     {
+        ApplyVisualYawOffset(0f);
+    }
+
+    private void ApplyVisualYawOffset(float extraYawOffset)
+    {
         if (visualRoot == null || visualRoot == transform)
             return;
 
-        visualRoot.localRotation = visualRootBaseLocalRotation * Quaternion.Euler(0f, visualYawOffset, 0f);
+        visualRoot.localRotation = visualRootBaseLocalRotation * Quaternion.Euler(0f, visualYawOffset + extraYawOffset, 0f);
+    }
+
+    private static Quaternion GetCameraScareFacingRotation(Vector3 scarePosition, Camera targetCamera)
+    {
+        Vector3 lookDirection = targetCamera.transform.position - scarePosition;
+        lookDirection.y = 0f;
+
+        if (lookDirection.sqrMagnitude <= 0.0001f)
+        {
+            lookDirection = -targetCamera.transform.forward;
+            lookDirection.y = 0f;
+        }
+
+        return lookDirection.sqrMagnitude > 0.0001f
+            ? Quaternion.LookRotation(lookDirection.normalized, Vector3.up)
+            : targetCamera.transform.rotation;
     }
 
     private void ChooseWanderTarget()

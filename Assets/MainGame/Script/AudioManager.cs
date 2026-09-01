@@ -14,6 +14,7 @@ public sealed class AudioManager : MonoBehaviour
     [SerializeField] private AudioSource sfxSource;
     [SerializeField] private AudioSource uiSource;
     [SerializeField] private AudioSource voiceSource;
+    [SerializeField, Min(0f)] private float playerVoiceVolumeMultiplier = 2f;
 
     private int lastGroundFootstepIndex = -1;
     private int lastWoodFootstepIndex = -1;
@@ -29,6 +30,7 @@ public sealed class AudioManager : MonoBehaviour
     private bool stairEncounterThreatPlayed;
     private bool sanityWarningAllowedAfterPianoDoor;
     private bool voiceSourcePlayingMonsterVoice;
+    private float voiceSourceVolumeMultiplier = 1f;
     private float gameplayAmbienceBlockedUntil;
     private Coroutine dialoguePauseRoutine;
     private Coroutine stairEncounterThreatRoutine;
@@ -95,7 +97,7 @@ public sealed class AudioManager : MonoBehaviour
         if (uiSource != null)
             uiSource.volume = settings.SfxVolume / 100f;
         if (voiceSource != null)
-            voiceSource.volume = settings.SfxVolume / 100f;
+            voiceSource.volume = GetVoiceSourceVolume(settings.SfxVolume / 100f, voiceSourceVolumeMultiplier);
     }
 
     public void PlayMenuMusic()
@@ -338,9 +340,9 @@ public sealed class AudioManager : MonoBehaviour
             PlayBlockingSfx(audioData != null ? audioData.pianoWrong : null);
     }
 
-    public void PlayGhostJumpscare(float volume = 1f)
+    public float PlayGhostJumpscare(float volume = 1f)
     {
-        PlayBlockingSfx(audioData != null ? audioData.ghostJumpscare : null, volume);
+        return PlayBlockingSfx(audioData != null ? audioData.ghostJumpscare : null, volume);
     }
 
     public void PauseDialogueForMonsterRoar(float seconds, System.Func<bool> shouldResume = null)
@@ -348,12 +350,20 @@ public sealed class AudioManager : MonoBehaviour
         if (dialoguePauseRoutine != null)
             StopCoroutine(dialoguePauseRoutine);
 
-        dialoguePauseRoutine = StartCoroutine(PauseDialogueForMonsterRoarRoutine(Mathf.Max(0f, seconds), shouldResume));
+        dialoguePauseRoutine = StartCoroutine(PauseVoiceForMonsterRoarRoutine(Mathf.Max(0f, seconds), shouldResume, false));
     }
 
-    public void PlayWellJumpscare()
+    public void PauseMonsterVoiceForRoar(float seconds, System.Func<bool> shouldResume = null)
     {
-        PlayBlockingSfx(audioData != null ? audioData.wellJumpscare : null);
+        if (dialoguePauseRoutine != null)
+            StopCoroutine(dialoguePauseRoutine);
+
+        dialoguePauseRoutine = StartCoroutine(PauseVoiceForMonsterRoarRoutine(Mathf.Max(0f, seconds), shouldResume, true));
+    }
+
+    public float PlayWellJumpscare()
+    {
+        return PlayBlockingSfx(audioData != null ? audioData.wellJumpscare : null);
     }
 
     public void PlayGroundFootstep(float volume = 0.1f)
@@ -433,7 +443,7 @@ public sealed class AudioManager : MonoBehaviour
 
     public float PlayDiaryReaction(int index)
     {
-        return PlayVoice(index switch
+        return PlayPlayerVoice(index switch
         {
             1 => audioData != null ? audioData.diaryReaction01 : null,
             2 => audioData != null ? audioData.diaryReaction02 : null,
@@ -444,7 +454,7 @@ public sealed class AudioManager : MonoBehaviour
 
     public float PlayHideVoice(int index)
     {
-        return PlayVoice(index switch
+        return PlayPlayerVoice(index switch
         {
             1 => audioData != null ? audioData.mkHide01 : null,
             2 => audioData != null ? audioData.mkHide02 : null,
@@ -458,7 +468,7 @@ public sealed class AudioManager : MonoBehaviour
 
     public float PlayDeathVoice(int index)
     {
-        return PlayVoice(index switch
+        return PlayPlayerVoice(index switch
         {
             1 => audioData != null ? audioData.mkDeath01 : null,
             2 => audioData != null ? audioData.mkDeath02 : null,
@@ -495,6 +505,16 @@ public sealed class AudioManager : MonoBehaviour
 
     public float PlayVoice(AudioClip clip)
     {
+        return PlayVoiceInternal(clip, 1f, false);
+    }
+
+    public float PlayPlayerVoice(AudioClip clip)
+    {
+        return PlayVoiceInternal(clip, playerVoiceVolumeMultiplier, false);
+    }
+
+    private float PlayVoiceInternal(AudioClip clip, float volumeMultiplier, bool playingMonsterVoice)
+    {
         if (voiceSource == null || clip == null)
             return 0f;
 
@@ -502,9 +522,13 @@ public sealed class AudioManager : MonoBehaviour
         voiceSource.Stop();
         voiceSource.clip = clip;
         voiceSource.loop = false;
-        voiceSource.volume = GetSettingsSfxVolume();
-        voiceSourcePlayingMonsterVoice = false;
-        voiceSource.Play();
+        voiceSourceVolumeMultiplier = Mathf.Max(0f, volumeMultiplier);
+        voiceSource.volume = GetVoiceSourceVolume(GetSettingsSfxVolume(), voiceSourceVolumeMultiplier);
+        voiceSourcePlayingMonsterVoice = playingMonsterVoice;
+        if (voiceSourceVolumeMultiplier > 1f)
+            voiceSource.PlayOneShot(clip, voiceSourceVolumeMultiplier);
+        else
+            voiceSource.Play();
         return clip.length;
     }
 
@@ -515,22 +539,18 @@ public sealed class AudioManager : MonoBehaviour
 
     private float PlayMonsterVoiceOverlay(AudioClip clip, float volume)
     {
-        if (clip == null || voiceSource == null)
-            return 0f;
-
-        BlockGameplayAmbience(clip.length);
-        voiceSource.Stop();
-        voiceSource.clip = clip;
-        voiceSource.loop = false;
-        voiceSource.volume = GetSettingsSfxVolume() * Mathf.Clamp01(volume);
-        voiceSourcePlayingMonsterVoice = true;
-        voiceSource.Play();
-        return clip.length;
+        return PlayVoiceInternal(clip, Mathf.Clamp01(volume), true);
     }
 
     private static float GetSettingsSfxVolume()
     {
         return GameData.Instance != null ? GameData.Instance.Settings.SfxVolume / 100f : 1f;
+    }
+
+    private static float GetVoiceSourceVolume(float settingsVolume, float multiplier)
+    {
+        multiplier = Mathf.Max(0f, multiplier);
+        return multiplier > 1f ? Mathf.Clamp01(settingsVolume) : Mathf.Clamp01(settingsVolume * multiplier);
     }
 
     private static float CalculateMonsterVoiceDistanceVolume(float baseVolume)
@@ -550,10 +570,12 @@ public sealed class AudioManager : MonoBehaviour
         return Mathf.Clamp01(Mathf.Clamp01(baseVolume) * distanceMultiplier);
     }
 
-    private IEnumerator PauseDialogueForMonsterRoarRoutine(float seconds, System.Func<bool> shouldResume)
+    private IEnumerator PauseVoiceForMonsterRoarRoutine(float seconds, System.Func<bool> shouldResume, bool monsterVoiceOnly)
     {
         AudioClip pausedClip = null;
-        bool pausedVoice = voiceSource != null && voiceSource.isPlaying;
+        bool pausedVoice = voiceSource != null
+            && voiceSource.isPlaying
+            && (!monsterVoiceOnly || voiceSourcePlayingMonsterVoice);
         if (pausedVoice)
         {
             pausedClip = voiceSource.clip;
@@ -588,6 +610,7 @@ public sealed class AudioManager : MonoBehaviour
         voiceSource.Stop();
         voiceSource.clip = null;
         voiceSourcePlayingMonsterVoice = false;
+        voiceSourceVolumeMultiplier = 1f;
     }
 
     public void StopMonsterVoice()
@@ -598,6 +621,7 @@ public sealed class AudioManager : MonoBehaviour
         voiceSource.Stop();
         voiceSource.clip = null;
         voiceSourcePlayingMonsterVoice = false;
+        voiceSourceVolumeMultiplier = 1f;
     }
 
     private void PlayUi(AudioClip clip)
@@ -783,12 +807,13 @@ public sealed class AudioManager : MonoBehaviour
         return audioData != null ? Mathf.Max(0.1f, audioData.gameplayAmbienceBlockedRetrySeconds) : 3f;
     }
 
-    private void PlayBlockingSfx(AudioClip clip, float volume = 1f)
+    private float PlayBlockingSfx(AudioClip clip, float volume = 1f)
     {
         if (clip != null)
             BlockGameplayAmbience(clip.length);
 
         PlaySfx(clip, volume);
+        return clip != null ? clip.length : 0f;
     }
 
     private IEnumerator PlayStairEncounterThreatOnceRoutine(float fadeDuration)

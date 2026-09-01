@@ -11,6 +11,7 @@ public class ElectricTorchOnOff : MonoBehaviour
 {
 	EmissionMaterialGlassTorchFadeOut _emissionMaterialFade;
 	BatteryPowerPickup _batteryPower;
+	Light _torchLight;
 	//
 
 	public enum LightChoose
@@ -36,6 +37,7 @@ public class ElectricTorchOnOff : MonoBehaviour
 	private void Awake()
     {
 		_batteryPower = FindObjectOfType<BatteryPowerPickup>();
+		_torchLight = GetComponent<Light>();
 	}
     void Start()
 	{
@@ -93,13 +95,15 @@ public class ElectricTorchOnOff : MonoBehaviour
     {
 		if (_flashLightOn)
 		{
-			GetComponent<Light>().intensity = intensityLight;
-			_emissionMaterialFade.OnEmission();
+			SetTorchIntensity(intensityLight);
+			if (_emissionMaterialFade != null)
+				_emissionMaterialFade.OnEmission();
 		}
 		else
 		{
-			GetComponent<Light>().intensity = 0.0f;
-			_emissionMaterialFade.OffEmission();
+			SetTorchIntensity(0.0f);
+			if (_emissionMaterialFade != null)
+				_emissionMaterialFade.OffEmission();
 		}
 		InputKey();
 	}
@@ -109,30 +113,41 @@ public class ElectricTorchOnOff : MonoBehaviour
 
 		if (_flashLightOn)
 		{
-			GetComponent<Light>().intensity = intensityLight;
+			SetTorchIntensity(intensityLight);
 			intensityLight -= Time.deltaTime * _lightTime;
-			_emissionMaterialFade.TimeEmission(_lightTime);
+			if (_emissionMaterialFade != null)
+				_emissionMaterialFade.TimeEmission(_lightTime);
             
 			if (intensityLight < 0)
             {
 				intensityLight = 0;
 			}
-			if (_PowerPickUp == true)
+			if (_PowerPickUp == true && _batteryPower != null)
 			{
 				intensityLight = _batteryPower.PowerIntensityLight;
 			}
 		}
 		else
 		{
-			GetComponent<Light>().intensity = 0.0f;
-			_emissionMaterialFade.OffEmission();
+			SetTorchIntensity(0.0f);
+			if (_emissionMaterialFade != null)
+				_emissionMaterialFade.OffEmission();
 
-			if (_PowerPickUp == true)
+			if (_PowerPickUp == true && _batteryPower != null)
 			{
 				intensityLight = _batteryPower.PowerIntensityLight;
 			}
 		}
 
 		InputKey();
+	}
+
+	void SetTorchIntensity(float intensity)
+	{
+		if (_torchLight == null)
+			_torchLight = GetComponent<Light>();
+
+		if (_torchLight != null)
+			_torchLight.intensity = intensity;
 	}
 }

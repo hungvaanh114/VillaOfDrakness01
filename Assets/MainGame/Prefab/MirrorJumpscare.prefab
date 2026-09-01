@@ -78,8 +78,16 @@ MonoBehaviour:
   monsterVisualPrefab: {fileID: 0}
   monsterMaterial: {fileID: 2100000, guid: c704081a95b330d4fa1cfe33f2c9d369, type: 2}
   triggerOnlyOnce: 1
+  requiredMirrorLookSeconds: 3
   requiredPlayerDistance: 4.5
+  requirePlayerInsideTrigger: 0
   requirePlayerInFront: 1
+  requireFlashlightOff: 0
+  requireMirrorRaycast: 1
+  mirrorRaycastDistance: 8
+  mirrorRaycastRadius: 0.08
+  mirrorAimFallbackDot: 0.94
+  triggerWhenFlashlightTurnsOff: 0
   monsterFlyDuration: 0.7
   cameraImpactDistance: 0.45
   fallRoll: 62

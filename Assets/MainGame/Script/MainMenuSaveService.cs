@@ -27,6 +27,19 @@ public sealed class PlayerPrefsMainMenuSaveService : IMainMenuSaveService
     private const string ChapterKey = "MainMenu.Chapter";
     private const string LastSaveAtKey = "MainMenu.LastSaveAt";
     private const string PlaySecondsKey = "MainMenu.PlaySeconds";
+    private const string PartTwoUnlockedKey = "MainMenu.PartTwoUnlocked";
+
+    public static bool IsPartTwoUnlocked => PlayerPrefs.GetInt(PartTwoUnlockedKey, 0) == 1;
+    public static int HighestUnlockedPart => IsPartTwoUnlocked ? 2 : 1;
+
+    public static void UnlockPartTwo()
+    {
+        PlayerPrefs.SetInt(PartTwoUnlockedKey, 1);
+        PlayerPrefs.SetInt(HasSaveKey, 1);
+        PlayerPrefs.SetInt(ChapterKey, Mathf.Max(PlayerPrefs.GetInt(ChapterKey, 1), 2));
+        PlayerPrefs.SetString(LastSaveAtKey, DateTime.Now.ToString("dd/MM/yyyy  HH:mm"));
+        PlayerPrefs.Save();
+    }
 
     public bool TryLoad(out MainMenuSaveData saveData)
     {
@@ -45,7 +58,13 @@ public sealed class PlayerPrefsMainMenuSaveService : IMainMenuSaveService
 
     public MainMenuSaveData StartNewGame()
     {
-        var saveData = new MainMenuSaveData(1, DateTime.Now.ToString("dd/MM/yyyy  HH:mm"), "00:00:00");
+        return StartNewPart(1);
+    }
+
+    public static MainMenuSaveData StartNewPart(int part)
+    {
+        int clampedPart = Mathf.Clamp(part, 1, HighestUnlockedPart);
+        var saveData = new MainMenuSaveData(clampedPart, DateTime.Now.ToString("dd/MM/yyyy  HH:mm"), "00:00:00");
 
         PlayerPrefs.SetInt(HasSaveKey, 1);
         PlayerPrefs.SetInt(ChapterKey, saveData.Chapter);

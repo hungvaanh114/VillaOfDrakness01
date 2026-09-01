@@ -17,15 +17,17 @@ namespace MainGame
         [SerializeField] private bool triggerOnlyOnce = true;
 
         [Header("Trigger")]
+        [SerializeField, Min(0f)] private float requiredMirrorLookSeconds = 3f;
         [SerializeField] private float requiredPlayerDistance = 4.5f;
-        [SerializeField] private bool requirePlayerInsideTrigger = true;
+        [SerializeField] private bool requirePlayerInsideTrigger = false;
         [SerializeField] private bool requirePlayerInFront = true;
-        [SerializeField] private bool requireFlashlightOff = true;
+        [SerializeField] private bool requireFlashlightOff = false;
         [SerializeField] private bool requireMirrorRaycast = true;
         [SerializeField, Min(0.1f)] private float mirrorRaycastDistance = 8f;
         [SerializeField, Min(0f)] private float mirrorRaycastRadius = 0.08f;
         [SerializeField, Range(0.1f, 1f)] private float mirrorAimFallbackDot = 0.94f;
-        [SerializeField] private bool triggerWhenFlashlightTurnsOff = true;
+        [SerializeField] private bool fallbackToPlayerRaycastWhenReflectionCameraMisses = true;
+        [SerializeField] private bool triggerWhenFlashlightTurnsOff = false;
 
         [Header("Jumpscare")]
         [SerializeField, Min(0f)] private float fallRoll = 62f;
@@ -52,6 +54,7 @@ namespace MainGame
         private bool playerInsideTrigger;
         private bool previousRaycastState;
         private bool hasChangedRaycastState;
+        private float mirrorLookTimer;
 
 #if UNITY_EDITOR
         private void OnValidate()
@@ -88,13 +91,13 @@ namespace MainGame
 
         private void Update()
         {
-            if (!requireMirrorRaycast || isRunning || (triggerOnlyOnce && hasTriggered))
+            if (isRunning || (triggerOnlyOnce && hasTriggered))
                 return;
 
             var candidate = playerController != null
                 ? playerController
                 : FindFirstObjectByType<FpsHorrorKit.FpsController>();
-            TryTrigger(candidate);
+            TickLookTrigger(candidate);
         }
 
         private void OnTriggerEnter(Collider other)
@@ -114,7 +117,10 @@ namespace MainGame
                 return;
 
             if (playerController == null || candidate == playerController)
+            {
                 playerInsideTrigger = false;
+                mirrorLookTimer = 0f;
+            }
         }
 
         private void TryTrigger(Collider other)
@@ -128,16 +134,22 @@ namespace MainGame
                 playerInsideTrigger = true;
                 playerController = candidate;
             }
-
-            TryTrigger(candidate);
         }
 
-        private void TryTrigger(FpsHorrorKit.FpsController candidate)
+        private void TickLookTrigger(FpsHorrorKit.FpsController candidate)
         {
             if (candidate == null || !CanTrigger(candidate))
+            {
+                mirrorLookTimer = 0f;
+                return;
+            }
+
+            mirrorLookTimer += Time.deltaTime;
+            if (mirrorLookTimer < requiredMirrorLookSeconds)
                 return;
 
             hasTriggered = true;
+            mirrorLookTimer = 0f;
             StartCoroutine(JumpscareRoutine(candidate));
         }
 
@@ -146,7 +158,7 @@ namespace MainGame
             if (!triggerWhenFlashlightTurnsOff || active)
                 return;
 
-            TryTrigger(FindFirstObjectByType<FpsHorrorKit.FpsController>());
+            mirrorLookTimer = 0f;
         }
 
         private bool CanTrigger(FpsHorrorKit.FpsController candidate)
@@ -176,8 +188,214 @@ namespace MainGame
             if (requirePlayerInFront && Vector3.Dot(GetMirrorForward(), toPlayer.normalized) < 0f)
                 return false;
 
-            if (requireMirrorRaycast && !IsPlayerRaycastLookingAtMirror(candidate))
+            if (requireMirrorRaycast && !IsPlayerCameraSeeingMirror(candidate))
                 return false;
+
+            if (requireMirrorRaycast && !IsReflectionCameraSeeingPlayer(candidate))
+            {
+                if (!fallbackToPlayerRaycastWhenReflectionCameraMisses || !IsPlayerRaycastLookingAtMirror(candidate))
+                    return false;
+            }
+
+            return true;
+        }
+
+        private bool IsPlayerCameraSeeingMirror(FpsHorrorKit.FpsController candidate)
+        {
+            Camera playerCamera = ResolvePlayerCamera(candidate);
+            if (playerCamera == null)
+                return IsPlayerRaycastLookingAtMirror(candidate);
+
+            Bounds mirrorBounds = GetMirrorBounds();
+            return IsBoundsVisibleFromCamera(
+                playerCamera,
+                mirrorBounds,
+                ResolveMirrorRaycastTarget(),
+                candidate != null ? candidate.transform : null,
+                false);
+        }
+
+        private bool IsReflectionCameraSeeingPlayer(FpsHorrorKit.FpsController candidate)
+        {
+            if (candidate == null)
+                return false;
+
+            Camera playerCamera = ResolvePlayerCamera(candidate);
+            Camera mirrorCamera = reflection != null
+                ? reflection.RefreshReflection(playerCamera)
+                : null;
+
+            if (mirrorCamera == null)
+                return false;
+
+            Bounds playerBounds = GetPlayerVisibilityBounds(candidate);
+            return IsBoundsVisibleFromCamera(
+                mirrorCamera,
+                playerBounds,
+                candidate.transform,
+                transform,
+                true);
+        }
+
+        private Camera ResolvePlayerCamera(FpsHorrorKit.FpsController candidate)
+        {
+            Camera playerCamera = Camera.main;
+            if (playerCamera != null && playerCamera.isActiveAndEnabled)
+                return playerCamera;
+
+            return candidate != null ? candidate.GetComponentInChildren<Camera>(true) : null;
+        }
+
+        private Bounds GetMirrorBounds()
+        {
+            Transform target = ResolveMirrorRaycastTarget();
+            if (target == null)
+                return new Bounds(transform.position + Vector3.up * 1.65f, Vector3.one);
+
+            Renderer targetRenderer = target.GetComponentInChildren<Renderer>();
+            if (targetRenderer != null)
+                return targetRenderer.bounds;
+
+            return new Bounds(target.position, new Vector3(1.6f, 2.4f, 0.25f));
+        }
+
+        private static Bounds GetPlayerVisibilityBounds(FpsHorrorKit.FpsController candidate)
+        {
+            var characterController = candidate.GetComponent<CharacterController>();
+            if (characterController != null)
+            {
+                Vector3 center = candidate.transform.TransformPoint(characterController.center);
+                Vector3 size = new(
+                    characterController.radius * 2f,
+                    characterController.height,
+                    characterController.radius * 2f);
+                return new Bounds(center, size);
+            }
+
+            var colliders = candidate.GetComponentsInChildren<Collider>(true);
+            bool hasBounds = false;
+            Bounds bounds = default;
+            for (int i = 0; i < colliders.Length; i++)
+            {
+                Collider itemCollider = colliders[i];
+                if (itemCollider == null || itemCollider.isTrigger)
+                    continue;
+
+                if (!hasBounds)
+                {
+                    bounds = itemCollider.bounds;
+                    hasBounds = true;
+                }
+                else
+                {
+                    bounds.Encapsulate(itemCollider.bounds);
+                }
+            }
+
+            if (hasBounds)
+                return bounds;
+
+            return new Bounds(candidate.transform.position + Vector3.up * 1f, new Vector3(0.7f, 1.8f, 0.7f));
+        }
+
+        private bool IsBoundsVisibleFromCamera(
+            Camera camera,
+            Bounds bounds,
+            Transform targetRoot,
+            Transform ignoredRoot,
+            bool ignoreMirrorRoot)
+        {
+            Vector3[] samplePoints = GetBoundsSamplePoints(bounds);
+            for (int i = 0; i < samplePoints.Length; i++)
+            {
+                Vector3 point = samplePoints[i];
+                if (!IsPointInsideCamera(camera, point))
+                    continue;
+
+                if (HasClearLineToPoint(
+                    camera.transform.position,
+                    point,
+                    targetRoot,
+                    ignoredRoot,
+                    ignoreMirrorRoot))
+                    return true;
+            }
+
+            return false;
+        }
+
+        private static Vector3[] GetBoundsSamplePoints(Bounds bounds)
+        {
+            Vector3 min = bounds.min;
+            Vector3 max = bounds.max;
+            Vector3 center = bounds.center;
+            return new[]
+            {
+                center,
+                new Vector3(min.x, min.y, min.z),
+                new Vector3(min.x, min.y, max.z),
+                new Vector3(min.x, max.y, min.z),
+                new Vector3(min.x, max.y, max.z),
+                new Vector3(max.x, min.y, min.z),
+                new Vector3(max.x, min.y, max.z),
+                new Vector3(max.x, max.y, min.z),
+                new Vector3(max.x, max.y, max.z)
+            };
+        }
+
+        private static bool IsPointInsideCamera(Camera camera, Vector3 point)
+        {
+            Vector3 viewport = camera.WorldToViewportPoint(point);
+            return viewport.z > camera.nearClipPlane
+                && viewport.x >= 0f
+                && viewport.x <= 1f
+                && viewport.y >= 0f
+                && viewport.y <= 1f;
+        }
+
+        private bool HasClearLineToPoint(
+            Vector3 origin,
+            Vector3 point,
+            Transform targetRoot,
+            Transform ignoredRoot,
+            bool ignoreMirrorRoot)
+        {
+            Vector3 direction = point - origin;
+            float distance = direction.magnitude;
+            if (distance <= 0.05f)
+                return true;
+
+            RaycastHit[] hits = Physics.RaycastAll(
+                origin,
+                direction / distance,
+                distance,
+                Physics.DefaultRaycastLayers,
+                QueryTriggerInteraction.Collide);
+
+            if (hits == null || hits.Length == 0)
+                return true;
+
+            Array.Sort(hits, (left, right) => left.distance.CompareTo(right.distance));
+            foreach (RaycastHit hit in hits)
+            {
+                Transform hitTransform = hit.transform;
+                if (hitTransform == null)
+                    continue;
+
+                if (hit.collider != null && hit.collider.isTrigger)
+                    continue;
+
+                if (ignoredRoot != null && hitTransform.IsChildOf(ignoredRoot))
+                    continue;
+
+                if (ignoreMirrorRoot && hitTransform.IsChildOf(transform))
+                    continue;
+
+                if (targetRoot != null && (hitTransform == targetRoot || hitTransform.IsChildOf(targetRoot)))
+                    return true;
+
+                return false;
+            }
 
             return true;
         }
@@ -344,7 +562,12 @@ namespace MainGame
 
             DisablePlayerInteraction();
             reflection?.SetBloodStained();
-            AudioManager.Instance?.PlayGhostJumpscare();
+            float jumpscareAudioStartedAt = Time.time;
+            float jumpscareAudioDuration = AudioManager.Instance?.PlayGhostJumpscare() ?? 0f;
+            float respawnDelay = Mathf.Max(
+                screenImagePopDuration + screenImageHoldDuration + deathTriggerDelay,
+                2.5f);
+            GameController.Instance?.TriggerJumpscareCheckpointRespawn(respawnDelay);
 
             Camera playerCamera = Camera.main;
             yield return PlayScreenImageJumpscare(playerCamera);
@@ -353,11 +576,11 @@ namespace MainGame
             if (deathTriggerDelay > 0f)
                 yield return new WaitForSeconds(deathTriggerDelay);
 
-            if (GameController.Instance != null)
-                GameController.Instance.TriggerDeathWithUIDelay(false, 0f);
-            else
+            if (GameController.Instance == null)
             {
-                AudioManager.Instance?.PlayDeathVoice(3);
+                float remainingJumpscareAudio = Mathf.Max(0f, jumpscareAudioDuration - (Time.time - jumpscareAudioStartedAt));
+                if (remainingJumpscareAudio > 0f)
+                    yield return new WaitForSeconds(remainingJumpscareAudio);
                 enabled = false;
             }
         }

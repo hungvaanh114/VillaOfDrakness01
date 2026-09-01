@@ -24,6 +24,7 @@ namespace FpsHorrorKit
             }
 
             AudioManager.Instance?.PlayButtonClick();
+            ChapterOneCheckpointManager.Instance?.MarkPianoCheckpoint();
             if (GetPhysicalPiano() != null)
             {
                 physicalPiano.ActivateFromPianoInteract();

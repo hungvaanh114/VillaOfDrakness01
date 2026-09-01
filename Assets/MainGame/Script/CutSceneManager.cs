@@ -10,8 +10,11 @@ using FpsHorrorKit;
 
 public sealed class CutSceneManager : MonoBehaviour
 {
+    private const string DefaultIntroWindowEntryCutSceneId = "intro_window_entry";
+
     [Header("Sequences")]
     [SerializeField] private string introCutSceneId = "intro";
+    [SerializeField] private string introWindowEntryCutSceneId = DefaultIntroWindowEntryCutSceneId;
     [SerializeField] private bool autoResolveSequences = true;
     [SerializeField] private List<CutSceneSequence> sequences = new();
 
@@ -37,6 +40,7 @@ public sealed class CutSceneManager : MonoBehaviour
     [SerializeField] private AudioSource typewriterClickSource;
     [SerializeField] private AudioClip typewriterClickClip;
     [SerializeField, Range(0f, 1f)] private float typewriterClickVolume = 0.45f;
+    [SerializeField, Min(1f)] private float typewriterClickVolumeDivider = 6f;
     [SerializeField, Min(0f)] private float skipInputCooldown = 0.45f;
 
     [Header("Navigation")]
@@ -69,6 +73,8 @@ public sealed class CutSceneManager : MonoBehaviour
     private float nextSkipAllowedTime;
     private bool waitForSkipRelease;
     private bool skipConsumedForPoint;
+
+    public static bool SuppressSpaceSkipInput { get; set; }
 
     public bool IsPlaying => runningCutScene != null;
     public bool IsPlayingIntro => IsPlaying && runningSequence != null && IsIntro(runningSequence);
@@ -195,7 +201,7 @@ public sealed class CutSceneManager : MonoBehaviour
                 continue;
             }
 
-            if (!speechDone && !skipConsumedForPoint && TryConsumeSkipPressed())
+            if (!speechDone && movementDone && !skipConsumedForPoint && TryConsumeSkipPressed())
             {
                 skipConsumedForPoint = true;
                 speechDone = true;
@@ -291,8 +297,11 @@ public sealed class CutSceneManager : MonoBehaviour
         cameraVelocity = Vector3.zero;
         waitForSkipRelease = false;
         skipConsumedForPoint = false;
-        if (sequence != null && IsIntro(sequence))
+        if (sequence != null && IsIntroWindowEntry(sequence))
+        {
+            ChapterOneCheckpointManager.Instance?.MarkWindowCutsceneCompleted();
             gameController?.SetChapterPhase(GameController.ChapterPhase.EnterHouse);
+        }
 
         gameController?.StartGameplay();
     }
@@ -529,7 +538,7 @@ public sealed class CutSceneManager : MonoBehaviour
 
         var clip = typewriterClickClip != null ? typewriterClickClip : GetGeneratedTypewriterClickClip();
         if (clip != null)
-            source.PlayOneShot(clip, typewriterClickVolume);
+            source.PlayOneShot(clip, typewriterClickVolume / Mathf.Max(1f, typewriterClickVolumeDivider));
     }
 
     private AudioClip GetGeneratedTypewriterClickClip()
@@ -643,6 +652,12 @@ public sealed class CutSceneManager : MonoBehaviour
         return string.Equals(sequence.CutSceneId, introCutSceneId, System.StringComparison.OrdinalIgnoreCase);
     }
 
+    private bool IsIntroWindowEntry(CutSceneSequence sequence)
+    {
+        return string.Equals(sequence.CutSceneId, introWindowEntryCutSceneId, System.StringComparison.OrdinalIgnoreCase)
+            || string.Equals(sequence.CutSceneId, DefaultIntroWindowEntryCutSceneId, System.StringComparison.OrdinalIgnoreCase);
+    }
+
     private static CutScenePoint FirstPlayablePoint(CutSceneSequence sequence)
     {
         foreach (var point in sequence.Points)
@@ -659,6 +674,17 @@ public sealed class CutSceneManager : MonoBehaviour
         var keyboard = Keyboard.current;
         if (keyboard == null)
             return false;
+
+        if (SuppressSpaceSkipInput)
+        {
+            if (keyboard.spaceKey.isPressed)
+            {
+                waitForSkipRelease = true;
+                FpsAssetsInputs.Instance?.ClearGameplayInput();
+            }
+
+            return false;
+        }
 
         if (waitForSkipRelease)
         {

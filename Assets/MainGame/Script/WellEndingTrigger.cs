@@ -18,6 +18,7 @@ public sealed class WellEndingTrigger : MonoBehaviour
     [SerializeField, Min(0.5f)] private float triggerRadius = 2.8f;
     [SerializeField] private bool armedOnStart;
     [SerializeField] private bool triggerCutsceneOnOwnCollider;
+    [SerializeField] private bool hideMonstersWhenEndingStarts = true;
 
     [Header("Outtro CutScene")]
     [SerializeField] private CutSceneManager cutSceneManager;
@@ -72,6 +73,10 @@ public sealed class WellEndingTrigger : MonoBehaviour
     [SerializeField, Min(0f)] private float menuReturnDelay = 1.25f;
     [SerializeField] private float creditsStartY = -920f;
     [SerializeField] private float creditsEndY = 1480f;
+    [SerializeField] private bool showDeathScreenBeforePartTwo = true;
+    [SerializeField, Min(0f)] private float endingDeathScreenHoldDuration = 2.5f;
+    [SerializeField] private bool showPartTwoContinueButton = true;
+    [SerializeField] private string partTwoTransitionSceneName = "EndingP2Transition";
     [TextArea(6, 18)]
     [SerializeField] private string endingLine =
         "VILLA OF DARKNESS\n\n" +
@@ -170,6 +175,7 @@ public sealed class WellEndingTrigger : MonoBehaviour
             return;
 
         hasTriggered = true;
+        HideMonstersForEnding();
         StartCoroutine(ExitDoorEndingRoutine(carriedGramophone));
     }
 
@@ -183,7 +189,24 @@ public sealed class WellEndingTrigger : MonoBehaviour
             return;
 
         hasTriggered = true;
+        HideMonstersForEnding();
         StartCoroutine(ExitDoorEndingRoutine(null));
+    }
+
+    private void HideMonstersForEnding()
+    {
+        if (!hideMonstersWhenEndingStarts)
+            return;
+
+        var monsters = FindObjectsByType<MonsterAI>(FindObjectsInactive.Include, FindObjectsSortMode.None);
+        for (int i = 0; i < monsters.Length; i++)
+        {
+            if (monsters[i] == null)
+                continue;
+
+            monsters[i].DisableHunt(true);
+            monsters[i].SetMeshVisible(false);
+        }
     }
 
     private IEnumerator ExitDoorEndingRoutine(Transform carriedGramophone)
@@ -234,13 +257,17 @@ public sealed class WellEndingTrigger : MonoBehaviour
         }
 
         BuildEndingUi(
+            out GameObject endingUiRoot,
             out CanvasGroup blackGroup,
             out CanvasGroup vignetteGroup,
             out RectTransform vignetteRect,
             out RawImage jumpscareImage,
             out RectTransform jumpscareRect,
             out TextMeshProUGUI jumpscareSubtitle,
-            out TextMeshProUGUI creditLabel);
+            out TextMeshProUGUI creditLabel,
+            out GameObject choiceRoot,
+            out Button continuePartTwoButton,
+            out Button returnMenuButton);
 
         PlayWellJumpscareAudio();
         yield return PlayJumpscareImage(blackGroup, vignetteGroup, vignetteRect, jumpscareImage, jumpscareRect, jumpscareSubtitle);
@@ -248,22 +275,35 @@ public sealed class WellEndingTrigger : MonoBehaviour
         if (jumpscareImage != null)
             jumpscareImage.gameObject.SetActive(false);
 
+        AudioManager.Instance?.PlayDeathMusic();
+        PlayerPrefsMainMenuSaveService.UnlockPartTwo();
+
+        if (showDeathScreenBeforePartTwo && controller != null)
+        {
+            if (endingUiRoot != null)
+                endingUiRoot.SetActive(false);
+
+            controller.ShowEndingDeathScreenPresentation();
+            if (endingDeathScreenHoldDuration > 0f)
+                yield return new WaitForSeconds(endingDeathScreenHoldDuration);
+            controller.HideEndingDeathScreenPresentation();
+        }
+
+        if (endingUiRoot != null)
+            endingUiRoot.SetActive(true);
+
         float blackAlpha = blackGroup != null ? blackGroup.alpha : 0f;
         yield return FadeBlack(blackGroup, blackAlpha, 1f, fadeToBlackDuration);
 
-        AudioManager.Instance?.PlayDeathMusic();
         if (blackHoldDuration > 0f)
             yield return new WaitForSeconds(blackHoldDuration);
 
         yield return RunEndingCredits(creditLabel);
 
-        if (menuReturnDelay > 0f)
-            yield return new WaitForSeconds(menuReturnDelay);
+        if (creditLabel != null)
+            creditLabel.gameObject.SetActive(false);
 
-        if (GameController.Instance != null)
-            GameController.Instance.LoadMainMenu();
-        else
-            SceneManager.LoadScene("Menu");
+        yield return WaitForEndingChoice(choiceRoot, continuePartTwoButton, returnMenuButton);
     }
 
     private void PlayWellJumpscareAudio()
@@ -274,7 +314,7 @@ public sealed class WellEndingTrigger : MonoBehaviour
 
         audio.PlayWellJumpscare();
         if (playerJumpscareScream != null)
-            audio.PlayVoice(playerJumpscareScream);
+            audio.PlayPlayerVoice(playerJumpscareScream);
         else
             audio.PlayDeathVoice(fallbackPlayerScreamVoiceIndex);
     }
@@ -466,16 +506,59 @@ public sealed class WellEndingTrigger : MonoBehaviour
         rect.anchoredPosition = new Vector2(0f, creditsEndY);
     }
 
+    private IEnumerator WaitForEndingChoice(GameObject choiceRoot, Button continuePartTwoButton, Button returnMenuButton)
+    {
+        if (choiceRoot == null || returnMenuButton == null)
+        {
+            if (menuReturnDelay > 0f)
+                yield return new WaitForSeconds(menuReturnDelay);
+
+            LoadMainMenuScene();
+            yield break;
+        }
+
+        string targetScene = null;
+        choiceRoot.SetActive(true);
+        SetEndingCursor(true);
+
+        if (continuePartTwoButton != null)
+        {
+            continuePartTwoButton.gameObject.SetActive(showPartTwoContinueButton && !string.IsNullOrWhiteSpace(partTwoTransitionSceneName));
+            continuePartTwoButton.onClick.RemoveAllListeners();
+            continuePartTwoButton.onClick.AddListener(() =>
+            {
+                targetScene = partTwoTransitionSceneName;
+            });
+        }
+
+        returnMenuButton.onClick.RemoveAllListeners();
+        returnMenuButton.onClick.AddListener(() =>
+        {
+            targetScene = GetMainMenuSceneName();
+        });
+
+        while (string.IsNullOrWhiteSpace(targetScene))
+            yield return null;
+
+        Time.timeScale = 1f;
+        SceneManager.LoadScene(targetScene);
+    }
+
     private void BuildEndingUi(
+        out GameObject endingUiRoot,
         out CanvasGroup blackGroup,
         out CanvasGroup vignetteGroup,
         out RectTransform vignetteRect,
         out RawImage jumpscareImage,
         out RectTransform jumpscareRect,
         out TextMeshProUGUI jumpscareSubtitle,
-        out TextMeshProUGUI creditLabel)
+        out TextMeshProUGUI creditLabel,
+        out GameObject choiceRoot,
+        out Button continuePartTwoButton,
+        out Button returnMenuButton)
     {
         var canvasObject = new GameObject("EndingRuntimeUI", typeof(RectTransform), typeof(Canvas), typeof(CanvasScaler), typeof(GraphicRaycaster));
+        endingUiRoot = canvasObject;
         var canvas = canvasObject.GetComponent<Canvas>();
         canvas.renderMode = RenderMode.ScreenSpaceOverlay;
         canvas.sortingOrder = 900;
@@ -555,6 +638,30 @@ public sealed class WellEndingTrigger : MonoBehaviour
         creditLabel.overflowMode = TextOverflowModes.Overflow;
         creditLabel.raycastTarget = false;
         creditLabel.gameObject.SetActive(false);
+
+        choiceRoot = new GameObject("EndingChoicePanel", typeof(RectTransform));
+        choiceRoot.transform.SetParent(canvasObject.transform, false);
+        var choiceRect = choiceRoot.GetComponent<RectTransform>();
+        Stretch(choiceRect);
+
+        var title = new GameObject("EndingChoiceTitle", typeof(RectTransform), typeof(CanvasRenderer), typeof(TextMeshProUGUI)).GetComponent<TextMeshProUGUI>();
+        title.transform.SetParent(choiceRoot.transform, false);
+        RectTransform titleRect = title.rectTransform;
+        titleRect.anchorMin = new Vector2(0.5f, 0.5f);
+        titleRect.anchorMax = new Vector2(0.5f, 0.5f);
+        titleRect.pivot = new Vector2(0.5f, 0.5f);
+        titleRect.sizeDelta = new Vector2(980f, 110f);
+        titleRect.anchoredPosition = new Vector2(0f, 120f);
+        title.text = "HO\u00C0N TH\u00C0NH PH\u1EA6N 1";
+        title.fontSize = 48f;
+        title.fontStyle = FontStyles.Bold;
+        title.alignment = TextAlignmentOptions.Center;
+        title.color = new Color(0.86f, 0.92f, 0.96f, 1f);
+        title.raycastTarget = false;
+
+        continuePartTwoButton = CreateEndingChoiceButton(choiceRoot.transform, "ContinuePartTwoButton", "TI\u1EBEP T\u1EE4C", new Vector2(0f, -20f));
+        returnMenuButton = CreateEndingChoiceButton(choiceRoot.transform, "ReturnMenuButton", "TR\u1EDE V\u1EC0 MENU", new Vector2(0f, -130f));
+        choiceRoot.SetActive(false);
     }
 
     private Texture2D GetCircularBackdropTexture()
@@ -767,6 +874,72 @@ public sealed class WellEndingTrigger : MonoBehaviour
         }
 
         return null;
+    }
+
+    private static Button CreateEndingChoiceButton(Transform parent, string objectName, string label, Vector2 anchoredPosition)
+    {
+        var buttonObject = new GameObject(objectName, typeof(RectTransform), typeof(CanvasRenderer), typeof(Image), typeof(Button));
+        buttonObject.transform.SetParent(parent, false);
+
+        var buttonRect = buttonObject.GetComponent<RectTransform>();
+        buttonRect.anchorMin = new Vector2(0.5f, 0.5f);
+        buttonRect.anchorMax = new Vector2(0.5f, 0.5f);
+        buttonRect.pivot = new Vector2(0.5f, 0.5f);
+        buttonRect.sizeDelta = new Vector2(460f, 82f);
+        buttonRect.anchoredPosition = anchoredPosition;
+
+        var image = buttonObject.GetComponent<Image>();
+        image.color = new Color(0.18f, 0.02f, 0.02f, 0.92f);
+        image.raycastTarget = true;
+
+        var button = buttonObject.GetComponent<Button>();
+        button.targetGraphic = image;
+        var colors = button.colors;
+        colors.normalColor = Color.white;
+        colors.highlightedColor = new Color(0.8f, 0.2f, 0.2f, 1f);
+        colors.pressedColor = new Color(0.55f, 0.02f, 0.02f, 1f);
+        colors.selectedColor = Color.white;
+        colors.disabledColor = new Color(0.25f, 0.25f, 0.25f, 0.55f);
+        colors.fadeDuration = 0.08f;
+        button.colors = colors;
+
+        var labelObject = new GameObject("LabelText", typeof(RectTransform), typeof(CanvasRenderer), typeof(TextMeshProUGUI));
+        labelObject.transform.SetParent(buttonObject.transform, false);
+        var labelRect = labelObject.GetComponent<RectTransform>();
+        Stretch(labelRect);
+        labelRect.offsetMin = new Vector2(24f, 0f);
+        labelRect.offsetMax = new Vector2(-24f, 0f);
+
+        var text = labelObject.GetComponent<TextMeshProUGUI>();
+        text.text = label;
+        text.fontSize = 34f;
+        text.fontStyle = FontStyles.Bold;
+        text.alignment = TextAlignmentOptions.Center;
+        text.textWrappingMode = TextWrappingModes.NoWrap;
+        text.overflowMode = TextOverflowModes.Ellipsis;
+        text.color = new Color(0.86f, 0.92f, 0.96f, 1f);
+        text.raycastTarget = false;
+
+        return button;
+    }
+
+    private static void LoadMainMenuScene()
+    {
+        Time.timeScale = 1f;
+        SceneManager.LoadScene(GetMainMenuSceneName());
+    }
+
+    private static string GetMainMenuSceneName()
+    {
+        return GameController.Instance != null && !string.IsNullOrWhiteSpace(GameController.Instance.mainMenuSceneName)
+            ? GameController.Instance.mainMenuSceneName
+            : "Menu";
+    }
+
+    private static void SetEndingCursor(bool visible)
+    {
+        Cursor.visible = visible;
+        Cursor.lockState = visible ? CursorLockMode.None : CursorLockMode.Locked;
     }
 
     private static Image CreateImage(string objectName, Transform parent, Color color)
