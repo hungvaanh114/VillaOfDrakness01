@@ -1,4 +1,5 @@
 using System.Collections.Generic;
+using System.IO;
 using MainGame.P2;
 using TMPro;
 using UnityEditor;
@@ -32,9 +33,10 @@ public static class GameP2SceneBuilder
     {
         EnsureFolders();
         CreateMaterials();
+        CopyChapterOneSceneAsBase();
 
-        var scene = EditorSceneManager.NewScene(NewSceneSetup.EmptyScene, NewSceneMode.Single);
-        scene.name = "GameP2";
+        var scene = EditorSceneManager.OpenScene(ScenePath, OpenSceneMode.Single);
+        DisableChapterOneRuntimeInCopy();
 
         RenderSettings.ambientMode = UnityEngine.Rendering.AmbientMode.Flat;
         RenderSettings.ambientLight = new Color(0.075f, 0.083f, 0.095f);
@@ -43,12 +45,12 @@ public static class GameP2SceneBuilder
         RenderSettings.fogDensity = 0.018f;
 
         var roots = new SceneRoots();
-        roots.Environment = new GameObject("P2_Environment").transform;
+        roots.Environment = new GameObject("P2_StoryLayer_FromChapter1").transform;
         roots.Gameplay = new GameObject("P2_Gameplay").transform;
         roots.Waypoints = new GameObject("P2_GhostWaypoints").transform;
         roots.Audio = new GameObject("P2_Audio").transform;
 
-        BuildEnvironment(roots);
+        BuildInheritedSceneStoryGuides(roots);
 
         var player = CreatePlayer(roots.Gameplay);
         var ui = CreateHud(roots.Gameplay);
@@ -63,7 +65,91 @@ public static class GameP2SceneBuilder
         AssetDatabase.Refresh();
         ConfigureBuildSettings();
         AssetDatabase.SaveAssets();
-        Debug.Log("GameP2 scene built at " + ScenePath);
+        Debug.Log("GameP2 inherited scene built from Assets/MainGame/Game.unity at " + ScenePath);
+    }
+
+    private static void CopyChapterOneSceneAsBase()
+    {
+        var source = Path.GetFullPath("Assets/MainGame/Game.unity");
+        var destination = Path.GetFullPath(ScenePath);
+        if (!File.Exists(source))
+            throw new FileNotFoundException("Cannot find Chapter 1 scene to inherit from.", source);
+
+        Directory.CreateDirectory(Path.GetDirectoryName(destination));
+        File.Copy(source, destination, true);
+        AssetDatabase.ImportAsset(ScenePath, ImportAssetOptions.ForceSynchronousImport);
+    }
+
+    private static void DisableChapterOneRuntimeInCopy()
+    {
+        var disabledTypes = new HashSet<string>
+        {
+            "AudioManager",
+            "ChapterOneCheckpointManager",
+            "ChapterOneStoryFlow",
+            "CutSceneManager",
+            "GameController",
+            "IntroWindowCutsceneTrigger",
+            "MirrorJumpscare",
+            "MonsterAI",
+            "OuttroCutSceneSequenceBinder",
+            "PauseMenuController",
+            "PianoInteractable",
+            "PianoPuzzle",
+            "PhysicalPianoController",
+            "WellEndingTrigger"
+        };
+
+        foreach (var behaviour in Object.FindObjectsByType<MonoBehaviour>(FindObjectsInactive.Include, FindObjectsSortMode.None))
+        {
+            if (behaviour == null)
+                continue;
+
+            var type = behaviour.GetType();
+            if (type.Namespace == "MainGame.P2" || !disabledTypes.Contains(type.Name))
+                continue;
+
+            behaviour.enabled = false;
+            EditorUtility.SetDirty(behaviour);
+        }
+
+        foreach (var canvas in Object.FindObjectsByType<Canvas>(FindObjectsInactive.Include, FindObjectsSortMode.None))
+        {
+            if (canvas.name.StartsWith("P2_"))
+                continue;
+
+            canvas.enabled = false;
+            EditorUtility.SetDirty(canvas);
+        }
+
+        foreach (var camera in Object.FindObjectsByType<Camera>(FindObjectsInactive.Include, FindObjectsSortMode.None))
+        {
+            if (camera.name.StartsWith("P2_"))
+                continue;
+
+            camera.enabled = false;
+            EditorUtility.SetDirty(camera);
+        }
+
+        foreach (var listener in Object.FindObjectsByType<AudioListener>(FindObjectsInactive.Include, FindObjectsSortMode.None))
+        {
+            listener.enabled = false;
+            EditorUtility.SetDirty(listener);
+        }
+    }
+
+    private static void BuildInheritedSceneStoryGuides(SceneRoots roots)
+    {
+        CreateLight("P2_Moon_Key", new Vector3(-7f, 8f, 10f), new Vector3(52f, -35f, 0f), LightType.Directional, 1.1f, 12f, new Color(0.55f, 0.68f, 0.9f), roots.Environment);
+        CreateLight("P2_Lobby_Warm_Spill", new Vector3(0f, 2.7f, -12f), Vector3.zero, LightType.Point, 1.7f, 10f, new Color(1f, 0.62f, 0.32f), roots.Environment);
+        CreateLight("P2_Linh_Static_CandleGlow", new Vector3(2f, 4f, -7.4f), Vector3.zero, LightType.Point, 1.5f, 5.5f, new Color(1f, 0.58f, 0.25f), roots.Environment);
+        CreateLight("P2_Backyard_MoonPool", new Vector3(0f, 3f, 13f), Vector3.zero, LightType.Point, 1.0f, 8f, new Color(0.45f, 0.58f, 0.9f), roots.Environment);
+
+        CreateRoomLabel("P2: TIEN SANH / GUONG PHU VAI", new Vector3(0f, 2.5f, -15.5f), roots.Environment);
+        CreateRoomLabel("P2: THU PHONG / NHAT KY BA LAN", new Vector3(-10f, 2.5f, -15.4f), roots.Environment);
+        CreateRoomLabel("P2: HANH LANG TANG MOT / MA VU DAI", new Vector3(4f, 5.4f, -1.1f), roots.Environment);
+        CreateRoomLabel("P2: PHONG BE LINH / TUONG PHIA TAY", new Vector3(5f, 5.4f, -8.5f), roots.Environment);
+        CreateRoomLabel("P2: SAN SAU / DEATH SEQUENCE", new Vector3(0f, 2.4f, 13.5f), roots.Environment);
     }
 
     private static void BuildEnvironment(SceneRoots roots)

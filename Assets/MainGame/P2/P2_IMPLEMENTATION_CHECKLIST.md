@@ -5,11 +5,14 @@
 - Scene chính: `Assets/MainGame/GameP2.unity`.
 - Thư mục riêng: `Assets/MainGame/P2/`.
 - Không sửa nội dung các scene khác.
-- Có thể tham chiếu asset/script có sẵn của Chapter 1, nhưng runtime P2 có lớp riêng để scene chạy độc lập.
+- `GameP2.unity` phải là bản sao kế thừa từ `Assets/MainGame/Game.unity` của Chapter 1 để tái sử dụng House, terrain, decor, lighting baseline và asset đã dựng.
+- Runtime/cutscene Chapter 1 trong bản sao được tắt để không chạy intro/checkpoint/chase cũ đè lên flow P2.
+- Layer P2 mới chỉ add thêm object/script trong scene copy và thư mục `Assets/MainGame/P2/`.
 
 ## 1. Khung scene và hướng chơi
 
-- Tạo scene `GameP2` độc lập.
+- Tạo scene `GameP2` bằng cách copy từ `Game.unity`.
+- Giữ root/environment chính của Chapter 1, đặc biệt là `House`, terrain và decor đã có.
 - Tạo player first-person riêng cho P2.
 - Tạo Canvas/HUD riêng cho P2.
 - Tạo hệ thống objective/hint/subtitle/interact prompt.
@@ -65,8 +68,10 @@
 
 ## 4. Layout playable demo
 
-- Đường mòn/cổng vào tối xám 1970.
-- Tiền sảnh tầng trệt:
+- Dùng lại layout Chapter 1 làm nền.
+- Add marker/prop P2 lên các khu vực tương ứng theo cốt truyện mới.
+- Đường mòn/cổng vào tối xám 1970 trên nền outdoor Ch.1.
+- Tiền sảnh tầng trệt trên nền House Ch.1:
   - Gương lớn phủ vải đỏ.
   - Tranh gia đình.
   - Lối thư phòng.
