@@ -58,11 +58,11 @@ public static class GameP2SceneBuilder
         var controller = CreateController(roots.Gameplay, player, ui, audio, ghostSetup.Ghost, mirrorEvent);
 
         ConfigureController(controller, player, ui, audio, ghostSetup.Ghost, mirrorEvent);
-        ConfigureBuildSettings();
-
         EditorSceneManager.SaveScene(scene, ScenePath);
         AssetDatabase.SaveAssets();
         AssetDatabase.Refresh();
+        ConfigureBuildSettings();
+        AssetDatabase.SaveAssets();
         Debug.Log("GameP2 scene built at " + ScenePath);
     }
 
@@ -434,11 +434,30 @@ public static class GameP2SceneBuilder
     private static void ConfigureBuildSettings()
     {
         var scenes = new List<EditorBuildSettingsScene>(EditorBuildSettings.scenes);
-        if (scenes.Exists(s => s.path == ScenePath))
+        for (var i = 0; i < scenes.Count; i++)
+        {
+            if (scenes[i].path == ScenePath)
+            {
+                scenes[i] = CreateBuildSettingsScene(ScenePath);
+                EditorBuildSettings.scenes = scenes.ToArray();
+                return;
+            }
+        }
+
+        if (string.IsNullOrWhiteSpace(AssetDatabase.AssetPathToGUID(ScenePath)))
             return;
 
-        scenes.Add(new EditorBuildSettingsScene(ScenePath, true));
+        scenes.Add(CreateBuildSettingsScene(ScenePath));
         EditorBuildSettings.scenes = scenes.ToArray();
+    }
+
+    private static EditorBuildSettingsScene CreateBuildSettingsScene(string path)
+    {
+        var scene = new EditorBuildSettingsScene(path, true);
+        var guid = AssetDatabase.AssetPathToGUID(path);
+        if (!string.IsNullOrWhiteSpace(guid))
+            scene.guid = new GUID(guid);
+        return scene;
     }
 
     private static P2Interactable AddInteractable(GameObject target, P2InteractableKind kind, string prompt, bool needsLight, bool oneShot, GameObject linked = null)
@@ -510,7 +529,7 @@ public static class GameP2SceneBuilder
             TextAnchor.LowerCenter => TextAlignmentOptions.Bottom,
             _ => TextAlignmentOptions.Left
         };
-        tmp.enableWordWrapping = true;
+        tmp.textWrappingMode = TextWrappingModes.Normal;
 
         var rect = obj.GetComponent<RectTransform>();
         rect.sizeDelta = size;
