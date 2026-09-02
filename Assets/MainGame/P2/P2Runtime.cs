@@ -551,6 +551,8 @@ namespace MainGame.P2
     {
         [SerializeField] private Camera playerCamera;
         [SerializeField] private CharacterController characterController;
+        [SerializeField] private bool driveInput = true;
+        [SerializeField] private MonoBehaviour[] externalMovementBehaviours = Array.Empty<MonoBehaviour>();
         [SerializeField] private float walkSpeed = 3f;
         [SerializeField] private float runSpeed = 5.4f;
         [SerializeField] private float mouseSensitivity = 0.08f;
@@ -582,6 +584,14 @@ namespace MainGame.P2
 
         private void Update()
         {
+            if (!driveInput)
+            {
+                MoveSpeed = (transform.position - lastPosition).magnitude / Mathf.Max(Time.deltaTime, 0.0001f);
+                IsRunning = Keyboard.current != null && Keyboard.current.leftShiftKey.isPressed && MoveSpeed > 0.4f;
+                lastPosition = transform.position;
+                return;
+            }
+
             if (inputLocked)
             {
                 MoveSpeed = 0f;
@@ -596,6 +606,14 @@ namespace MainGame.P2
         public void SetInputLocked(bool locked)
         {
             inputLocked = locked;
+            if (externalMovementBehaviours == null)
+                return;
+
+            foreach (var behaviour in externalMovementBehaviours)
+            {
+                if (behaviour != null)
+                    behaviour.enabled = !locked;
+            }
         }
 
         public void Teleport(Vector3 position)

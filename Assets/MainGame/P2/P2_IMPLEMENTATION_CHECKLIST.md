@@ -6,16 +6,17 @@
 - Thư mục riêng: `Assets/MainGame/P2/`.
 - Không sửa nội dung các scene khác.
 - `GameP2.unity` phải là bản sao kế thừa từ `Assets/MainGame/Game.unity` của Chapter 1 để tái sử dụng House, terrain, decor, lighting baseline và asset đã dựng.
-- Runtime/cutscene Chapter 1 trong bản sao được tắt để không chạy intro/checkpoint/chase cũ đè lên flow P2.
+- Giữ nguyên nhân vật/player controller, camera gameplay, UI cũ, model ma cũ, ánh sáng môi trường và không khí scene cũ.
+- Chỉ thay lớp cốt truyện, audio thoại và cutscene/event của Chapter 2.
+- Runtime/cutscene Chapter 1 liên quan intro/checkpoint/chase/ending cũ trong bản sao được tắt hoặc cấu hình lại để không đè lên flow P2.
 - Layer P2 mới chỉ add thêm object/script trong scene copy và thư mục `Assets/MainGame/P2/`.
 
 ## 1. Khung scene và hướng chơi
 
 - Tạo scene `GameP2` bằng cách copy từ `Game.unity`.
 - Giữ root/environment chính của Chapter 1, đặc biệt là `House`, terrain và decor đã có.
-- Tạo player first-person riêng cho P2.
-- Tạo Canvas/HUD riêng cho P2.
-- Tạo hệ thống objective/hint/subtitle/interact prompt.
+- Dùng lại player/camera/ma/UI của Chapter 1.
+- Tạo hệ thống objective/hint/subtitle/interact prompt bằng chính Canvas/Text style cũ.
 - Tạo progression tuyến tính:
   1. Cổng vào và tiền sảnh.
   2. Đọc nhật ký Bà Lan.

@@ -38,12 +38,6 @@ public static class GameP2SceneBuilder
         var scene = EditorSceneManager.OpenScene(ScenePath, OpenSceneMode.Single);
         DisableChapterOneRuntimeInCopy();
 
-        RenderSettings.ambientMode = UnityEngine.Rendering.AmbientMode.Flat;
-        RenderSettings.ambientLight = new Color(0.075f, 0.083f, 0.095f);
-        RenderSettings.fog = true;
-        RenderSettings.fogColor = new Color(0.07f, 0.08f, 0.09f);
-        RenderSettings.fogDensity = 0.018f;
-
         var roots = new SceneRoots();
         roots.Environment = new GameObject("P2_StoryLayer_FromChapter1").transform;
         roots.Gameplay = new GameObject("P2_Gameplay").transform;
@@ -52,10 +46,10 @@ public static class GameP2SceneBuilder
 
         BuildInheritedSceneStoryGuides(roots);
 
-        var player = CreatePlayer(roots.Gameplay);
-        var ui = CreateHud(roots.Gameplay);
+        var player = UseChapterOnePlayer(roots.Gameplay);
+        var ui = UseChapterOneHud();
         var audio = CreateAudio(roots.Audio);
-        var ghostSetup = CreateGhost(roots.Gameplay, roots.Waypoints, player.transform);
+        var ghostSetup = UseChapterOneGhost(roots.Waypoints, player.transform);
         var mirrorEvent = CreateInteractablesAndTriggers(roots, player.transform);
         var controller = CreateController(roots.Gameplay, player, ui, audio, ghostSetup.Ghost, mirrorEvent);
 
@@ -84,19 +78,13 @@ public static class GameP2SceneBuilder
     {
         var disabledTypes = new HashSet<string>
         {
-            "AudioManager",
             "ChapterOneCheckpointManager",
             "ChapterOneStoryFlow",
             "CutSceneManager",
-            "GameController",
             "IntroWindowCutsceneTrigger",
             "MirrorJumpscare",
             "MonsterAI",
             "OuttroCutSceneSequenceBinder",
-            "PauseMenuController",
-            "PianoInteractable",
-            "PianoPuzzle",
-            "PhysicalPianoController",
             "WellEndingTrigger"
         };
 
@@ -112,44 +100,23 @@ public static class GameP2SceneBuilder
             behaviour.enabled = false;
             EditorUtility.SetDirty(behaviour);
         }
-
-        foreach (var canvas in Object.FindObjectsByType<Canvas>(FindObjectsInactive.Include, FindObjectsSortMode.None))
+        foreach (var behaviour in Object.FindObjectsByType<MonoBehaviour>(FindObjectsInactive.Include, FindObjectsSortMode.None))
         {
-            if (canvas.name.StartsWith("P2_"))
+            if (behaviour == null || behaviour.GetType().Name != "GameController")
                 continue;
 
-            canvas.enabled = false;
-            EditorUtility.SetDirty(canvas);
-        }
-
-        foreach (var camera in Object.FindObjectsByType<Camera>(FindObjectsInactive.Include, FindObjectsSortMode.None))
-        {
-            if (camera.name.StartsWith("P2_"))
-                continue;
-
-            camera.enabled = false;
-            EditorUtility.SetDirty(camera);
-        }
-
-        foreach (var listener in Object.FindObjectsByType<AudioListener>(FindObjectsInactive.Include, FindObjectsSortMode.None))
-        {
-            listener.enabled = false;
-            EditorUtility.SetDirty(listener);
+            var serialized = new SerializedObject(behaviour);
+            var playIntro = serialized.FindProperty("playIntroOnStart");
+            if (playIntro != null)
+                playIntro.boolValue = false;
+            serialized.ApplyModifiedPropertiesWithoutUndo();
+            EditorUtility.SetDirty(behaviour);
         }
     }
 
     private static void BuildInheritedSceneStoryGuides(SceneRoots roots)
     {
-        CreateLight("P2_Moon_Key", new Vector3(-7f, 8f, 10f), new Vector3(52f, -35f, 0f), LightType.Directional, 1.1f, 12f, new Color(0.55f, 0.68f, 0.9f), roots.Environment);
-        CreateLight("P2_Lobby_Warm_Spill", new Vector3(0f, 2.7f, -12f), Vector3.zero, LightType.Point, 1.7f, 10f, new Color(1f, 0.62f, 0.32f), roots.Environment);
-        CreateLight("P2_Linh_Static_CandleGlow", new Vector3(2f, 4f, -7.4f), Vector3.zero, LightType.Point, 1.5f, 5.5f, new Color(1f, 0.58f, 0.25f), roots.Environment);
-        CreateLight("P2_Backyard_MoonPool", new Vector3(0f, 3f, 13f), Vector3.zero, LightType.Point, 1.0f, 8f, new Color(0.45f, 0.58f, 0.9f), roots.Environment);
-
-        CreateRoomLabel("P2: TIEN SANH / GUONG PHU VAI", new Vector3(0f, 2.5f, -15.5f), roots.Environment);
-        CreateRoomLabel("P2: THU PHONG / NHAT KY BA LAN", new Vector3(-10f, 2.5f, -15.4f), roots.Environment);
-        CreateRoomLabel("P2: HANH LANG TANG MOT / MA VU DAI", new Vector3(4f, 5.4f, -1.1f), roots.Environment);
-        CreateRoomLabel("P2: PHONG BE LINH / TUONG PHIA TAY", new Vector3(5f, 5.4f, -8.5f), roots.Environment);
-        CreateRoomLabel("P2: SAN SAU / DEATH SEQUENCE", new Vector3(0f, 2.4f, 13.5f), roots.Environment);
+        roots.Environment.name = "P2_StoryLayer_FromChapter1_NoLightingOverride";
     }
 
     private static void BuildEnvironment(SceneRoots roots)
@@ -190,7 +157,37 @@ public static class GameP2SceneBuilder
         CreateLight("Backyard_MoonPool", new Vector3(0f, 3f, 13f), Vector3.zero, LightType.Point, 1.2f, 8f, new Color(0.45f, 0.58f, 0.9f), roots.Environment);
     }
 
-    private static P2FirstPersonController CreatePlayer(Transform parent)
+    private static P2FirstPersonController UseChapterOnePlayer(Transform parent)
+    {
+        var fpsController = FindBehaviourByTypeName("FpsController");
+        var playerObject = fpsController != null ? fpsController.gameObject : null;
+        var camera = FindBestGameplayCamera(playerObject);
+
+        if (playerObject == null && camera != null)
+            playerObject = camera.transform.root.gameObject;
+
+        if (playerObject == null)
+            return CreateFallbackPlayer(parent);
+
+        var proxy = playerObject.GetComponent<P2FirstPersonController>();
+        if (proxy == null)
+            proxy = playerObject.AddComponent<P2FirstPersonController>();
+
+        SetObject(proxy, "playerCamera", camera);
+        SetObject(proxy, "characterController", playerObject.GetComponent<CharacterController>());
+        SetBool(proxy, "driveInput", false);
+        SetObjectArray(proxy, "externalMovementBehaviours", fpsController != null ? new Object[] { fpsController } : new Object[0]);
+        SetBool(fpsController, "isCutScene", false);
+
+        var interactor = playerObject.GetComponent<P2Interactor>();
+        if (interactor == null)
+            interactor = playerObject.AddComponent<P2Interactor>();
+        SetObject(interactor, "sourceCamera", camera);
+
+        return proxy;
+    }
+
+    private static P2FirstPersonController CreateFallbackPlayer(Transform parent)
     {
         var playerObject = new GameObject("P2_Player_BichNgoc");
         playerObject.transform.SetParent(parent);
@@ -284,20 +281,106 @@ public static class GameP2SceneBuilder
         };
     }
 
+    private static HudRefs UseChapterOneHud()
+    {
+        var canvas = FindMainCanvas();
+        if (canvas == null)
+        {
+            var fallbackCanvas = new GameObject("Canvas");
+            canvas = fallbackCanvas.AddComponent<Canvas>();
+            canvas.renderMode = RenderMode.ScreenSpaceOverlay;
+            fallbackCanvas.AddComponent<CanvasScaler>().uiScaleMode = CanvasScaler.ScaleMode.ScaleWithScreenSize;
+            fallbackCanvas.AddComponent<GraphicRaycaster>();
+        }
+
+        canvas.enabled = true;
+        canvas.gameObject.SetActive(true);
+
+        var gameUi = FindSceneObject("GameUI");
+        var groupHost = gameUi != null ? gameUi : canvas.gameObject;
+        groupHost.SetActive(true);
+
+        var group = groupHost.GetComponent<CanvasGroup>();
+        if (group == null)
+            group = groupHost.AddComponent<CanvasGroup>();
+
+        var objective = FindSceneText("ObjectiveText") ?? CreateUiText("ObjectiveText", canvas.transform, new Vector2(32f, -28f), new Vector2(780f, 82f), TextAnchor.UpperLeft, 26f);
+        objective.text = "Di theo duong mon toi cong biet thu.";
+
+        var prompt = FindSceneText("InteractText") ?? FindSceneText("InteractPrompt") ?? CreateUiText("InteractText", canvas.transform, new Vector2(0f, 78f), new Vector2(720f, 48f), TextAnchor.MiddleCenter, 24f);
+        prompt.text = string.Empty;
+
+        var subtitle = CreateUiText("P2_SubtitleText", canvas.transform, new Vector2(0f, 152f), new Vector2(1020f, 160f), TextAnchor.LowerCenter, 25f);
+        CopyTextStyle(objective, subtitle);
+        subtitle.text = string.Empty;
+
+        var deathCard = new GameObject("P2_DeathCard");
+        deathCard.transform.SetParent(canvas.transform, false);
+        var cardImage = deathCard.AddComponent<Image>();
+        cardImage.color = new Color(0.01f, 0.012f, 0.015f, 0.97f);
+        var cardRect = deathCard.GetComponent<RectTransform>();
+        cardRect.anchorMin = Vector2.zero;
+        cardRect.anchorMax = Vector2.one;
+        cardRect.offsetMin = Vector2.zero;
+        cardRect.offsetMax = Vector2.zero;
+        var deathText = CreateUiText("P2_DeathCardText", deathCard.transform, Vector2.zero, new Vector2(1100f, 100f), TextAnchor.MiddleCenter, 42f);
+        CopyTextStyle(objective, deathText);
+        deathText.fontSize = 42f;
+        deathText.text = "NGUYEN THI BICH NGOC - 1951 - 1970";
+        deathCard.SetActive(false);
+
+        return new HudRefs
+        {
+            HudGroup = group,
+            ObjectiveText = objective,
+            PromptText = prompt,
+            SubtitleText = subtitle,
+            StageText = null,
+            DeathCard = deathCard,
+            DeathCardText = deathText
+        };
+    }
+
     private static AudioRefs CreateAudio(Transform parent)
     {
         var voice = CreateAudioSource("P2_VoiceSource", parent, false, 1f);
         var sfx = CreateAudioSource("P2_SfxSource", parent, false, 0.85f);
-        var ambience = CreateAudioSource("P2_AmbienceSource", parent, true, 0.35f);
-        ambience.clip = Clip("Assets/MainGame/Audio/Ambient/Amb_CH1_Day_02.wav");
-        ambience.Play();
 
         return new AudioRefs
         {
             VoiceSource = voice,
             SfxSource = sfx,
-            AmbienceSource = ambience
+            AmbienceSource = null
         };
+    }
+
+    private static GhostSetup UseChapterOneGhost(Transform waypointParent, Transform player)
+    {
+        var oldGhost = FindSceneObject("MonsterPlaceholder");
+        if (oldGhost == null)
+            return CreateGhost(waypointParent, waypointParent, player);
+
+        oldGhost.SetActive(true);
+        var ghost = oldGhost.GetComponent<P2GhostController>();
+        if (ghost == null)
+            ghost = oldGhost.AddComponent<P2GhostController>();
+
+        var quiet = new[]
+        {
+            Waypoint("Quiet_A", oldGhost.transform.position, waypointParent),
+            Waypoint("Quiet_B", oldGhost.transform.position + new Vector3(2.5f, 0f, 0f), waypointParent),
+            Waypoint("Quiet_C", oldGhost.transform.position + new Vector3(-2.5f, 0f, 1.8f), waypointParent)
+        };
+        var awakened = new[]
+        {
+            Waypoint("Full_A_OriginalGhost", oldGhost.transform.position, waypointParent),
+            Waypoint("Full_B_PlayerRoute", player.position + new Vector3(4f, 0f, 2f), waypointParent),
+            Waypoint("Full_C_PlayerRoute", player.position + new Vector3(-4f, 0f, 2f), waypointParent),
+            Waypoint("Full_D_PlayerRoute", player.position + new Vector3(0f, 0f, 6f), waypointParent)
+        };
+        ghost.Configure(player, quiet, awakened);
+
+        return new GhostSetup { Ghost = ghost, QuietWaypoints = quiet, FullWaypoints = awakened };
     }
 
     private static GhostSetup CreateGhost(Transform parent, Transform waypointParent, Transform player)
@@ -801,6 +884,85 @@ public static class GameP2SceneBuilder
         return AssetDatabase.LoadAssetAtPath<AudioClip>(path);
     }
 
+    private static MonoBehaviour FindBehaviourByTypeName(string typeName)
+    {
+        foreach (var behaviour in Object.FindObjectsByType<MonoBehaviour>(FindObjectsInactive.Include, FindObjectsSortMode.None))
+        {
+            if (behaviour != null && behaviour.GetType().Name == typeName)
+                return behaviour;
+        }
+
+        return null;
+    }
+
+    private static Camera FindBestGameplayCamera(GameObject playerObject)
+    {
+        if (playerObject != null)
+        {
+            var playerCamera = playerObject.GetComponentInChildren<Camera>(true);
+            if (playerCamera != null)
+                return playerCamera;
+        }
+
+        foreach (var camera in Object.FindObjectsByType<Camera>(FindObjectsInactive.Include, FindObjectsSortMode.None))
+        {
+            if (camera != null && camera.gameObject.activeInHierarchy && camera.enabled)
+                return camera;
+        }
+
+        foreach (var camera in Object.FindObjectsByType<Camera>(FindObjectsInactive.Include, FindObjectsSortMode.None))
+        {
+            if (camera != null && camera.name == "Main Camera_1")
+                return camera;
+        }
+
+        return Object.FindFirstObjectByType<Camera>(FindObjectsInactive.Include);
+    }
+
+    private static Canvas FindMainCanvas()
+    {
+        foreach (var canvas in Object.FindObjectsByType<Canvas>(FindObjectsInactive.Include, FindObjectsSortMode.None))
+        {
+            if (canvas != null && canvas.name == "Canvas")
+                return canvas;
+        }
+
+        return Object.FindFirstObjectByType<Canvas>(FindObjectsInactive.Include);
+    }
+
+    private static GameObject FindSceneObject(string objectName)
+    {
+        foreach (var transform in Object.FindObjectsByType<Transform>(FindObjectsInactive.Include, FindObjectsSortMode.None))
+        {
+            if (transform != null && transform.name == objectName)
+                return transform.gameObject;
+        }
+
+        return null;
+    }
+
+    private static TMP_Text FindSceneText(string objectName)
+    {
+        foreach (var text in Object.FindObjectsByType<TMP_Text>(FindObjectsInactive.Include, FindObjectsSortMode.None))
+        {
+            if (text != null && text.name == objectName)
+                return text;
+        }
+
+        return null;
+    }
+
+    private static void CopyTextStyle(TMP_Text source, TMP_Text target)
+    {
+        if (source == null || target == null)
+            return;
+
+        target.font = source.font;
+        target.fontSharedMaterial = source.fontSharedMaterial;
+        target.color = source.color;
+        target.fontStyle = source.fontStyle;
+    }
+
     private static void SetObject(Object target, string property, Object value)
     {
         if (target == null)
@@ -815,6 +977,42 @@ public static class GameP2SceneBuilder
         }
 
         prop.objectReferenceValue = value;
+        serialized.ApplyModifiedPropertiesWithoutUndo();
+    }
+
+    private static void SetBool(Object target, string property, bool value)
+    {
+        if (target == null)
+            return;
+
+        var serialized = new SerializedObject(target);
+        var prop = serialized.FindProperty(property);
+        if (prop == null)
+        {
+            Debug.LogWarning($"Missing serialized property {property} on {target.name}");
+            return;
+        }
+
+        prop.boolValue = value;
+        serialized.ApplyModifiedPropertiesWithoutUndo();
+    }
+
+    private static void SetObjectArray(Object target, string property, Object[] values)
+    {
+        if (target == null)
+            return;
+
+        var serialized = new SerializedObject(target);
+        var prop = serialized.FindProperty(property);
+        if (prop == null || !prop.isArray)
+        {
+            Debug.LogWarning($"Missing serialized array property {property} on {target.name}");
+            return;
+        }
+
+        prop.arraySize = values != null ? values.Length : 0;
+        for (var i = 0; i < prop.arraySize; i++)
+            prop.GetArrayElementAtIndex(i).objectReferenceValue = values[i];
         serialized.ApplyModifiedPropertiesWithoutUndo();
     }
 
