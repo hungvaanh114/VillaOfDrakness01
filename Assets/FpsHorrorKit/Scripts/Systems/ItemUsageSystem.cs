@@ -35,6 +35,7 @@ namespace FpsHorrorKit
         private bool savedCanUseLantern;
         private bool savedUsingLantern;
         private bool savedLanternEnergyEnough;
+        private MainGame.P2.P2OilLamp p2OilLamp;
 
         public bool IsCutsceneFlashlightForced => cutsceneFlashlightForced;
 
@@ -300,6 +301,15 @@ namespace FpsHorrorKit
             if (!EnsureFlashlightLight())
                 return;
 
+            if (TryResolveP2OilLamp())
+            {
+                bool wasLit = p2OilLamp.IsLit;
+                p2OilLamp.SetLit(active);
+                if (wasLit != p2OilLamp.IsLit)
+                    FlashlightLightChanged?.Invoke(p2OilLamp.IsLit);
+                return;
+            }
+
             bool wasActive = IsFlashlightLightActive();
             _light.SetActive(active);
             bool isActive = _light.activeInHierarchy;
@@ -310,11 +320,17 @@ namespace FpsHorrorKit
 
         public bool IsFlashlightLightActive()
         {
+            if (TryResolveP2OilLamp())
+                return p2OilLamp.IsLit;
+
             return EnsureFlashlightLight() && _light.activeInHierarchy;
         }
 
         private bool EnsureFlashlightLight()
         {
+            if (TryResolveP2OilLamp())
+                return true;
+
             if (_light == null || _light.name == "Spot Light_1")
                 ResolveFlashlightLight();
 
@@ -351,6 +367,40 @@ namespace FpsHorrorKit
             var directSpotLight = followTarget.transform.Find("Spot Light");
             if (directSpotLight != null)
                 _light = directSpotLight.gameObject;
+        }
+
+        private bool TryResolveP2OilLamp()
+        {
+            if (p2OilLamp == null || !p2OilLamp.ControlsGameplaySystems)
+                p2OilLamp = FindGameplayP2OilLamp();
+
+            if (p2OilLamp == null)
+                return false;
+
+            if (_light == null)
+            {
+                var controller = FindFirstObjectByType<FpsController>();
+                if (controller != null && controller.flashlightLight != null)
+                    _light = controller.flashlightLight.gameObject;
+            }
+
+            return true;
+        }
+
+        private static MainGame.P2.P2OilLamp FindGameplayP2OilLamp()
+        {
+            MainGame.P2.P2OilLamp fallback = null;
+            foreach (var lamp in FindObjectsByType<MainGame.P2.P2OilLamp>(FindObjectsInactive.Include, FindObjectsSortMode.None))
+            {
+                if (lamp == null)
+                    continue;
+
+                fallback ??= lamp;
+                if (lamp.ControlsGameplaySystems)
+                    return lamp;
+            }
+
+            return fallback;
         }
 
         public void SelectCamera()

@@ -10,6 +10,7 @@ namespace FpsHorrorKit
         [Header("Scene References")]
         [SerializeField] private GameObject playerModelRoot;
         [SerializeField] private GameObject firstPersonFlashlightViewModel;
+        [SerializeField] private GameObject cutsceneHeldLantern;
 
         [Header("State Rules")]
         [SerializeField] private bool hidePlayerRenderersInFirstPerson = true;
@@ -28,8 +29,10 @@ namespace FpsHorrorKit
             ResolveLayer();
             CachePlayerRenderers();
             PrepareFlashlightViewModel();
+            PrepareCutsceneHeldLantern();
             AssignPlayerModelRenderLayer();
             AssignFlashlightViewModelLayer();
+            AssignCutsceneHeldLanternLayer();
         }
 
         private void OnEnable()
@@ -45,7 +48,12 @@ namespace FpsHorrorKit
             foreach (var collider in firstPersonFlashlightViewModel.GetComponentsInChildren<Collider>(true))
                 collider.enabled = false;
             foreach (var light in firstPersonFlashlightViewModel.GetComponentsInChildren<Light>(true))
+            {
+                if (light.GetComponentInParent<MainGame.P2.P2OilLamp>(true) != null)
+                    continue;
+
                 light.enabled = false;
+            }
         }
 
         private void Start()
@@ -77,6 +85,15 @@ namespace FpsHorrorKit
                 if (viewModel != null)
                     firstPersonFlashlightViewModel = viewModel.gameObject;
             }
+
+            if (cutsceneHeldLantern == null)
+            {
+                var heldLantern = FindSceneTransform("Lantern_01_2kCutscene");
+                if (heldLantern == null)
+                    heldLantern = FindSceneTransform("P2_CutsceneHeldLantern");
+                if (heldLantern != null)
+                    cutsceneHeldLantern = heldLantern.gameObject;
+            }
         }
 
         private void CachePlayerRenderers()
@@ -94,6 +111,7 @@ namespace FpsHorrorKit
 
             AssignPlayerModelRenderLayer();
             AssignFlashlightViewModelLayer();
+            AssignCutsceneHeldLanternLayer();
             ApplyCameraMasks(cutscenePresentation);
 
             if (!force && hasAppliedState && state == lastAppliedState)
@@ -103,6 +121,8 @@ namespace FpsHorrorKit
 
             if (firstPersonFlashlightViewModel != null)
                 firstPersonFlashlightViewModel.SetActive(!cutscenePresentation && showFlashlightViewModelInFirstPerson);
+            if (cutsceneHeldLantern != null)
+                cutsceneHeldLantern.SetActive(cutscenePresentation);
 
             lastAppliedState = state;
             hasAppliedState = true;
@@ -157,6 +177,24 @@ namespace FpsHorrorKit
 
             foreach (var child in firstPersonFlashlightViewModel.GetComponentsInChildren<Transform>(true))
                 child.gameObject.layer = viewModelLayer;
+        }
+
+        private void PrepareCutsceneHeldLantern()
+        {
+            if (cutsceneHeldLantern == null)
+                return;
+
+            foreach (var collider in cutsceneHeldLantern.GetComponentsInChildren<Collider>(true))
+                collider.enabled = false;
+        }
+
+        private void AssignCutsceneHeldLanternLayer()
+        {
+            if (cutsceneHeldLantern == null || playerModelLayer < 0)
+                return;
+
+            foreach (var child in cutsceneHeldLantern.GetComponentsInChildren<Transform>(true))
+                child.gameObject.layer = playerModelLayer;
         }
 
         private void ApplyCameraMasks(bool cutscenePresentation)

@@ -44,6 +44,7 @@ public class GameController : MonoBehaviour
     [Header("Cut Scenes")]
     public CutSceneManager cutSceneManager;
     public bool playIntroOnStart = true;
+    [SerializeField] private bool useChapterOneCheckpoints = true;
 
     [Header("Pause")]
     public GameObject gameUI;
@@ -90,13 +91,15 @@ public class GameController : MonoBehaviour
         ResolveUiReferences();
         ResolveDeathUI();
 
-        var checkpointManager = ChapterOneCheckpointManager.Instance
-            ?? FindFirstObjectByType<ChapterOneCheckpointManager>(FindObjectsInactive.Include);
+        var checkpointManager = useChapterOneCheckpoints
+            ? ChapterOneCheckpointManager.Instance ?? FindFirstObjectByType<ChapterOneCheckpointManager>(FindObjectsInactive.Include)
+            : null;
         bool restoredCheckpoint = checkpointManager != null && checkpointManager.ApplySavedState(this);
+        bool hasCompletedIntro = useChapterOneCheckpoints && ChapterOneCheckpointManager.HasCompletedIntroCutscenes;
 
-        if (playIntroOnStart && !restoredCheckpoint && !ChapterOneCheckpointManager.HasCompletedIntroCutscenes)
+        if (playIntroOnStart && !restoredCheckpoint && !hasCompletedIntro)
             ResetForIntroStart();
-        else if (ChapterOneCheckpointManager.HasCompletedIntroCutscenes)
+        else if (hasCompletedIntro)
             playIntroOnStart = false;
 
         EnsureGameUiCanRender();
@@ -110,7 +113,7 @@ public class GameController : MonoBehaviour
         SetGameState(currentGameState);
 
         bool shouldPlayIntro = playIntroOnStart
-            && !ChapterOneCheckpointManager.HasCompletedIntroCutscenes
+            && !hasCompletedIntro
             && currentChapterPhase == ChapterPhase.Intro
             && cutSceneManager != null;
         if (!shouldPlayIntro)

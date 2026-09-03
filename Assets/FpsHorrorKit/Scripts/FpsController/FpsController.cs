@@ -68,6 +68,7 @@ namespace FpsHorrorKit
         public Transform rightHandGrip;
         public Transform followTarget;
         public Light flashlightLight;
+        public bool driveFlashlightLightTransform = true;
         public float flashlightLookDistance = 10f;
         public float flashlightAimSmooth = 15f;
         public bool showFlashlightRay = true;
@@ -513,7 +514,7 @@ namespace FpsHorrorKit
             }
 
             // Spot Light LUÔN phát từ FollowTarget.
-            if (flashlightLight != null)
+            if (driveFlashlightLightTransform && flashlightLight != null)
             {
                 flashlightLight.transform.position = rayOrigin;
                 flashlightLight.transform.rotation = aimRotation;

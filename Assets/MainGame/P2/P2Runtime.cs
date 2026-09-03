@@ -3,6 +3,7 @@ using System.Collections;
 using System.Collections.Generic;
 using TMPro;
 using UnityEngine;
+using UnityEngine.AI;
 using UnityEngine.InputSystem;
 using UnityEngine.UI;
 
@@ -135,7 +136,7 @@ namespace MainGame.P2
             if (player == null)
                 player = FindFirstObjectByType<P2FirstPersonController>();
             if (oilLamp == null)
-                oilLamp = FindFirstObjectByType<P2OilLamp>();
+                oilLamp = FindGameplayOilLamp();
             if (ghost == null)
                 ghost = FindFirstObjectByType<P2GhostController>();
 
@@ -385,6 +386,22 @@ namespace MainGame.P2
         public float DistanceToPlayer(Vector3 worldPosition)
         {
             return player == null ? 999f : Vector3.Distance(player.transform.position, worldPosition);
+        }
+
+        private static P2OilLamp FindGameplayOilLamp()
+        {
+            P2OilLamp fallback = null;
+            foreach (var lamp in FindObjectsByType<P2OilLamp>(FindObjectsInactive.Include, FindObjectsSortMode.None))
+            {
+                if (lamp == null)
+                    continue;
+
+                fallback ??= lamp;
+                if (lamp.ControlsGameplaySystems)
+                    return lamp;
+            }
+
+            return fallback;
         }
 
         public void PlayGhostLine()
@@ -788,14 +805,27 @@ namespace MainGame.P2
         }
     }
 
-    public sealed class P2OilLamp : MonoBehaviour
+    internal sealed class P2OilLampOld : MonoBehaviour
     {
         [SerializeField] private Light flameLight;
         [SerializeField] private Renderer flameRenderer;
+        [SerializeField] private ParticleSystem[] flameParticles = Array.Empty<ParticleSystem>();
         [SerializeField] private P2GhostController ghost;
+        [SerializeField] private Transform shakeRoot;
         [SerializeField] private Image oilFillImage;
         [SerializeField, Range(0f, 100f)] private float oilPercent = 100f;
         [SerializeField, Min(0f)] private float oilDrainPerSecond = 0.15f;
+        [SerializeField, Min(0f)] private float flameBaseIntensity = 1.15f;
+        [SerializeField, Min(0f)] private float flamePulseIntensity = 0.45f;
+        [SerializeField, Min(0f)] private float flameBaseRange = 2.4f;
+        [SerializeField, Min(0f)] private float flameDangerRange = 1.8f;
+        [SerializeField, Min(0.1f)] private float nearGhostEffectStartDistance = 12f;
+        [SerializeField, Min(0.1f)] private float nearGhostFullEffectDistance = 2f;
+        [SerializeField, Min(0f)] private float dangerShakePosition = 0.045f;
+        [SerializeField, Min(0f)] private float dangerShakeRotation = 5f;
+        [SerializeField] private Color normalFlameColor = new Color(1f, 0.48f, 0.16f);
+        [SerializeField] private Color dangerFlameColor = new Color(0.35f, 0.85f, 1f);
+        [SerializeField] private bool debugNearGhostEffectZone = true;
         [SerializeField] private float directAttackSeconds = 10f;
         [SerializeField] private float dangerDistance = 7f;
 
@@ -803,15 +833,22 @@ namespace MainGame.P2
 
         private float unlitNearGhostTimer;
         private Material flameMaterial;
+        private Vector3 baseLocalPosition;
+        private Quaternion baseLocalRotation;
 
         private void Awake()
         {
+            if (shakeRoot == null)
+                shakeRoot = transform;
             if (flameLight == null)
                 flameLight = GetComponentInChildren<Light>();
             if (flameRenderer != null)
                 flameMaterial = flameRenderer.material;
+            baseLocalPosition = shakeRoot.localPosition;
+            baseLocalRotation = shakeRoot.localRotation;
             ResolveOilFillImage();
             UpdateOilUi();
+            SetFlameParticles(IsLit);
         }
 
         private void Update()
@@ -821,6 +858,7 @@ namespace MainGame.P2
 
             DrainOil();
             ApplyFlicker();
+            ApplyNearGhostReaction();
             TrackUnlitDanger();
             UpdateOilUi();
         }
@@ -834,6 +872,7 @@ namespace MainGame.P2
                     flameLight.enabled = false;
                 if (flameRenderer != null)
                     flameRenderer.enabled = false;
+                SetFlameParticles(false);
                 P2GameController.Instance?.ShowPrompt("Den dau da het dau.");
                 UpdateOilUi();
                 return;
@@ -844,7 +883,30 @@ namespace MainGame.P2
                 flameLight.enabled = lit;
             if (flameRenderer != null)
                 flameRenderer.enabled = lit;
+            SetFlameParticles(lit);
             P2GameController.Instance?.ShowPrompt(lit ? "Đèn dầu đã cháy lại." : "Đèn dầu tắt. Không thể đọc chữ.");
+        }
+
+        private void SetFlameParticles(bool lit)
+        {
+            if (flameParticles == null)
+                return;
+
+            foreach (var particles in flameParticles)
+            {
+                if (particles == null)
+                    continue;
+
+                if (lit)
+                {
+                    if (!particles.isPlaying)
+                        particles.Play(true);
+                }
+                else
+                {
+                    particles.Stop(true, ParticleSystemStopBehavior.StopEmittingAndClear);
+                }
+            }
         }
 
         private void DrainOil()
@@ -879,13 +941,91 @@ namespace MainGame.P2
             if (!IsLit || flameLight == null)
                 return;
 
-            var distance = ghost == null ? 999f : P2GameController.Instance.DistanceToPlayer(ghost.transform.position);
-            var danger = Mathf.InverseLerp(12f, 2f, distance);
-            flameLight.intensity = 1.15f + Mathf.Sin(Time.time * Mathf.Lerp(5f, 18f, danger)) * Mathf.Lerp(0.08f, 0.55f, danger);
-            flameLight.range = Mathf.Lerp(7f, 5.2f, danger);
+            var danger = GetNearGhostEffect01();
+            flameLight.intensity = flameBaseIntensity + Mathf.Sin(Time.time * Mathf.Lerp(5f, 18f, danger)) * Mathf.Lerp(0.06f, flamePulseIntensity, danger);
+            flameLight.range = Mathf.Lerp(flameBaseRange, flameDangerRange, danger);
+            flameLight.color = Color.Lerp(normalFlameColor, dangerFlameColor, danger);
 
             if (flameMaterial != null)
-                flameMaterial.color = Color.Lerp(new Color(1f, 0.55f, 0.18f), new Color(0.45f, 0.9f, 1f), danger * 0.35f);
+                flameMaterial.color = Color.Lerp(new Color(1f, 0.55f, 0.18f), dangerFlameColor, danger);
+
+            ApplyParticleDangerColor(danger);
+        }
+
+        private void ApplyNearGhostReaction()
+        {
+            if (shakeRoot == null)
+                return;
+
+            var danger = IsLit ? GetNearGhostEffect01() : 0f;
+            if (danger <= 0.001f)
+            {
+                shakeRoot.localPosition = Vector3.Lerp(shakeRoot.localPosition, baseLocalPosition, Time.deltaTime * 12f);
+                shakeRoot.localRotation = Quaternion.Slerp(shakeRoot.localRotation, baseLocalRotation, Time.deltaTime * 12f);
+                return;
+            }
+
+            var shakeSpeed = Mathf.Lerp(16f, 42f, danger);
+            var positionAmount = dangerShakePosition * danger;
+            var rotationAmount = dangerShakeRotation * danger;
+            var shakeOffset = new Vector3(
+                Mathf.PerlinNoise(Time.time * shakeSpeed, 0.13f) - 0.5f,
+                Mathf.PerlinNoise(1.71f, Time.time * shakeSpeed) - 0.5f,
+                Mathf.PerlinNoise(Time.time * shakeSpeed, 3.29f) - 0.5f) * positionAmount;
+
+            var shakeRotation = Quaternion.Euler(
+                (Mathf.PerlinNoise(5.17f, Time.time * shakeSpeed) - 0.5f) * rotationAmount,
+                (Mathf.PerlinNoise(Time.time * shakeSpeed, 8.33f) - 0.5f) * rotationAmount,
+                (Mathf.PerlinNoise(11.9f, Time.time * shakeSpeed) - 0.5f) * rotationAmount);
+
+            shakeRoot.localPosition = baseLocalPosition + shakeOffset;
+            shakeRoot.localRotation = baseLocalRotation * shakeRotation;
+        }
+
+        private void ApplyParticleDangerColor(float danger)
+        {
+            if (flameParticles == null)
+                return;
+
+            var warmStart = new Color(1f, 0.86f, 0.25f, 0.95f);
+            var warmEnd = new Color(1f, 0.28f, 0.04f, 0.75f);
+            var blueStart = new Color(0.5f, 0.95f, 1f, 0.98f);
+            var blueEnd = new Color(0.08f, 0.42f, 1f, 0.8f);
+
+            foreach (var particles in flameParticles)
+            {
+                if (particles == null)
+                    continue;
+
+                var main = particles.main;
+                main.startColor = new ParticleSystem.MinMaxGradient(
+                    Color.Lerp(warmStart, blueStart, danger),
+                    Color.Lerp(warmEnd, blueEnd, danger));
+
+                var emission = particles.emission;
+                emission.rateOverTime = new ParticleSystem.MinMaxCurve(
+                    Mathf.Lerp(18f, 36f, danger),
+                    Mathf.Lerp(28f, 52f, danger));
+
+                var noise = particles.noise;
+                noise.strength = new ParticleSystem.MinMaxCurve(
+                    Mathf.Lerp(0.04f, 0.16f, danger),
+                    Mathf.Lerp(0.1f, 0.32f, danger));
+                noise.frequency = Mathf.Lerp(7f, 16f, danger);
+            }
+        }
+
+        private float GetNearGhostEffect01()
+        {
+            if (ghost == null)
+                return 0f;
+
+            var controller = P2GameController.Instance;
+            var distance = controller != null
+                ? controller.DistanceToPlayer(ghost.transform.position)
+                : Vector3.Distance(transform.position, ghost.transform.position);
+            var startDistance = Mathf.Max(nearGhostEffectStartDistance, nearGhostFullEffectDistance + 0.01f);
+            return Mathf.InverseLerp(startDistance, nearGhostFullEffectDistance, distance);
         }
 
         private void TrackUnlitDanger()
@@ -910,26 +1050,61 @@ namespace MainGame.P2
                 P2GameController.Instance.ShowPrompt("Bóng tối không che được lâu nữa.");
             }
         }
+
+        private void OnDrawGizmos()
+        {
+            if (!debugNearGhostEffectZone)
+                return;
+
+            var origin = transform.position;
+            Gizmos.color = new Color(0.25f, 0.85f, 1f, 0.55f);
+            Gizmos.DrawWireSphere(origin, nearGhostEffectStartDistance);
+            Gizmos.color = new Color(0.05f, 0.35f, 1f, 0.8f);
+            Gizmos.DrawWireSphere(origin, nearGhostFullEffectDistance);
+            if (ghost != null)
+            {
+                Gizmos.color = new Color(0.25f, 0.85f, 1f, 0.25f);
+                Gizmos.DrawLine(origin, ghost.transform.position);
+            }
+        }
     }
 
     public sealed class P2GhostController : MonoBehaviour
     {
         [SerializeField] private Transform player;
+        [SerializeField] private Transform quietPatrolRoot;
+        [SerializeField] private Transform awakenedPatrolRoot;
+        [SerializeField] private bool autoCollectWaypointsFromChildren = true;
+        [SerializeField] private bool pingPongPatrol = true;
         [SerializeField] private Transform[] quietPatrolWaypoints = Array.Empty<Transform>();
         [SerializeField] private Transform[] awakenedWaypoints = Array.Empty<Transform>();
+        [SerializeField] private NavMeshAgent agent;
         [SerializeField] private float quietSpeed = 1.5f;
         [SerializeField] private float awakenedSpeed = 2f;
         [SerializeField] private float chaseSpeed = 3.4f;
         [SerializeField] private float catchDistance = 1.25f;
+        [SerializeField, Min(0.05f)] private float waypointReachDistance = 0.35f;
+        [SerializeField, Min(0.1f)] private float navMeshSampleRadius = 2.5f;
         [SerializeField] private float lineCooldown = 10f;
 
         public bool IsAwakened { get; private set; }
 
         private int waypointIndex;
+        private int waypointDirection = 1;
         private bool chase;
         private float nextLineTime;
         private Vector3 investigationPoint;
         private bool hasInvestigationPoint;
+        private Vector3 lastDestination;
+        private bool hasDestination;
+        private int quietPatrolChildCount = -1;
+        private int awakenedPatrolChildCount = -1;
+
+        private void Awake()
+        {
+            ResolveAgent();
+            RefreshWaypointsFromRoots(true);
+        }
 
         private void Start()
         {
@@ -939,16 +1114,21 @@ namespace MainGame.P2
                 if (controller != null)
                     player = controller.transform;
             }
+
+            ResolveAgent();
+            RefreshWaypointsFromRoots(true);
         }
 
         private void Update()
         {
+            RefreshWaypointsFromRoots(false);
+
             if (player == null)
                 return;
 
             if (chase)
             {
-                MoveTowards(player.position, chaseSpeed);
+                MoveTowards(player.position, chaseSpeed, catchDistance);
                 if (Vector3.Distance(transform.position, player.position) <= catchDistance)
                     P2GameController.Instance?.StartEndingSequence();
                 return;
@@ -957,8 +1137,7 @@ namespace MainGame.P2
             var waypoints = IsAwakened ? awakenedWaypoints : quietPatrolWaypoints;
             if (hasInvestigationPoint)
             {
-                MoveTowards(investigationPoint, awakenedSpeed);
-                if (Vector3.Distance(transform.position, investigationPoint) < 0.4f)
+                if (MoveTowards(investigationPoint, awakenedSpeed, waypointReachDistance))
                     hasInvestigationPoint = false;
                 return;
             }
@@ -966,10 +1145,16 @@ namespace MainGame.P2
             if (waypoints == null || waypoints.Length == 0)
                 return;
 
-            var target = waypoints[Mathf.Clamp(waypointIndex, 0, waypoints.Length - 1)];
-            MoveTowards(target.position, IsAwakened ? awakenedSpeed : quietSpeed);
-            if (Vector3.Distance(transform.position, target.position) < 0.35f)
-                waypointIndex = IsAwakened ? UnityEngine.Random.Range(0, waypoints.Length) : (waypointIndex + 1) % waypoints.Length;
+            waypointIndex = Mathf.Clamp(waypointIndex, 0, waypoints.Length - 1);
+            var target = waypoints[waypointIndex];
+            if (target == null)
+            {
+                AdvanceWaypoint(waypoints);
+                return;
+            }
+
+            if (MoveTowards(target.position, IsAwakened ? awakenedSpeed : quietSpeed, waypointReachDistance))
+                AdvanceWaypoint(waypoints);
 
             if (IsAwakened && Time.time >= nextLineTime && Vector3.Distance(transform.position, player.position) < 10f)
             {
@@ -989,6 +1174,8 @@ namespace MainGame.P2
         {
             IsAwakened = true;
             waypointIndex = 0;
+            waypointDirection = 1;
+            ClearDestination();
             nextLineTime = Time.time + 1f;
         }
 
@@ -1006,17 +1193,126 @@ namespace MainGame.P2
             if (!IsAwakened)
                 Awaken();
             chase = true;
+            ClearDestination();
         }
 
-        private void MoveTowards(Vector3 target, float speed)
+        private void RefreshWaypointsFromRoots(bool force)
         {
-            var flatTarget = new Vector3(target.x, transform.position.y, target.z);
-            var direction = flatTarget - transform.position;
-            if (direction.sqrMagnitude < 0.001f)
+            if (!autoCollectWaypointsFromChildren)
                 return;
 
-            transform.position += direction.normalized * speed * Time.deltaTime;
-            transform.rotation = Quaternion.Slerp(transform.rotation, Quaternion.LookRotation(direction.normalized, Vector3.up), Time.deltaTime * 5f);
+            if (quietPatrolRoot != null && (force || quietPatrolChildCount != quietPatrolRoot.childCount))
+            {
+                quietPatrolWaypoints = CollectDirectChildren(quietPatrolRoot);
+                quietPatrolChildCount = quietPatrolRoot.childCount;
+                waypointIndex = Mathf.Clamp(waypointIndex, 0, Mathf.Max(0, quietPatrolWaypoints.Length - 1));
+            }
+
+            if (awakenedPatrolRoot != null && (force || awakenedPatrolChildCount != awakenedPatrolRoot.childCount))
+            {
+                awakenedWaypoints = CollectDirectChildren(awakenedPatrolRoot);
+                awakenedPatrolChildCount = awakenedPatrolRoot.childCount;
+                waypointIndex = Mathf.Clamp(waypointIndex, 0, Mathf.Max(0, awakenedWaypoints.Length - 1));
+            }
+        }
+
+        private static Transform[] CollectDirectChildren(Transform root)
+        {
+            if (root == null || root.childCount == 0)
+                return Array.Empty<Transform>();
+
+            var waypoints = new List<Transform>(root.childCount);
+            for (var i = 0; i < root.childCount; i++)
+            {
+                var child = root.GetChild(i);
+                if (child != null && child.gameObject.activeSelf)
+                    waypoints.Add(child);
+            }
+
+            return waypoints.ToArray();
+        }
+
+        private void AdvanceWaypoint(Transform[] waypoints)
+        {
+            if (waypoints == null || waypoints.Length <= 1)
+                return;
+
+            if (!pingPongPatrol)
+            {
+                waypointIndex = (waypointIndex + 1) % waypoints.Length;
+                ClearDestination();
+                return;
+            }
+
+            if (waypointIndex >= waypoints.Length - 1)
+                waypointDirection = -1;
+            else if (waypointIndex <= 0)
+                waypointDirection = 1;
+
+            waypointIndex = Mathf.Clamp(waypointIndex + waypointDirection, 0, waypoints.Length - 1);
+            ClearDestination();
+        }
+
+        private bool MoveTowards(Vector3 target, float speed, float reachDistance)
+        {
+            ResolveAgent();
+            if (agent == null || !agent.enabled)
+                return false;
+
+            if (!agent.isOnNavMesh && !TryWarpAgentToNavMesh())
+                return false;
+
+            if (!NavMesh.SamplePosition(target, out var sampledTarget, navMeshSampleRadius, NavMesh.AllAreas))
+                return false;
+
+            agent.isStopped = false;
+            agent.speed = speed;
+            agent.stoppingDistance = Mathf.Min(0.1f, reachDistance * 0.5f);
+
+            var destination = sampledTarget.position;
+            if (!hasDestination || Vector3.Distance(lastDestination, destination) > 0.1f)
+            {
+                if (!agent.SetDestination(destination))
+                    return false;
+
+                lastDestination = destination;
+                hasDestination = true;
+            }
+
+            var velocity = agent.desiredVelocity.sqrMagnitude > 0.01f ? agent.desiredVelocity : agent.velocity;
+            if (velocity.sqrMagnitude > 0.01f)
+            {
+                var flatVelocity = new Vector3(velocity.x, 0f, velocity.z);
+                transform.rotation = Quaternion.Slerp(transform.rotation, Quaternion.LookRotation(flatVelocity.normalized, Vector3.up), Time.deltaTime * 5f);
+            }
+
+            return !agent.pathPending && agent.remainingDistance <= reachDistance;
+        }
+
+        private void ResolveAgent()
+        {
+            if (agent == null)
+                agent = GetComponent<NavMeshAgent>();
+
+            if (agent == null)
+                agent = gameObject.AddComponent<NavMeshAgent>();
+
+            agent.updateRotation = false;
+        }
+
+        private bool TryWarpAgentToNavMesh()
+        {
+            if (NavMesh.SamplePosition(transform.position, out var hit, navMeshSampleRadius, NavMesh.AllAreas))
+                return agent.Warp(hit.position);
+
+            return false;
+        }
+
+        private void ClearDestination()
+        {
+            hasDestination = false;
+            if (agent != null && agent.enabled && agent.isOnNavMesh)
+                agent.ResetPath();
         }
     }
 

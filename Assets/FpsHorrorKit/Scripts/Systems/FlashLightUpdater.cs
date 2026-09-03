@@ -46,6 +46,9 @@ namespace FpsHorrorKit
             if (itemFlashLight == null)
                 return;
 
+            if (IsUsingP2OilLamp())
+                return;
+
             if (ItemUsageSystem.Instance != null && ItemUsageSystem.Instance.IsCutsceneFlashlightForced)
             {
                 SetBatteryPercent(itemFlashLight.energyLevel);
@@ -75,6 +78,11 @@ namespace FpsHorrorKit
             return usageSystem != null
                 && itemFlashLight.isUsingItem
                 && usageSystem.IsFlashlightLightActive();
+        }
+
+        private static bool IsUsingP2OilLamp()
+        {
+            return FindFirstObjectByType<MainGame.P2.P2OilLamp>(FindObjectsInactive.Include) != null;
         }
 
         private void SetBatteryPercent(float percent)
