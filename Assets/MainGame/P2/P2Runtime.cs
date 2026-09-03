@@ -4,6 +4,7 @@ using System.Collections.Generic;
 using TMPro;
 using UnityEngine;
 using UnityEngine.InputSystem;
+using UnityEngine.UI;
 
 namespace MainGame.P2
 {
@@ -144,9 +145,16 @@ namespace MainGame.P2
                 hiddenWallCavity.SetActive(false);
 
             SetStage(P2Stage.Arrival);
-            SetHudVisible(true);
             LockInput(false);
-            StartCoroutine(PlayOpening());
+
+            var chapterIntroWillPlay = GameController.Instance != null
+                && GameController.Instance.playIntroOnStart
+                && GameController.Instance.cutSceneManager != null
+                && GameController.Instance.currentChapterPhase == GameController.ChapterPhase.Intro;
+
+            SetHudVisible(!chapterIntroWillPlay);
+            if (!chapterIntroWillPlay)
+                StartCoroutine(PlayOpening());
         }
 
         public void LockInput(bool locked)
@@ -302,6 +310,8 @@ namespace MainGame.P2
             switch (kind)
             {
                 case P2TriggerKind.EnterLobby:
+                    SetHudVisible(true);
+                    LockInput(false);
                     SetStage(P2Stage.Lobby);
                     break;
 
@@ -783,6 +793,9 @@ namespace MainGame.P2
         [SerializeField] private Light flameLight;
         [SerializeField] private Renderer flameRenderer;
         [SerializeField] private P2GhostController ghost;
+        [SerializeField] private Image oilFillImage;
+        [SerializeField, Range(0f, 100f)] private float oilPercent = 100f;
+        [SerializeField, Min(0f)] private float oilDrainPerSecond = 0.15f;
         [SerializeField] private float directAttackSeconds = 10f;
         [SerializeField] private float dangerDistance = 7f;
 
@@ -797,6 +810,8 @@ namespace MainGame.P2
                 flameLight = GetComponentInChildren<Light>();
             if (flameRenderer != null)
                 flameMaterial = flameRenderer.material;
+            ResolveOilFillImage();
+            UpdateOilUi();
         }
 
         private void Update()
@@ -804,18 +819,59 @@ namespace MainGame.P2
             if (Keyboard.current != null && Keyboard.current.tKey.wasPressedThisFrame && !(P2GameController.Instance?.IsInputLocked ?? false))
                 SetLit(!IsLit);
 
+            DrainOil();
             ApplyFlicker();
             TrackUnlitDanger();
+            UpdateOilUi();
         }
 
         public void SetLit(bool lit)
         {
+            if (lit && oilPercent <= 0f)
+            {
+                IsLit = false;
+                if (flameLight != null)
+                    flameLight.enabled = false;
+                if (flameRenderer != null)
+                    flameRenderer.enabled = false;
+                P2GameController.Instance?.ShowPrompt("Den dau da het dau.");
+                UpdateOilUi();
+                return;
+            }
+
             IsLit = lit;
             if (flameLight != null)
                 flameLight.enabled = lit;
             if (flameRenderer != null)
                 flameRenderer.enabled = lit;
             P2GameController.Instance?.ShowPrompt(lit ? "Đèn dầu đã cháy lại." : "Đèn dầu tắt. Không thể đọc chữ.");
+        }
+
+        private void DrainOil()
+        {
+            if (!IsLit || oilDrainPerSecond <= 0f)
+                return;
+
+            oilPercent = Mathf.Max(0f, oilPercent - oilDrainPerSecond * Time.deltaTime);
+            if (oilPercent <= 0f)
+                SetLit(false);
+        }
+
+        private void UpdateOilUi()
+        {
+            ResolveOilFillImage();
+            if (oilFillImage != null)
+                oilFillImage.fillAmount = Mathf.Clamp01(oilPercent / 100f);
+        }
+
+        private void ResolveOilFillImage()
+        {
+            if (oilFillImage != null)
+                return;
+
+            var fillObject = GameObject.Find("LanternFuelFill");
+            if (fillObject != null)
+                oilFillImage = fillObject.GetComponent<Image>();
         }
 
         private void ApplyFlicker()

@@ -14,6 +14,7 @@ namespace FpsHorrorKit
 
         private void Start()
         {
+            ResolveBatteryImage();
             ResolveBatteryPercentText();
             SetBatteryPercent(itemFlashLight != null ? itemFlashLight.energyLevel : 0f);
         }
@@ -89,6 +90,16 @@ namespace FpsHorrorKit
 
             if (batteryPercentText != null)
                 batteryPercentText.text = $"{Mathf.CeilToInt(itemFlashLight.energyLevel)}%";
+        }
+
+        private void ResolveBatteryImage()
+        {
+            if (flashLightBatteryImage != null)
+                return;
+
+            var fillObject = GameObject.Find("LanternFuelFill");
+            if (fillObject != null)
+                flashLightBatteryImage = fillObject.GetComponent<Image>();
         }
 
         private void ResolveBatteryPercentText()

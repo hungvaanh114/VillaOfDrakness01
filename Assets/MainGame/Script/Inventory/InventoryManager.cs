@@ -21,6 +21,7 @@ namespace FpsHorrorKit
         private readonly Image[] fallbackBatteryCells = new Image[6];
 
         private GameObject fallbackFlashlightObject;
+        private Image fallbackLanternFuelFill;
         private TextMeshProUGUI fallbackBatteryPercentText;
         private bool fallbackFlashlightOn;
         private bool hasSyncedFallbackFlashlight;
@@ -377,6 +378,13 @@ namespace FpsHorrorKit
                     fallbackBatteryPercentText = textObject.GetComponent<TextMeshProUGUI>();
             }
 
+            if (fallbackLanternFuelFill == null)
+            {
+                var fillObject = GameObject.Find("LanternFuelFill");
+                if (fillObject != null)
+                    fallbackLanternFuelFill = fillObject.GetComponent<Image>();
+            }
+
             for (int i = 0; i < fallbackBatteryCells.Length; i++)
             {
                 if (fallbackBatteryCells[i] != null)
@@ -428,6 +436,9 @@ namespace FpsHorrorKit
 
             if (fallbackBatteryPercentText != null)
                 fallbackBatteryPercentText.text = $"{Mathf.CeilToInt(flashlightBatteryPercent)}%";
+
+            if (fallbackLanternFuelFill != null)
+                fallbackLanternFuelFill.fillAmount = flashlightBatteryPercent / 100f;
 
             int activeCells = Mathf.CeilToInt(flashlightBatteryPercent / 100f * fallbackBatteryCells.Length);
             for (int i = 0; i < fallbackBatteryCells.Length; i++)
