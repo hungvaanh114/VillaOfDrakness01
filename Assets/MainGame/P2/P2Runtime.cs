@@ -78,6 +78,11 @@ namespace MainGame.P2
         [SerializeField] private GameObject deathCard;
         [SerializeField] private TMP_Text deathCardText;
 
+        [Header("Runtime Rules")]
+        [SerializeField] private bool runOpeningWhenNoChapterCutscene;
+        [SerializeField] private bool enableP2VoiceLines;
+        [SerializeField] private bool showP2DebugStage;
+
         [Header("Audio Sources")]
         [SerializeField] private AudioSource voiceSource;
         [SerializeField] private AudioSource sfxSource;
@@ -154,8 +159,10 @@ namespace MainGame.P2
                 && GameController.Instance.currentChapterPhase == GameController.ChapterPhase.Intro;
 
             SetHudVisible(!chapterIntroWillPlay);
-            if (!chapterIntroWillPlay)
+            if (!chapterIntroWillPlay && runOpeningWhenNoChapterCutscene)
                 StartCoroutine(PlayOpening());
+            else if (!chapterIntroWillPlay)
+                SetObjective(string.Empty);
         }
 
         public void LockInput(bool locked)
@@ -486,8 +493,10 @@ namespace MainGame.P2
                 return;
 
             CurrentStage = stage;
-            if (stageText != null)
+            if (stageText != null && showP2DebugStage)
                 stageText.text = $"P2 · {stage}";
+            else if (stageText != null)
+                stageText.text = string.Empty;
 
             switch (stage)
             {
@@ -544,6 +553,9 @@ namespace MainGame.P2
 
         private void PlayVoice(AudioClip clip, string fallbackSubtitle, float fallbackSeconds = 4f)
         {
+            if (!enableP2VoiceLines)
+                return;
+
             if (clip != null && voiceSource != null)
             {
                 voiceSource.Stop();
@@ -873,7 +885,7 @@ namespace MainGame.P2
                 if (flameRenderer != null)
                     flameRenderer.enabled = false;
                 SetFlameParticles(false);
-                P2GameController.Instance?.ShowPrompt("Den dau da het dau.");
+                P2GameController.Instance?.ShowPrompt("Đèn dầu đã hết dầu.");
                 UpdateOilUi();
                 return;
             }

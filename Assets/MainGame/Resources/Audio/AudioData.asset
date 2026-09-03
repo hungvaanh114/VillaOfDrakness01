@@ -73,3 +73,19 @@ MonoBehaviour:
   mkDeath01: {fileID: 8300000, guid: 0c90878650bf42f4e83051cf1437d9c0, type: 3}
   mkDeath02: {fileID: 8300000, guid: 3a9825107d5e9bf4b922754a35f95240, type: 3}
   mkDeath03: {fileID: 8300000, guid: f219a60240013be4d8b37072716dfa41, type: 3}
+  p2Ngoc01: {fileID: 8300000, guid: c303da944d1f61f449bc1bd1cd76ddc8, type: 3}
+  p2Ngoc02: {fileID: 8300000, guid: 9933ce3575c905d40bd64188edfc18a0, type: 3}
+  p2Ngoc03: {fileID: 8300000, guid: aabf08c587797194db179da6163e814b, type: 3}
+  p2Ngoc04: {fileID: 8300000, guid: 913ec47cde9b90241bfcefb330f04aeb, type: 3}
+  p2Ngoc05: {fileID: 8300000, guid: 7f7699ee282c03b48bac674434965d79, type: 3}
+  p2Ngoc06: {fileID: 8300000, guid: 7caff75879e008148b2802b2b161ac0c, type: 3}
+  p2Ngoc07: {fileID: 8300000, guid: 4ba47d55c245dc34d96a047ce55da3e3, type: 3}
+  p2Ngoc08: {fileID: 8300000, guid: 1f0e4297291264e4aa430fe496f2c33d, type: 3}
+  p2Ngoc09: {fileID: 8300000, guid: 9ff0a38e8f2c11e4c8618220d52b7207, type: 3}
+  p2Ngoc10: {fileID: 8300000, guid: 4844229298ecea145be2ead55fc23e82, type: 3}
+  p2Linh01: {fileID: 8300000, guid: 005117f38421a234a84ef5646149a08f, type: 3}
+  p2Linh02: {fileID: 8300000, guid: 862a37ee35f866a4284c9197009bc3bb, type: 3}
+  p2Ma01: {fileID: 8300000, guid: 29f375610b68d894995095503dca4e4e, type: 3}
+  p2Ma02: {fileID: 8300000, guid: 318372d1432d8f7459404619ff12aa99, type: 3}
+  p2MaDa02: {fileID: 8300000, guid: 7e267e6fc6728ec49bc300282f047451, type: 3}
+  p2MaDa03: {fileID: 8300000, guid: 68645ff774f00d84cba7366f99122748, type: 3}

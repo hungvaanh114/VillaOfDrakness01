@@ -415,6 +415,22 @@ public sealed class AudioManager : MonoBehaviour
             "intro_thesis_line" => audioData != null ? audioData.intro03 : null,
             "intro_front_sketch_line" => audioData != null ? audioData.intro04 : null,
             "intro_enter_window_line" => audioData != null ? audioData.intro05 : null,
+            "p2_ngoc_01" => audioData != null ? audioData.p2Ngoc01 : null,
+            "p2_ngoc_02" => audioData != null ? audioData.p2Ngoc02 : null,
+            "p2_ngoc_03" => audioData != null ? audioData.p2Ngoc03 : null,
+            "p2_ngoc_04" => audioData != null ? audioData.p2Ngoc04 : null,
+            "p2_ngoc_05" => audioData != null ? audioData.p2Ngoc05 : null,
+            "p2_ngoc_06" => audioData != null ? audioData.p2Ngoc06 : null,
+            "p2_ngoc_07" => audioData != null ? audioData.p2Ngoc07 : null,
+            "p2_ngoc_08" => audioData != null ? audioData.p2Ngoc08 : null,
+            "p2_ngoc_09" => audioData != null ? audioData.p2Ngoc09 : null,
+            "p2_ngoc_10" => audioData != null ? audioData.p2Ngoc10 : null,
+            "p2_linh_01" => audioData != null ? audioData.p2Linh01 : null,
+            "p2_linh_02" => audioData != null ? audioData.p2Linh02 : null,
+            "p2_ma_01" => audioData != null ? audioData.p2Ma01 : null,
+            "p2_ma_02" => audioData != null ? audioData.p2Ma02 : null,
+            "p2_ma_da_02" => audioData != null ? audioData.p2MaDa02 : null,
+            "p2_ma_da_03" => audioData != null ? audioData.p2MaDa03 : null,
             _ => null
         };
     }

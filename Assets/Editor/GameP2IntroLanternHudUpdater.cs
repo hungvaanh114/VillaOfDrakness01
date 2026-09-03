@@ -1,4 +1,6 @@
 using System.Collections.Generic;
+using System.Globalization;
+using System.Text;
 using MainGame.P2;
 using TMPro;
 using Unity.Cinemachine;
@@ -15,7 +17,14 @@ public static class GameP2IntroLanternHudUpdater
     private const string LanternFramePath = "Assets/FpsHorrorKit/Png/UI/LanternOut.png";
     private const string LanternFillPath = "Assets/FpsHorrorKit/Png/UI/LanternIn_V2.png";
     private const string FlameMaterialPath = "Assets/FpsHorrorKit/Materials/PM_CandleFlame.mat";
-    private const string LanternPrefabPath = "Assets/FpsHorrorKit/Prefabs/Systems/Lantern.prefab";
+    private const string AudioDataPath = "Assets/MainGame/Resources/Audio/AudioData.asset";
+    private const string P2VoiceFolder = "Assets/MainGame/Audio/Phan 2";
+
+    [MenuItem("MainGame/P2/Apply P1 Base With P2 Lantern Only")]
+    public static void ApplyP1BaseWithP2LanternOnlyMenu()
+    {
+        Apply();
+    }
 
     [MenuItem("MainGame/P2/Apply Front Door Intro And Lantern HUD")]
     public static void Apply()
@@ -37,11 +46,12 @@ public static class GameP2IntroLanternHudUpdater
         var voiceSource = manager.GetComponent<AudioSource>() ?? manager.gameObject.AddComponent<AudioSource>();
 
         ApplyFrontDoorIntro(manager, player, fps, mainCamera, followCamera, narrationPanel, narrationText, voiceSource);
+        ApplyP2AudioData();
+        RemoveP2WindowEntryMechanic();
+        RemoveP2GameplayDemo();
         ApplyLanternHud();
         ApplyLanternFireFx();
         ApplyP2LanternPresentation();
-        ApplyGhostPatrolRoutes();
-        RemoveP2WindowEntryMechanic();
         WireLampFillImage();
 
         var controller = Object.FindFirstObjectByType<GameController>(FindObjectsInactive.Include);
@@ -67,10 +77,11 @@ public static class GameP2IntroLanternHudUpdater
         if (EditorSceneManager.GetActiveScene().path != ScenePath)
             EditorSceneManager.OpenScene(ScenePath);
 
+        RemoveP2WindowEntryMechanic();
+        RemoveP2GameplayDemo();
+        ApplyLanternHud();
         ApplyLanternFireFx();
         ApplyP2LanternPresentation();
-        ApplyGhostPatrolRoutes();
-        RemoveP2WindowEntryMechanic();
         WireLampFillImage();
 
         EditorSceneManager.MarkSceneDirty(EditorSceneManager.GetActiveScene());
@@ -144,12 +155,12 @@ public static class GameP2IntroLanternHudUpdater
     {
         return new[]
         {
-            Point("Walk from forest to gate", gateApproach, "intro_gate_arrival", "Duong mon vao biet thu hien ro duoi bau troi xam duc. Ngoc di cham, mot tay cam den dau, tay kia giu cuon so cu cua ba.", 7.5f, true, CutSceneCameraShot.OverheadFollow),
-            Point("Stop at gate", gateApproach, "intro_arrived_line", "\"Ba oi, con da den roi.\"", 3.2f, false, CutSceneCameraShot.DescendBehind),
-            Point("Read gate sign", gateApproach, "intro_dogia_sign", "Tam bang ten cu hien len duoi anh den dau: Do Gia.", 3.2f, false, CutSceneCameraShot.SignClose),
-            Point("Remember grandmother note", gateApproach, "intro_villa_history", "\"Ba noi can nha nay giu thu co the cuu ho. Con khong hieu het, nhung con tin ba.\"", 6f, false, CutSceneCameraShot.SignClose),
-            Point("Walk to front door", frontDoor, "intro_walk_front_door", "Ngoc day cong sat, buoc qua san truoc va di thang ve phia cua chinh.", 5.2f, true, CutSceneCameraShot.DescendBehind),
-            Point("Open front door", frontDoor, "intro_open_front_door", "\"Tam guong bac. Tim duoc thi dem ve. Ba dan... dung nhin vao mat nuoc trong nha. Tuyet doi khong.\"", 6.2f, false, CutSceneCameraShot.BehindShoulder),
+            Point("Walk from forest to gate", gateApproach, "intro_gate_arrival", "Đường mòn vào biệt thự hiện rõ dưới bầu trời xám đục. Ngọc đi chậm, một tay cầm đèn dầu, tay kia giữ cuốn sổ cũ của bà.", 7.5f, true, CutSceneCameraShot.OverheadFollow),
+            Point("Stop at gate", gateApproach, "p2_ngoc_01", "\"Bà ơi, con đã đến rồi.\"", 3.2f, false, CutSceneCameraShot.DescendBehind),
+            Point("Read gate sign", gateApproach, "intro_dogia_sign", "Tấm bảng tên cũ hiện lên dưới ánh đèn dầu: Đỗ Gia.", 3.2f, false, CutSceneCameraShot.SignClose),
+            Point("Remember grandmother note", gateApproach, "p2_ngoc_02", "\"Bà nói căn nhà này giữ thứ có thể cứu họ. Con không hiểu hết, nhưng con tin bà.\"", 6f, false, CutSceneCameraShot.SignClose),
+            Point("Walk to front door", frontDoor, "intro_walk_front_door", "Ngọc đẩy cổng sắt, bước qua sân trước và đi thẳng về phía cửa chính.", 5.2f, true, CutSceneCameraShot.DescendBehind),
+            Point("Open front door", frontDoor, "p2_ngoc_03", "\"Tấm gương bạc. Tìm được thì đem về. Bà dặn... đừng nhìn vào mặt nước trong nhà. Tuyệt đối không.\"", 6.2f, false, CutSceneCameraShot.BehindShoulder),
             Point("Enter lobby through front door", lobbyEntry, "intro_enter_front_door", string.Empty, 1.2f, true, CutSceneCameraShot.InteriorSettle)
         };
     }
@@ -160,6 +171,7 @@ public static class GameP2IntroLanternHudUpdater
         {
             moveToPoint = moveToPoint,
             overrideText = text,
+            overrideAudioClip = P2DialogueClip(dialogueId),
             overrideFallbackDuration = duration,
             waitAfter = 0.12f
         };
@@ -167,59 +179,72 @@ public static class GameP2IntroLanternHudUpdater
 
     private static void ApplyLanternHud()
     {
-        var gameUi = FindSceneTransform("GameUI");
-        if (gameUi == null)
-            return;
+        EnsureGameUiVisible();
+        ApplyP1FlashlightPanelLayout();
 
-        var panel = FindSceneTransform("FlashlightPanel");
-        if (panel == null)
+        var frame = FindSceneTransform("LanternFrame")?.GetComponent<Image>();
+        if (frame == null)
+            frame = CreateLanternFrameImage();
+        if (frame != null)
         {
-            var panelObject = new GameObject("FlashlightPanel", typeof(RectTransform), typeof(CanvasRenderer), typeof(Image));
-            panelObject.layer = LayerMask.NameToLayer("UI");
-            panelObject.transform.SetParent(gameUi, false);
-            panel = panelObject.transform;
+            frame.sprite = AssetDatabase.LoadAssetAtPath<Sprite>(LanternFramePath);
+            frame.type = Image.Type.Simple;
+            frame.color = Color.white;
+            frame.preserveAspect = true;
+            frame.raycastTarget = false;
+            SetCentered(frame.rectTransform, new Vector2(120f, 148f), new Vector2(-86f, 0f));
+            frame.transform.SetAsLastSibling();
+            EditorUtility.SetDirty(frame);
         }
 
-        for (var i = panel.childCount - 1; i >= 0; i--)
-            Object.DestroyImmediate(panel.GetChild(i).gameObject);
+        var fill = FindLanternFuelFillImage();
+        if (fill == null)
+            fill = CreateLanternFuelFillImage();
+        if (fill == null)
+            return;
 
-        var panelRect = EnsureRect(panel);
-        panelRect.anchorMin = Vector2.zero;
-        panelRect.anchorMax = Vector2.zero;
-        panelRect.pivot = Vector2.zero;
-        panelRect.sizeDelta = new Vector2(132f, 164f);
-        panelRect.anchoredPosition = new Vector2(24f, 22f);
-
-        var panelImage = panel.GetComponent<Image>() ?? panel.gameObject.AddComponent<Image>();
-        panelImage.color = Color.clear;
-        panelImage.raycastTarget = false;
-
-        var fill = AddImage(panel, "LanternFuelFill", AssetDatabase.LoadAssetAtPath<Sprite>(LanternFillPath), Image.Type.Filled);
         fill.fillMethod = Image.FillMethod.Vertical;
         fill.fillOrigin = (int)Image.OriginVertical.Bottom;
-        fill.fillAmount = 0.78f;
+        fill.fillAmount = 1f;
+        fill.color = new Color(1f, 0.77f, 0.12f, 0.95f);
         fill.preserveAspect = true;
-        SetCentered(fill.rectTransform, new Vector2(120f, 148f), Vector2.zero);
+        fill.raycastTarget = false;
+        SetCentered(fill.rectTransform, new Vector2(120f, 148f), new Vector2(-86f, 0f));
+        if (frame != null)
+            fill.transform.SetSiblingIndex(Mathf.Max(0, frame.transform.GetSiblingIndex() - 1));
+        EditorUtility.SetDirty(fill);
 
-        var frame = AddImage(panel, "LanternFrame", AssetDatabase.LoadAssetAtPath<Sprite>(LanternFramePath), Image.Type.Simple);
-        frame.preserveAspect = true;
-        SetCentered(frame.rectTransform, new Vector2(120f, 148f), Vector2.zero);
+        var percentText = EnsureOilPercentText();
+        if (percentText != null)
+        {
+            percentText.text = "100%";
+            percentText.color = new Color(1f, 0.77f, 0.12f, 1f);
+            EditorUtility.SetDirty(percentText);
+        }
     }
 
     private static void WireLampFillImage()
     {
-        var fillTransform = FindSceneTransform("LanternFuelFill");
-        var fill = fillTransform != null ? fillTransform.GetComponent<Image>() : null;
+        var fill = FindLanternFuelFillImage();
         if (fill == null)
             return;
 
-        foreach (var behaviour in Object.FindObjectsByType<MonoBehaviour>(FindObjectsInactive.Include, FindObjectsSortMode.None))
+        fill.color = new Color(1f, 0.77f, 0.12f, 0.95f);
+        fill.type = Image.Type.Filled;
+        fill.fillMethod = Image.FillMethod.Vertical;
+        fill.fillOrigin = (int)Image.OriginVertical.Bottom;
+        fill.raycastTarget = false;
+        EditorUtility.SetDirty(fill);
+
+        foreach (var behaviour in Object.FindObjectsByType<P2OilLamp>(FindObjectsInactive.Include, FindObjectsSortMode.None))
         {
-            if (behaviour == null || behaviour.GetType().Name != "P2OilLamp")
+            if (behaviour == null || !behaviour.ControlsGameplaySystems)
                 continue;
 
             var serialized = new SerializedObject(behaviour);
             Set(serialized, "oilFillImage", fill);
+            Set(serialized, "oilPercentText", EnsureOilPercentText());
+            Set(serialized, "oilFillColor", new Color(1f, 0.77f, 0.12f, 0.95f));
             serialized.ApplyModifiedPropertiesWithoutUndo();
             EditorUtility.SetDirty(behaviour);
         }
@@ -317,8 +342,9 @@ public static class GameP2IntroLanternHudUpdater
             return;
         }
 
-        RemoveP2OilLampFromOtherLanterns(lantern);
-        var oilLamp = ConfigureP2OilLamp(lantern, true);
+        RemoveP2OilLampComponents();
+        ConfigureLanternFx(lantern);
+        var oilLamp = ConfigurePlayerOilLampController();
         var flameLight = GetP2FlameLight(lantern);
 
         var fps = Object.FindFirstObjectByType<FpsHorrorKit.FpsController>(FindObjectsInactive.Include);
@@ -338,6 +364,9 @@ public static class GameP2IntroLanternHudUpdater
         {
             var serializedController = new SerializedObject(controller);
             Set(serializedController, "oilLamp", oilLamp);
+            Set(serializedController, "runOpeningWhenNoChapterCutscene", false);
+            Set(serializedController, "enableP2VoiceLines", false);
+            Set(serializedController, "showP2DebugStage", false);
             serializedController.ApplyModifiedPropertiesWithoutUndo();
             EditorUtility.SetDirty(controller);
         }
@@ -350,13 +379,13 @@ public static class GameP2IntroLanternHudUpdater
             return;
 
         var serializedPresentation = new SerializedObject(presentation);
-        var playerModelRoot = serializedPresentation.FindProperty("playerModelRoot")?.objectReferenceValue as GameObject;
-        if (playerModelRoot == null)
-            playerModelRoot = FindSceneTransform("PlayerNew")?.gameObject ?? presentation.gameObject;
 
         var firstPersonLantern = FindGameplayLantern();
         if (firstPersonLantern != null)
+        {
             Set(serializedPresentation, "firstPersonFlashlightViewModel", firstPersonLantern.gameObject);
+            Set(serializedPresentation, "gameplayLanternObject", firstPersonLantern.gameObject);
+        }
 
         var legacyViewModel = FindSceneTransform("FirstPersonFlashlightViewModel");
         if (legacyViewModel != null && legacyViewModel != firstPersonLantern && !IsAncestorOf(legacyViewModel, firstPersonLantern))
@@ -365,119 +394,89 @@ public static class GameP2IntroLanternHudUpdater
             EditorUtility.SetDirty(legacyViewModel.gameObject);
         }
 
-        var rightHand = FindChildRecursive(playerModelRoot.transform, "mixamorig:RightHand");
-        if (rightHand == null)
-        {
-            Debug.LogWarning("mixamorig:RightHand was not found under the player model, so cutscene lantern was parented to the player root.");
-            rightHand = playerModelRoot.transform;
-        }
+        Set(serializedPresentation, "cutsceneHeldLantern", FindSceneTransform("Lantern_01_2kCutscene")?.gameObject);
+        Set(serializedPresentation, "switchLanternObjectsByCutscene", true);
+        ConfigurePlayerOilLampController();
 
-        var cutsceneLantern = FindSceneTransform("Lantern_01_2kCutscene");
-        if (cutsceneLantern == null)
-            cutsceneLantern = FindSceneTransform("P2_CutsceneHeldLantern");
-        if (cutsceneLantern == null)
-        {
-            var prefab = AssetDatabase.LoadAssetAtPath<GameObject>(LanternPrefabPath);
-            var instance = prefab != null
-                ? PrefabUtility.InstantiatePrefab(prefab, rightHand) as GameObject
-                : new GameObject("Lantern_01_2kCutscene");
-
-            cutsceneLantern = instance != null ? instance.transform : null;
-        }
-
-        if (cutsceneLantern == null)
-            return;
-
-        cutsceneLantern.name = "Lantern_01_2kCutscene";
-        cutsceneLantern.SetParent(rightHand, false);
-        cutsceneLantern.localPosition = new Vector3(0.266f, 0.097f, -0.075f);
-        cutsceneLantern.localRotation = Quaternion.Euler(-35.535f, 4.645f, 107.675f);
-        cutsceneLantern.localScale = Vector3.one;
-        cutsceneLantern.gameObject.SetActive(false);
-
-        DisableColliders(cutsceneLantern);
-        ConfigureP2OilLamp(cutsceneLantern, false);
-
-        Set(serializedPresentation, "cutsceneHeldLantern", cutsceneLantern.gameObject);
         serializedPresentation.ApplyModifiedPropertiesWithoutUndo();
         EditorUtility.SetDirty(presentation);
-        EditorUtility.SetDirty(cutsceneLantern.gameObject);
     }
 
-    private static P2OilLamp ConfigureP2OilLamp(Transform lantern, bool controlsGameplaySystems)
+    private static void ConfigureLanternFx(Transform lantern)
     {
-        var fireFx = EnsureChild(lantern, "P2_Lantern_FireFX");
-        fireFx.localPosition = new Vector3(0f, 0.096f, 0f);
-        fireFx.localRotation = Quaternion.identity;
-        fireFx.localScale = Vector3.one;
+        var fireFx = lantern.Find("P2_Lantern_FireFX");
+        var createdFireFx = fireFx == null;
+        if (createdFireFx)
+        {
+            fireFx = EnsureChild(lantern, "P2_Lantern_FireFX");
+            fireFx.localPosition = new Vector3(0f, 0.096f, 0f);
+            fireFx.localRotation = Quaternion.identity;
+            fireFx.localScale = Vector3.one;
+            EditorUtility.SetDirty(fireFx);
+        }
 
-        var particleTransform = EnsureParticleChild(fireFx, "P2_Lantern_FlameParticle");
-        particleTransform.localPosition = Vector3.zero;
-        particleTransform.localRotation = Quaternion.identity;
-        particleTransform.localScale = Vector3.one;
+        var particleTransform = fireFx.Find("P2_Lantern_FlameParticle");
+        var createdParticle = particleTransform == null;
+        if (createdParticle)
+        {
+            particleTransform = EnsureParticleChild(fireFx, "P2_Lantern_FlameParticle");
+            particleTransform.localPosition = Vector3.zero;
+            particleTransform.localRotation = Quaternion.identity;
+            particleTransform.localScale = Vector3.one;
+            EditorUtility.SetDirty(particleTransform);
+        }
 
         var particles = particleTransform.GetComponent<ParticleSystem>();
         if (particles == null)
-            particles = particleTransform.gameObject.AddComponent<ParticleSystem>();
-        ConfigureLanternFlameParticles(particles);
-
-        var particleRenderer = particleTransform.GetComponent<ParticleSystemRenderer>();
-        if (particleRenderer != null)
         {
-            var flameMaterial = AssetDatabase.LoadAssetAtPath<Material>(FlameMaterialPath);
-            if (flameMaterial != null)
-                particleRenderer.sharedMaterial = flameMaterial;
-            particleRenderer.renderMode = ParticleSystemRenderMode.Billboard;
-            particleRenderer.alignment = ParticleSystemRenderSpace.View;
-            particleRenderer.sortingFudge = 2f;
+            particles = particleTransform.gameObject.AddComponent<ParticleSystem>();
+            createdParticle = true;
         }
 
-        var lightTransform = EnsureChild(fireFx, "P2_Lantern_FlameLight");
-        lightTransform.localPosition = new Vector3(0f, 0.012f, 0f);
-        lightTransform.localRotation = Quaternion.identity;
-        lightTransform.localScale = Vector3.one;
+        if (createdParticle)
+        {
+            ConfigureLanternFlameParticles(particles);
+
+            var particleRenderer = particleTransform.GetComponent<ParticleSystemRenderer>();
+            if (particleRenderer != null)
+            {
+                var flameMaterial = AssetDatabase.LoadAssetAtPath<Material>(FlameMaterialPath);
+                if (flameMaterial != null)
+                    particleRenderer.sharedMaterial = flameMaterial;
+                particleRenderer.renderMode = ParticleSystemRenderMode.Billboard;
+                particleRenderer.alignment = ParticleSystemRenderSpace.View;
+                particleRenderer.sortingFudge = 2f;
+                EditorUtility.SetDirty(particleRenderer);
+            }
+
+            EditorUtility.SetDirty(particles);
+        }
+
+        var lightTransform = fireFx.Find("P2_Lantern_FlameLight");
+        var createdLight = lightTransform == null;
+        if (createdLight)
+        {
+            lightTransform = EnsureChild(fireFx, "P2_Lantern_FlameLight");
+            lightTransform.localPosition = new Vector3(0f, 0.012f, 0f);
+            lightTransform.localRotation = Quaternion.identity;
+            lightTransform.localScale = Vector3.one;
+            EditorUtility.SetDirty(lightTransform);
+        }
 
         var flameLight = lightTransform.GetComponent<Light>();
         if (flameLight == null)
+        {
             flameLight = lightTransform.gameObject.AddComponent<Light>();
-        flameLight.type = LightType.Point;
-        flameLight.color = new Color(1f, 0.48f, 0.16f);
-        flameLight.intensity = controlsGameplaySystems ? 1.25f : 0.95f;
-        flameLight.range = controlsGameplaySystems ? 2.4f : 2.1f;
-        flameLight.shadows = LightShadows.None;
-        flameLight.enabled = true;
+            createdLight = true;
+        }
 
-        RecreateOilLampComponent(lantern);
-        var oilLamp = lantern.gameObject.AddComponent<P2OilLamp>();
-        var fillTransform = FindSceneTransform("LanternFuelFill");
-        var fillImage = controlsGameplaySystems && fillTransform != null ? fillTransform.GetComponent<Image>() : null;
-        var ghost = Object.FindFirstObjectByType<P2GhostController>(FindObjectsInactive.Include);
-
-        var serializedLamp = new SerializedObject(oilLamp);
-        Set(serializedLamp, "flameLight", flameLight);
-        SetParticleList(serializedLamp, particles);
-        Set(serializedLamp, "shakeRoot", lantern);
-        Set(serializedLamp, "controlsGameplaySystems", controlsGameplaySystems);
-        Set(serializedLamp, "oilFillImage", controlsGameplaySystems ? fillImage : (Object)null);
-        Set(serializedLamp, "ghost", ghost);
-        Set(serializedLamp, "flameBaseIntensity", controlsGameplaySystems ? 1.15f : 0.95f);
-        Set(serializedLamp, "flamePulseIntensity", 0.45f);
-        Set(serializedLamp, "flameBaseRange", controlsGameplaySystems ? 2.4f : 2.1f);
-        Set(serializedLamp, "flameDangerRange", controlsGameplaySystems ? 1.8f : 1.6f);
-        Set(serializedLamp, "nearGhostEffectStartDistance", 12f);
-        Set(serializedLamp, "nearGhostFullEffectDistance", 2f);
-        Set(serializedLamp, "dangerShakePosition", 0.045f);
-        Set(serializedLamp, "dangerShakeRotation", 6f);
-        Set(serializedLamp, "normalFlameColor", new Color(1f, 0.48f, 0.16f));
-        Set(serializedLamp, "dangerFlameColor", new Color(0.35f, 0.85f, 1f));
-        Set(serializedLamp, "debugNearGhostEffectZone", controlsGameplaySystems);
-        serializedLamp.ApplyModifiedPropertiesWithoutUndo();
-
-        EditorUtility.SetDirty(fireFx);
-        EditorUtility.SetDirty(particles);
-        EditorUtility.SetDirty(flameLight);
-        EditorUtility.SetDirty(oilLamp);
-        return oilLamp;
+        if (createdLight)
+        {
+            flameLight.type = LightType.Point;
+            flameLight.shadows = LightShadows.None;
+            flameLight.enabled = true;
+            EditorUtility.SetDirty(flameLight);
+        }
     }
 
     private static Light GetP2FlameLight(Transform lantern)
@@ -485,6 +484,71 @@ public static class GameP2IntroLanternHudUpdater
         var fireFx = lantern != null ? lantern.Find("P2_Lantern_FireFX") : null;
         var lightTransform = fireFx != null ? fireFx.Find("P2_Lantern_FlameLight") : null;
         return lightTransform != null ? lightTransform.GetComponent<Light>() : null;
+    }
+
+    private static P2OilLamp ConfigurePlayerOilLampController()
+    {
+        var host = FindOilLampControllerHost();
+        if (host == null)
+            return null;
+
+        RemoveP2OilLampComponentsExcept(host);
+
+        var oilLamp = host.GetComponent<P2OilLamp>();
+        if (oilLamp == null)
+            oilLamp = host.gameObject.AddComponent<P2OilLamp>();
+
+        var gameplayLantern = FindGameplayLantern();
+        var fill = FindLanternFuelFillImage();
+        var percentText = EnsureOilPercentText();
+        var serializedLamp = new SerializedObject(oilLamp);
+        Set(serializedLamp, "gameplayLanternRoot", gameplayLantern);
+        Set(serializedLamp, "gameplayFlameSwayRoot", gameplayLantern != null ? gameplayLantern.Find("P2_Lantern_FireFX") : null);
+        Set(serializedLamp, "gameplayFlameLight", GetP2FlameLight(gameplayLantern));
+        SetParticleList(serializedLamp, "gameplayFlameParticles", gameplayLantern != null ? gameplayLantern.GetComponentsInChildren<ParticleSystem>(true) : System.Array.Empty<ParticleSystem>());
+        Set(serializedLamp, "oilFillImage", fill);
+        Set(serializedLamp, "oilPercentText", percentText);
+        Set(serializedLamp, "oilFillColor", new Color(1f, 0.77f, 0.12f, 0.95f));
+        Set(serializedLamp, "startLitOnGameplay", true);
+        Set(serializedLamp, "forceLitDuringCutscene", true);
+        Set(serializedLamp, "drainOilDuringCutscene", false);
+        Set(serializedLamp, "acceptExternalFlashlightToggle", false);
+        Set(serializedLamp, "ghost", (UnityEngine.Object)null);
+        Set(serializedLamp, "dangerTarget", FindLanternDangerTarget(null));
+        serializedLamp.ApplyModifiedPropertiesWithoutUndo();
+        EditorUtility.SetDirty(oilLamp);
+        return oilLamp;
+    }
+
+    private static Transform FindOilLampControllerHost()
+    {
+        var fps = Object.FindFirstObjectByType<FpsHorrorKit.FpsController>(FindObjectsInactive.Include);
+        if (fps != null)
+            return fps.transform;
+
+        var player = FindSceneTransform("Player");
+        if (player != null)
+            return player;
+
+        return FindSceneTransform("PlayerP2");
+    }
+
+    private static void RemoveP2OilLampComponents()
+    {
+        var host = FindOilLampControllerHost();
+        if (host != null)
+            RemoveP2OilLampComponentsExcept(host);
+    }
+
+    private static void RemoveP2OilLampComponentsExcept(Transform host)
+    {
+        foreach (var oilLamp in Object.FindObjectsByType<P2OilLamp>(FindObjectsInactive.Include, FindObjectsSortMode.None))
+        {
+            if (oilLamp == null || oilLamp.transform == host)
+                continue;
+
+            Object.DestroyImmediate(oilLamp, true);
+        }
     }
 
     private static void DisableColliders(Transform root)
@@ -615,12 +679,333 @@ public static class GameP2IntroLanternHudUpdater
         return image;
     }
 
+    private static void EnsureGameUiVisible()
+    {
+        var gameUi = FindSceneTransform("GameUI");
+        if (gameUi == null)
+            return;
+
+        gameUi.gameObject.SetActive(true);
+        var canvasGroup = gameUi.GetComponent<CanvasGroup>();
+        if (canvasGroup != null)
+        {
+            canvasGroup.alpha = 1f;
+            canvasGroup.interactable = true;
+            canvasGroup.blocksRaycasts = true;
+            EditorUtility.SetDirty(canvasGroup);
+        }
+
+        var canvas = gameUi.GetComponentInParent<Canvas>(true);
+        if (canvas != null)
+        {
+            canvas.gameObject.SetActive(true);
+            canvas.enabled = true;
+            EditorUtility.SetDirty(canvas);
+        }
+
+        EditorUtility.SetDirty(gameUi.gameObject);
+    }
+
+    private static void ApplyP1FlashlightPanelLayout()
+    {
+        var gameUi = FindSceneTransform("GameUI");
+        if (gameUi == null)
+            return;
+
+        var panel = FindSceneTransform("FlashlightPanel");
+        if (panel == null)
+        {
+            var panelObject = new GameObject("FlashlightPanel", typeof(RectTransform), typeof(CanvasRenderer), typeof(Image));
+            panelObject.layer = LayerMask.NameToLayer("UI");
+            panelObject.transform.SetParent(gameUi, false);
+            panel = panelObject.transform;
+        }
+
+        var rect = EnsureRect(panel);
+        rect.anchorMin = Vector2.zero;
+        rect.anchorMax = Vector2.zero;
+        rect.pivot = Vector2.zero;
+        rect.sizeDelta = new Vector2(332f, 158f);
+        rect.anchoredPosition = new Vector2(20f, 20f);
+        rect.localScale = Vector3.one;
+
+        var image = panel.GetComponent<Image>() ?? panel.gameObject.AddComponent<Image>();
+        image.color = new Color(0.01f, 0.04f, 0.07f, 0.78f);
+        image.raycastTarget = false;
+        EditorUtility.SetDirty(panel.gameObject);
+        EditorUtility.SetDirty(image);
+    }
+
+    private static TMP_Text EnsureOilPercentText()
+    {
+        var textTransform = FindSceneTransform("BatteryPercentText");
+        var text = textTransform != null ? textTransform.GetComponent<TMP_Text>() : null;
+        if (text == null)
+        {
+            var panel = FindSceneTransform("FlashlightPanel");
+            if (panel == null)
+                return null;
+
+            var obj = new GameObject("BatteryPercentText", typeof(RectTransform), typeof(CanvasRenderer), typeof(TextMeshProUGUI), typeof(Shadow));
+            obj.layer = LayerMask.NameToLayer("UI");
+            obj.transform.SetParent(panel, false);
+            textTransform = obj.transform;
+            text = obj.GetComponent<TMP_Text>();
+
+            var shadow = obj.GetComponent<Shadow>();
+            shadow.effectColor = new Color(0.08f, 0.55f, 0.72f, 0.34f);
+            shadow.effectDistance = new Vector2(1.2f, -1.4f);
+            EditorUtility.SetDirty(shadow);
+        }
+
+        var rect = EnsureRect(textTransform);
+        rect.anchorMin = Vector2.zero;
+        rect.anchorMax = Vector2.zero;
+        rect.pivot = Vector2.zero;
+        rect.anchoredPosition = new Vector2(238f, 34f);
+        rect.sizeDelta = new Vector2(90f, 40f);
+        rect.localScale = Vector3.one;
+
+        text.fontSize = 24f;
+        text.alignment = TextAlignmentOptions.Center;
+        text.raycastTarget = false;
+        text.gameObject.SetActive(true);
+        EditorUtility.SetDirty(text.gameObject);
+        return text;
+    }
+
+    private static Image FindLanternFuelFillImage()
+    {
+        var fillTransform = FindSceneTransform("LanternFuelFill");
+        var fill = fillTransform != null ? fillTransform.GetComponent<Image>() : null;
+        if (fill != null)
+            return fill;
+
+        var names = new[] { "OilFill", "LampOilFill", "LanternOilFill", "FuelFill" };
+        foreach (var name in names)
+        {
+            fillTransform = FindSceneTransform(name);
+            fill = fillTransform != null ? fillTransform.GetComponent<Image>() : null;
+            if (fill != null)
+            {
+                fillTransform.name = "LanternFuelFill";
+                EditorUtility.SetDirty(fillTransform.gameObject);
+                return fill;
+            }
+        }
+
+        return null;
+    }
+
+    private static Image CreateLanternFrameImage()
+    {
+        var panel = FindSceneTransform("FlashlightPanel");
+        if (panel == null)
+        {
+            var gameUi = FindSceneTransform("GameUI");
+            if (gameUi == null)
+                return null;
+
+            var panelObject = new GameObject("FlashlightPanel", typeof(RectTransform), typeof(CanvasRenderer), typeof(Image));
+            panelObject.layer = LayerMask.NameToLayer("UI");
+            panelObject.transform.SetParent(gameUi, false);
+            panel = panelObject.transform;
+
+            var panelRect = EnsureRect(panel);
+            panelRect.anchorMin = Vector2.zero;
+            panelRect.anchorMax = Vector2.zero;
+            panelRect.pivot = Vector2.zero;
+            panelRect.sizeDelta = new Vector2(132f, 164f);
+            panelRect.anchoredPosition = new Vector2(24f, 22f);
+
+            var panelImage = panelObject.GetComponent<Image>();
+            panelImage.color = Color.clear;
+            panelImage.raycastTarget = false;
+            EditorUtility.SetDirty(panelObject);
+        }
+
+        var frame = AddImage(panel, "LanternFrame", AssetDatabase.LoadAssetAtPath<Sprite>(LanternFramePath), Image.Type.Simple);
+        SetCentered(frame.rectTransform, new Vector2(120f, 148f), Vector2.zero);
+        return frame;
+    }
+
+    private static Image CreateLanternFuelFillImage()
+    {
+        var panel = FindSceneTransform("FlashlightPanel");
+        if (panel == null)
+            panel = FindSceneTransform("LanternFrame");
+        if (panel == null)
+            return null;
+
+        var fill = AddImage(panel, "LanternFuelFill", AssetDatabase.LoadAssetAtPath<Sprite>(LanternFillPath), Image.Type.Filled);
+        var rect = fill.rectTransform;
+        rect.anchorMin = new Vector2(0.5f, 0.5f);
+        rect.anchorMax = new Vector2(0.5f, 0.5f);
+        rect.pivot = new Vector2(0.5f, 0.5f);
+        rect.sizeDelta = new Vector2(120f, 148f);
+        rect.anchoredPosition = Vector2.zero;
+        rect.localScale = Vector3.one;
+        return fill;
+    }
+
+    private static void RemoveP2GameplayDemo()
+    {
+        DestroySceneObjectEverywhere("P2_Gameplay");
+        DestroySceneObjectEverywhere("P2_HUD");
+        DestroySceneObjectEverywhere("P2_Audio");
+        DestroySceneObjectEverywhere("P2_GhostWaypoints");
+        DestroySceneObjectEverywhere("P2_StoryLayer_FromChapter1");
+        DestroySceneObjectEverywhere("P2_StoryLayer_FromChapter1_NoLightingOverride");
+        DestroySceneObjectEverywhere("P2_SubtitleText");
+        DestroySceneObjectEverywhere("P2_DeathCard");
+        DestroySceneObjectEverywhere("P2_DeathCardText");
+        DestroySceneObjectEverywhere("MaVuDai_P2_Demo");
+
+        RemoveComponents<P2StageTrigger>();
+        RemoveComponents<P2Interactor>();
+        RemoveComponents<P2Interactable>();
+        RemoveComponents<P2WallKnockPuzzle>();
+        RemoveComponents<P2GlassShardField>();
+        RemoveComponents<P2MirrorBreakable>();
+        RemoveComponents<P2FirstPersonController>();
+        RemoveComponents<P2GhostController>();
+
+        foreach (var controller in Object.FindObjectsByType<P2GameController>(FindObjectsInactive.Include, FindObjectsSortMode.None))
+        {
+            if (controller != null)
+                Object.DestroyImmediate(controller.gameObject, true);
+        }
+
+        DestroySceneObjectEverywhere("P2_GameController");
+    }
+
     private static void DestroySceneObject(string name)
     {
         var transform = FindSceneTransform(name);
         if (transform != null)
             Object.DestroyImmediate(transform.gameObject, true);
     }
+
+    private static void DestroySceneObjectEverywhere(string name)
+    {
+        Transform transform;
+        while ((transform = FindSceneTransform(name)) != null)
+            Object.DestroyImmediate(transform.gameObject, true);
+    }
+
+    private static void RemoveComponents<T>() where T : Component
+    {
+        foreach (var component in Object.FindObjectsByType<T>(FindObjectsInactive.Include, FindObjectsSortMode.None))
+        {
+            if (component != null)
+                Object.DestroyImmediate(component, true);
+        }
+    }
+
+    private static void ApplyP2AudioData()
+    {
+        var data = AssetDatabase.LoadAssetAtPath<AudioData>(AudioDataPath);
+        if (data == null)
+            return;
+
+        var clips = LoadP2VoiceClipsByNormalizedName();
+        var serialized = new SerializedObject(data);
+        Set(serialized, "p2Ngoc01", FindClip(clips, "ngoc 1_1"));
+        Set(serialized, "p2Ngoc02", FindClip(clips, "ngoc 2_1"));
+        Set(serialized, "p2Ngoc03", FindClip(clips, "ngoc 3_1"));
+        Set(serialized, "p2Ngoc04", FindClip(clips, "ngoc 4_1"));
+        Set(serialized, "p2Ngoc05", FindClip(clips, "ngoc 5_1"));
+        Set(serialized, "p2Ngoc06", FindClip(clips, "ngoc 6_1"));
+        Set(serialized, "p2Ngoc07", FindClip(clips, "ngoc 7_1"));
+        Set(serialized, "p2Ngoc08", FindClip(clips, "ngoc 8_1"));
+        Set(serialized, "p2Ngoc09", FindClip(clips, "ngoc 9_1"));
+        Set(serialized, "p2Ngoc10", FindClip(clips, "ngoc 10_1"));
+        Set(serialized, "p2Linh01", FindClip(clips, "linh 1_1"));
+        Set(serialized, "p2Linh02", FindClip(clips, "linh 2_1"));
+        Set(serialized, "p2Ma01", FindClip(clips, "ma 1_1"));
+        Set(serialized, "p2Ma02", FindClip(clips, "ma 2_1"));
+        Set(serialized, "p2MaDa02", FindClip(clips, "ma da 2_1"));
+        Set(serialized, "p2MaDa03", FindClip(clips, "ma da 3_1"));
+        serialized.ApplyModifiedPropertiesWithoutUndo();
+        EditorUtility.SetDirty(data);
+        AssetDatabase.SaveAssets();
+    }
+
+    private static AudioClip P2DialogueClip(string dialogueId)
+    {
+        if (string.IsNullOrWhiteSpace(dialogueId))
+            return null;
+
+        var clips = LoadP2VoiceClipsByNormalizedName();
+        return dialogueId switch
+        {
+            "p2_ngoc_01" => FindClip(clips, "ngoc 1_1"),
+            "p2_ngoc_02" => FindClip(clips, "ngoc 2_1"),
+            "p2_ngoc_03" => FindClip(clips, "ngoc 3_1"),
+            "p2_ngoc_04" => FindClip(clips, "ngoc 4_1"),
+            "p2_ngoc_05" => FindClip(clips, "ngoc 5_1"),
+            "p2_ngoc_06" => FindClip(clips, "ngoc 6_1"),
+            "p2_ngoc_07" => FindClip(clips, "ngoc 7_1"),
+            "p2_ngoc_08" => FindClip(clips, "ngoc 8_1"),
+            "p2_ngoc_09" => FindClip(clips, "ngoc 9_1"),
+            "p2_ngoc_10" => FindClip(clips, "ngoc 10_1"),
+            "p2_linh_01" => FindClip(clips, "linh 1_1"),
+            "p2_linh_02" => FindClip(clips, "linh 2_1"),
+            "p2_ma_01" => FindClip(clips, "ma 1_1"),
+            "p2_ma_02" => FindClip(clips, "ma 2_1"),
+            "p2_ma_da_02" => FindClip(clips, "ma da 2_1"),
+            "p2_ma_da_03" => FindClip(clips, "ma da 3_1"),
+            _ => null
+        };
+    }
+
+    private static Dictionary<string, AudioClip> LoadP2VoiceClipsByNormalizedName()
+    {
+        var result = new Dictionary<string, AudioClip>();
+        foreach (var guid in AssetDatabase.FindAssets("t:AudioClip", new[] { P2VoiceFolder }))
+        {
+            var path = AssetDatabase.GUIDToAssetPath(guid);
+            var clip = AssetDatabase.LoadAssetAtPath<AudioClip>(path);
+            if (clip == null)
+                continue;
+
+            result[NormalizeClipName(clip.name)] = clip;
+        }
+
+        return result;
+    }
+
+    private static AudioClip FindClip(Dictionary<string, AudioClip> clips, string normalizedName)
+    {
+        return clips != null && clips.TryGetValue(NormalizeClipName(normalizedName), out var clip) ? clip : null;
+    }
+
+    private static string NormalizeClipName(string value)
+    {
+        if (string.IsNullOrWhiteSpace(value))
+            return string.Empty;
+
+        var normalized = value.Normalize(NormalizationForm.FormD);
+        var builder = new StringBuilder(normalized.Length);
+        foreach (var character in normalized)
+        {
+            var category = CharUnicodeInfo.GetUnicodeCategory(character);
+            if (category != UnicodeCategory.NonSpacingMark)
+                builder.Append(char.ToLowerInvariant(character));
+        }
+
+        return builder.ToString().Normalize(NormalizationForm.FormC).Trim();
+    }
+
+    private static Transform FindLanternDangerTarget(P2GhostController ghost)
+    {
+        if (ghost != null)
+            return ghost.transform;
+
+        var p1Monster = Object.FindFirstObjectByType<MonsterAI>(FindObjectsInactive.Include);
+        return p1Monster != null ? p1Monster.transform : null;
+    }
+
 
     private static void WireFollowCamera(Transform followCamera, FpsHorrorKit.FpsController fps)
     {
@@ -801,7 +1186,12 @@ public static class GameP2IntroLanternHudUpdater
 
     private static void SetParticleList(SerializedObject serialized, params ParticleSystem[] particles)
     {
-        var property = serialized.FindProperty("flameParticles");
+        SetParticleList(serialized, "flameParticles", particles);
+    }
+
+    private static void SetParticleList(SerializedObject serialized, string propertyName, params ParticleSystem[] particles)
+    {
+        var property = serialized.FindProperty(propertyName);
         if (property == null)
             return;
 
@@ -821,7 +1211,7 @@ public static class GameP2IntroLanternHudUpdater
             property.GetArrayElementAtIndex(i).objectReferenceValue = transforms[i];
     }
 
-    private static void Set(SerializedObject serialized, string propertyName, Object value)
+    private static void Set(SerializedObject serialized, string propertyName, UnityEngine.Object value)
     {
         var property = serialized.FindProperty(propertyName);
         if (property != null)

@@ -1,4 +1,5 @@
 using System;
+using TMPro;
 using UnityEngine;
 using UnityEngine.InputSystem;
 using UnityEngine.UI;
@@ -7,126 +8,228 @@ namespace MainGame.P2
 {
     public sealed class P2OilLamp : MonoBehaviour
     {
-        [SerializeField] private Light flameLight;
-        [SerializeField] private Renderer flameRenderer;
-        [SerializeField] private ParticleSystem[] flameParticles = Array.Empty<ParticleSystem>();
+        [Header("Lanterns")]
+        [SerializeField] private Transform gameplayLanternRoot;
+        [SerializeField] private Transform gameplayFlameSwayRoot;
+        [SerializeField] private Light gameplayFlameLight;
+        [SerializeField] private Renderer gameplayFlameRenderer;
+        [SerializeField] private ParticleSystem[] gameplayFlameParticles = Array.Empty<ParticleSystem>();
+
+        [Header("Danger Target")]
         [SerializeField] private P2GhostController ghost;
-        [SerializeField] private Transform shakeRoot;
-        [SerializeField] private bool controlsGameplaySystems = true;
+        [SerializeField] private Transform dangerTarget;
+
+        [Header("UI")]
         [SerializeField] private Image oilFillImage;
+        [SerializeField] private TMP_Text oilPercentText;
+        [SerializeField] private Color oilFillColor = new Color(1f, 0.77f, 0.12f, 0.95f);
+
+        [Header("Oil")]
         [SerializeField, Range(0f, 100f)] private float oilPercent = 100f;
         [SerializeField, Min(0f)] private float oilDrainPerSecond = 0.15f;
-        [SerializeField, Min(0f)] private float flameBaseIntensity = 1.15f;
-        [SerializeField, Min(0f)] private float flamePulseIntensity = 0.45f;
-        [SerializeField, Min(0f)] private float flameBaseRange = 2.4f;
-        [SerializeField, Min(0f)] private float flameDangerRange = 1.8f;
+        [SerializeField] private Key toggleKey = Key.T;
+        [SerializeField] private bool startLitOnGameplay = true;
+        [SerializeField] private bool forceLitDuringCutscene = true;
+        [SerializeField] private bool drainOilDuringCutscene;
+        [SerializeField] private bool acceptExternalFlashlightToggle;
+
+        [Header("Near Monster Color")]
+        [SerializeField] private Color dangerFlameColor = new Color(0.35f, 0.85f, 1f);
+        [SerializeField, Range(0f, 1f)] private float dangerColorBlend = 1f;
+
+        [Header("Near Monster Effect")]
         [SerializeField, Min(0.1f)] private float nearGhostEffectStartDistance = 12f;
         [SerializeField, Min(0.1f)] private float nearGhostFullEffectDistance = 2f;
         [SerializeField, Min(0f)] private float dangerShakePosition = 0.045f;
         [SerializeField, Min(0f)] private float dangerShakeRotation = 5f;
-        [SerializeField] private Color normalFlameColor = new Color(1f, 0.48f, 0.16f);
-        [SerializeField] private Color dangerFlameColor = new Color(0.35f, 0.85f, 1f);
+        [SerializeField, Min(0f)] private float dangerFlameSwayPosition = 0.012f;
+        [SerializeField, Min(0f)] private float dangerFlameSwayRotation = 4f;
         [SerializeField] private bool debugNearGhostEffectZone = true;
         [SerializeField] private float directAttackSeconds = 10f;
         [SerializeField] private float dangerDistance = 7f;
 
         public bool IsLit { get; private set; } = true;
-        public bool ControlsGameplaySystems => controlsGameplaySystems;
+        public bool ControlsGameplaySystems => true;
 
         private static P2OilLamp gameplayLamp;
 
+        private readonly LampRuntime gameplayRuntime = new();
         private float unlitNearGhostTimer;
-        private Material flameMaterial;
-        private Vector3 baseLocalPosition;
-        private Quaternion baseLocalRotation;
+        private bool forcedLitForCurrentGameplay;
+        private bool wasInCutsceneState;
+        private bool litBeforeCutscene = true;
 
-        private void OnValidate()
+        private sealed class LampRuntime
         {
-            if (shakeRoot == null)
-                shakeRoot = transform;
-            if (!controlsGameplaySystems)
-                oilFillImage = null;
+            public Transform Root;
+            public Light Light;
+            public Renderer FlameRenderer;
+            public ParticleSystem[] Particles = Array.Empty<ParticleSystem>();
+            public ParticleSystem.MinMaxGradient[] AuthoredParticleColors = Array.Empty<ParticleSystem.MinMaxGradient>();
+            public Material FlameMaterial;
+            public Vector3 BaseLocalPosition;
+            public Quaternion BaseLocalRotation;
+            public Transform FlameSwayRoot;
+            public Vector3 BaseFlameSwayLocalPosition;
+            public Quaternion BaseFlameSwayLocalRotation;
+            public float AuthoredIntensity;
+            public float AuthoredRange;
+            public Color AuthoredColor = Color.white;
+            public Color AuthoredMaterialColor = Color.white;
         }
 
         private void Awake()
         {
-            if (controlsGameplaySystems)
-                gameplayLamp = this;
-
-            if (shakeRoot == null)
-                shakeRoot = transform;
-            if (flameLight == null)
-                flameLight = GetComponentInChildren<Light>();
-            if (flameRenderer != null)
-                flameMaterial = flameRenderer.material;
-            baseLocalPosition = shakeRoot.localPosition;
-            baseLocalRotation = shakeRoot.localRotation;
-            ResolveOilFillImage();
+            gameplayLamp = this;
+            ResolveReferences();
+            CaptureRuntime(gameplayRuntime, gameplayLanternRoot, gameplayFlameSwayRoot, gameplayFlameLight, gameplayFlameRenderer, gameplayFlameParticles);
+            ResolveDangerTarget();
+            ResolveOilUi();
             UpdateOilUi();
-            SetFlameParticles(IsLit);
+            ApplyLitVisual(startLitOnGameplay || IsLit);
+        }
+
+        private void Start()
+        {
+            ForceLitForFreshGameplayIfNeeded();
         }
 
         private void Update()
         {
-            if (controlsGameplaySystems)
-            {
-                if (Keyboard.current != null && Keyboard.current.tKey.wasPressedThisFrame && !(P2GameController.Instance?.IsInputLocked ?? false))
-                    SetLit(!IsLit);
+            HandleLampToggleInput();
+            HandleCutsceneLampState();
+            ForceLitForFreshGameplayIfNeeded();
 
-                DrainOil();
-                TrackUnlitDanger();
-                UpdateOilUi();
-            }
-            else
-            {
-                MirrorGameplayLampState();
-            }
+            DrainOil();
+            TrackUnlitDanger();
+            UpdateOilUi();
 
-            ApplyFlicker();
-            ApplyNearGhostReaction();
+            var danger = IsLit ? GetNearGhostEffect01() : 0f;
+            ApplyNearMonsterColorEffect(gameplayRuntime, danger);
+            ApplyNearGhostReaction(gameplayRuntime, danger);
         }
 
         public void SetLit(bool lit)
         {
+            SetLitInternal(lit, false, false);
+        }
+
+        private void HandleLampToggleInput()
+        {
+            if (!WasTogglePressedThisFrame() || IsLampInputLocked())
+                return;
+
+            SetLitInternal(!IsLit, true, true);
+        }
+
+        private bool WasTogglePressedThisFrame()
+        {
+            var keyboard = Keyboard.current;
+            return keyboard != null && keyboard[toggleKey].wasPressedThisFrame;
+        }
+
+        private static bool IsLampInputLocked()
+        {
+            return global::GameController.IsGameplayInputLocked()
+                || (P2GameController.Instance?.IsInputLocked ?? false);
+        }
+
+        private void ForceLitForFreshGameplayIfNeeded()
+        {
+            if (!startLitOnGameplay || forcedLitForCurrentGameplay)
+                return;
+
+            var controller = global::GameController.Instance;
+            if (controller != null && controller.currentGameState != global::GameController.GameState.Gameplay)
+                return;
+
+            if (oilPercent <= 0f)
+                oilPercent = 100f;
+
+            ApplyLitVisual(true);
+            UpdateOilUi();
+            forcedLitForCurrentGameplay = true;
+        }
+
+        private void HandleCutsceneLampState()
+        {
+            bool isCutscene = IsCutsceneLampState();
+            if (!forceLitDuringCutscene)
+            {
+                wasInCutsceneState = isCutscene;
+                return;
+            }
+
+            if (isCutscene)
+            {
+                if (!wasInCutsceneState)
+                    litBeforeCutscene = IsLit;
+
+                if (!IsLit)
+                    ApplyLitVisual(true);
+            }
+            else if (wasInCutsceneState)
+            {
+                ApplyLitVisual(oilPercent > 0f && litBeforeCutscene);
+            }
+
+            wasInCutsceneState = isCutscene;
+        }
+
+        private static bool IsCutsceneLampState()
+        {
+            var controller = global::GameController.Instance;
+            return controller != null
+                && (controller.currentGameState == global::GameController.GameState.Cutscene
+                    || controller.currentGameState == global::GameController.GameState.Ending
+                    || controller.currentGameState == global::GameController.GameState.Dead);
+        }
+
+        private void SetLitInternal(bool lit, bool showMessage, bool force)
+        {
+            if (!lit && !force && !acceptExternalFlashlightToggle)
+            {
+                ApplyLitVisual(IsLit);
+                return;
+            }
+
             if (lit && oilPercent <= 0f)
             {
                 ApplyLitVisual(false);
-                if (controlsGameplaySystems)
-                    P2GameController.Instance?.ShowPrompt("Den dau da het dau.");
+                if (showMessage)
+                    ShowLampMessage("Đèn dầu đã hết dầu.");
                 UpdateOilUi();
                 return;
             }
 
             ApplyLitVisual(lit);
-            if (controlsGameplaySystems)
-                P2GameController.Instance?.ShowPrompt(lit ? "Den dau da chay lai." : "Den dau tat. Khong the doc chu.");
+            if (showMessage)
+                ShowLampMessage(lit ? "Đèn dầu đã được bật lại." : "Bạn thổi tắt đèn dầu.");
         }
 
         private void ApplyLitVisual(bool lit)
         {
             IsLit = lit;
-            if (flameLight != null)
-                flameLight.enabled = lit;
-            if (flameRenderer != null)
-                flameRenderer.enabled = lit;
-            SetFlameParticles(lit);
+            SetLampLit(gameplayRuntime, lit);
         }
 
-        private void MirrorGameplayLampState()
+        private static void SetLampLit(LampRuntime lamp, bool lit)
         {
-            if (gameplayLamp == null || gameplayLamp == this)
+            if (lamp == null)
                 return;
 
-            if (IsLit != gameplayLamp.IsLit)
-                ApplyLitVisual(gameplayLamp.IsLit);
-        }
+            if (lamp.Light != null)
+            {
+                lamp.Light.enabled = true;
+                if (!lit)
+                    lamp.Light.intensity = 0f;
+                else
+                    RestoreAuthoredLight(lamp);
+            }
+            if (lamp.FlameRenderer != null)
+                lamp.FlameRenderer.enabled = lit;
 
-        private void SetFlameParticles(bool lit)
-        {
-            if (flameParticles == null)
-                return;
-
-            foreach (var particles in flameParticles)
+            foreach (var particles in lamp.Particles)
             {
                 if (particles == null)
                     continue;
@@ -145,57 +248,109 @@ namespace MainGame.P2
 
         private void DrainOil()
         {
-            if (!IsLit || oilDrainPerSecond <= 0f)
+            if (!IsLit || oilDrainPerSecond <= 0f || IsOilDrainPaused())
                 return;
 
             oilPercent = Mathf.Max(0f, oilPercent - oilDrainPerSecond * Time.deltaTime);
             if (oilPercent <= 0f)
-                SetLit(false);
+                SetLitInternal(false, true, true);
+        }
+
+        private bool IsOilDrainPaused()
+        {
+            return !drainOilDuringCutscene && IsCutsceneLampState();
         }
 
         private void UpdateOilUi()
         {
-            ResolveOilFillImage();
+            ResolveOilUi();
             if (oilFillImage != null)
+            {
+                oilFillImage.color = oilFillColor;
                 oilFillImage.fillAmount = Mathf.Clamp01(oilPercent / 100f);
+            }
+
+            if (oilPercentText != null)
+                oilPercentText.text = $"{Mathf.CeilToInt(oilPercent)}%";
         }
 
-        private void ResolveOilFillImage()
+        private void ResolveOilUi()
         {
-            if (oilFillImage != null)
-                return;
+            if (oilFillImage == null)
+            {
+                var fillObject = GameObject.Find("LanternFuelFill");
+                if (fillObject != null)
+                    oilFillImage = fillObject.GetComponent<Image>();
+            }
 
-            var fillObject = GameObject.Find("LanternFuelFill");
-            if (fillObject != null)
-                oilFillImage = fillObject.GetComponent<Image>();
+            if (oilPercentText == null)
+            {
+                var textObject = GameObject.Find("BatteryPercentText");
+                if (textObject != null)
+                    oilPercentText = textObject.GetComponent<TMP_Text>();
+            }
         }
 
-        private void ApplyFlicker()
+        private void ApplyNearMonsterColorEffect(LampRuntime lamp, float danger)
         {
-            if (!IsLit || flameLight == null)
+            if (!IsLit || lamp == null)
                 return;
 
-            var danger = GetNearGhostEffect01();
-            flameLight.intensity = flameBaseIntensity + Mathf.Sin(Time.time * Mathf.Lerp(5f, 18f, danger)) * Mathf.Lerp(0.06f, flamePulseIntensity, danger);
-            flameLight.range = Mathf.Lerp(flameBaseRange, flameDangerRange, danger);
-            flameLight.color = Color.Lerp(normalFlameColor, dangerFlameColor, danger);
-
-            if (flameMaterial != null)
-                flameMaterial.color = Color.Lerp(new Color(1f, 0.55f, 0.18f), dangerFlameColor, danger);
-
-            ApplyParticleDangerColor(danger);
-        }
-
-        private void ApplyNearGhostReaction()
-        {
-            if (shakeRoot == null)
-                return;
-
-            var danger = IsLit ? GetNearGhostEffect01() : 0f;
             if (danger <= 0.001f)
             {
-                shakeRoot.localPosition = Vector3.Lerp(shakeRoot.localPosition, baseLocalPosition, Time.deltaTime * 12f);
-                shakeRoot.localRotation = Quaternion.Slerp(shakeRoot.localRotation, baseLocalRotation, Time.deltaTime * 12f);
+                RestoreAuthoredColors(lamp);
+                return;
+            }
+
+            if (lamp.Light != null)
+                lamp.Light.color = Color.Lerp(lamp.AuthoredColor, dangerFlameColor, danger * dangerColorBlend);
+
+            if (lamp.FlameMaterial != null)
+                lamp.FlameMaterial.color = Color.Lerp(lamp.AuthoredMaterialColor, dangerFlameColor, danger * dangerColorBlend);
+
+            ApplyParticleDangerColor(lamp, danger);
+        }
+
+        private static void RestoreAuthoredLight(LampRuntime lamp)
+        {
+            if (lamp == null || lamp.Light == null)
+                return;
+
+            lamp.Light.enabled = true;
+            lamp.Light.intensity = lamp.AuthoredIntensity;
+            lamp.Light.range = lamp.AuthoredRange;
+            lamp.Light.color = lamp.AuthoredColor;
+
+            if (lamp.FlameMaterial != null)
+                lamp.FlameMaterial.color = lamp.AuthoredMaterialColor;
+
+            RestoreAuthoredParticleColors(lamp);
+        }
+
+        private static void RestoreAuthoredColors(LampRuntime lamp)
+        {
+            if (lamp == null)
+                return;
+
+            if (lamp.Light != null)
+                lamp.Light.color = lamp.AuthoredColor;
+
+            if (lamp.FlameMaterial != null)
+                lamp.FlameMaterial.color = lamp.AuthoredMaterialColor;
+
+            RestoreAuthoredParticleColors(lamp);
+        }
+
+        private void ApplyNearGhostReaction(LampRuntime lamp, float danger)
+        {
+            if (lamp == null || lamp.Root == null)
+                return;
+
+            if (danger <= 0.001f)
+            {
+                lamp.Root.localPosition = Vector3.Lerp(lamp.Root.localPosition, lamp.BaseLocalPosition, Time.deltaTime * 12f);
+                lamp.Root.localRotation = Quaternion.Slerp(lamp.Root.localRotation, lamp.BaseLocalRotation, Time.deltaTime * 12f);
+                RestoreFlameSway(lamp);
                 return;
             }
 
@@ -212,52 +367,144 @@ namespace MainGame.P2
                 (Mathf.PerlinNoise(Time.time * shakeSpeed, 8.33f) - 0.5f) * rotationAmount,
                 (Mathf.PerlinNoise(11.9f, Time.time * shakeSpeed) - 0.5f) * rotationAmount);
 
-            shakeRoot.localPosition = baseLocalPosition + shakeOffset;
-            shakeRoot.localRotation = baseLocalRotation * shakeRotation;
+            lamp.Root.localPosition = lamp.BaseLocalPosition + shakeOffset;
+            lamp.Root.localRotation = lamp.BaseLocalRotation * shakeRotation;
+            ApplyFlameSway(lamp, danger);
         }
 
-        private void ApplyParticleDangerColor(float danger)
+        private void CaptureRuntime(
+            LampRuntime runtime,
+            Transform root,
+            Transform flameSwayRoot,
+            Light light,
+            Renderer flameRenderer,
+            ParticleSystem[] particles)
         {
-            if (flameParticles == null)
+            runtime.Root = root;
+            runtime.Light = light;
+            runtime.FlameRenderer = flameRenderer;
+            runtime.Particles = particles ?? Array.Empty<ParticleSystem>();
+            runtime.AuthoredParticleColors = CaptureParticleColors(runtime.Particles);
+            runtime.FlameMaterial = flameRenderer != null ? flameRenderer.material : null;
+            runtime.BaseLocalPosition = root != null ? root.localPosition : Vector3.zero;
+            runtime.BaseLocalRotation = root != null ? root.localRotation : Quaternion.identity;
+            runtime.FlameSwayRoot = flameSwayRoot;
+            runtime.BaseFlameSwayLocalPosition = flameSwayRoot != null ? flameSwayRoot.localPosition : Vector3.zero;
+            runtime.BaseFlameSwayLocalRotation = flameSwayRoot != null ? flameSwayRoot.localRotation : Quaternion.identity;
+            runtime.AuthoredIntensity = light != null ? light.intensity : 0f;
+            runtime.AuthoredRange = light != null ? light.range : 0f;
+            runtime.AuthoredColor = light != null ? light.color : Color.white;
+            runtime.AuthoredMaterialColor = runtime.FlameMaterial != null ? runtime.FlameMaterial.color : Color.white;
+
+            if (light != null)
+                light.enabled = true;
+        }
+
+        private void ApplyParticleDangerColor(LampRuntime lamp, float danger)
+        {
+            var particles = lamp.Particles;
+            if (particles == null)
                 return;
 
-            var warmStart = new Color(1f, 0.86f, 0.25f, 0.95f);
-            var warmEnd = new Color(1f, 0.28f, 0.04f, 0.75f);
             var blueStart = new Color(0.5f, 0.95f, 1f, 0.98f);
             var blueEnd = new Color(0.08f, 0.42f, 1f, 0.8f);
 
-            foreach (var particles in flameParticles)
+            var particleDanger = new ParticleSystem.MinMaxGradient(blueStart, blueEnd);
+            foreach (var particlesInstance in particles)
             {
-                if (particles == null)
+                if (particlesInstance == null)
+                    continue;
+
+                var index = Array.IndexOf(particles, particlesInstance);
+                var authoredColor = index >= 0 && index < lamp.AuthoredParticleColors.Length
+                    ? lamp.AuthoredParticleColors[index]
+                    : particlesInstance.main.startColor;
+                var main = particlesInstance.main;
+                main.startColor = LerpGradient(authoredColor, particleDanger, danger * dangerColorBlend);
+            }
+        }
+
+        private void ApplyFlameSway(LampRuntime lamp, float danger)
+        {
+            if (lamp.FlameSwayRoot == null)
+                return;
+
+            var swaySpeed = Mathf.Lerp(10f, 22f, danger);
+            var positionAmount = dangerFlameSwayPosition * danger;
+            var rotationAmount = dangerFlameSwayRotation * danger;
+            var swayOffset = new Vector3(
+                Mathf.Sin(Time.time * swaySpeed) * positionAmount,
+                Mathf.Sin(Time.time * swaySpeed * 1.37f) * positionAmount * 0.45f,
+                Mathf.Cos(Time.time * swaySpeed * 0.83f) * positionAmount);
+            var swayRotation = Quaternion.Euler(
+                Mathf.Sin(Time.time * swaySpeed * 0.91f) * rotationAmount,
+                0f,
+                Mathf.Cos(Time.time * swaySpeed * 1.13f) * rotationAmount);
+
+            lamp.FlameSwayRoot.localPosition = lamp.BaseFlameSwayLocalPosition + swayOffset;
+            lamp.FlameSwayRoot.localRotation = lamp.BaseFlameSwayLocalRotation * swayRotation;
+        }
+
+        private static void RestoreFlameSway(LampRuntime lamp)
+        {
+            if (lamp.FlameSwayRoot == null)
+                return;
+
+            lamp.FlameSwayRoot.localPosition = Vector3.Lerp(lamp.FlameSwayRoot.localPosition, lamp.BaseFlameSwayLocalPosition, Time.deltaTime * 12f);
+            lamp.FlameSwayRoot.localRotation = Quaternion.Slerp(lamp.FlameSwayRoot.localRotation, lamp.BaseFlameSwayLocalRotation, Time.deltaTime * 12f);
+        }
+
+        private static ParticleSystem.MinMaxGradient[] CaptureParticleColors(ParticleSystem[] particles)
+        {
+            if (particles == null || particles.Length == 0)
+                return Array.Empty<ParticleSystem.MinMaxGradient>();
+
+            var colors = new ParticleSystem.MinMaxGradient[particles.Length];
+            for (var i = 0; i < particles.Length; i++)
+                colors[i] = particles[i] != null ? particles[i].main.startColor : default;
+
+            return colors;
+        }
+
+        private static void RestoreAuthoredParticleColors(LampRuntime lamp)
+        {
+            if (lamp == null || lamp.Particles == null)
+                return;
+
+            for (var i = 0; i < lamp.Particles.Length; i++)
+            {
+                var particles = lamp.Particles[i];
+                if (particles == null || i >= lamp.AuthoredParticleColors.Length)
                     continue;
 
                 var main = particles.main;
-                main.startColor = new ParticleSystem.MinMaxGradient(
-                    Color.Lerp(warmStart, blueStart, danger),
-                    Color.Lerp(warmEnd, blueEnd, danger));
-
-                var emission = particles.emission;
-                emission.rateOverTime = new ParticleSystem.MinMaxCurve(
-                    Mathf.Lerp(18f, 36f, danger),
-                    Mathf.Lerp(28f, 52f, danger));
-
-                var noise = particles.noise;
-                noise.strength = new ParticleSystem.MinMaxCurve(
-                    Mathf.Lerp(0.04f, 0.16f, danger),
-                    Mathf.Lerp(0.1f, 0.32f, danger));
-                noise.frequency = Mathf.Lerp(7f, 16f, danger);
+                main.startColor = lamp.AuthoredParticleColors[i];
             }
+        }
+
+        private static ParticleSystem.MinMaxGradient LerpGradient(
+            ParticleSystem.MinMaxGradient from,
+            ParticleSystem.MinMaxGradient to,
+            float t)
+        {
+            t = Mathf.Clamp01(t);
+            return from.mode switch
+            {
+                ParticleSystemGradientMode.Color => new ParticleSystem.MinMaxGradient(Color.Lerp(from.color, to.color, t)),
+                ParticleSystemGradientMode.TwoColors => new ParticleSystem.MinMaxGradient(
+                    Color.Lerp(from.colorMin, to.colorMin, t),
+                    Color.Lerp(from.colorMax, to.colorMax, t)),
+                _ => new ParticleSystem.MinMaxGradient(Color.Lerp(from.colorMax, to.colorMax, t))
+            };
         }
 
         private float GetNearGhostEffect01()
         {
-            if (ghost == null)
+            ResolveDangerTarget();
+            if (dangerTarget == null)
                 return 0f;
 
-            var controller = P2GameController.Instance;
-            var distance = controller != null
-                ? controller.DistanceToPlayer(ghost.transform.position)
-                : Vector3.Distance(transform.position, ghost.transform.position);
+            var distance = DistanceToDangerTarget();
             var startDistance = Mathf.Max(nearGhostEffectStartDistance, nearGhostFullEffectDistance + 0.01f);
             return Mathf.InverseLerp(startDistance, nearGhostFullEffectDistance, distance);
         }
@@ -270,7 +517,7 @@ namespace MainGame.P2
                 return;
             }
 
-            if (P2GameController.Instance.DistanceToPlayer(ghost.transform.position) > dangerDistance)
+            if (DistanceToDangerTarget() > dangerDistance)
             {
                 unlitNearGhostTimer = 0f;
                 return;
@@ -281,8 +528,80 @@ namespace MainGame.P2
             {
                 unlitNearGhostTimer = -999f;
                 ghost.ForceChase();
-                P2GameController.Instance.ShowPrompt("Bong toi khong che duoc lau nua.");
+                ShowLampMessage("Bóng tối không che được lâu nữa.");
             }
+        }
+
+        private void ResolveReferences()
+        {
+            if (gameplayLanternRoot == null)
+                gameplayLanternRoot = FindLantern("Lantern_01_2k", "FollowCamera");
+
+            if (gameplayFlameSwayRoot == null && gameplayLanternRoot != null)
+            {
+                var fireFx = gameplayLanternRoot.Find("P2_Lantern_FireFX");
+                gameplayFlameSwayRoot = fireFx != null
+                    ? fireFx
+                    : gameplayFlameParticles != null && gameplayFlameParticles.Length > 0 && gameplayFlameParticles[0] != null
+                        ? gameplayFlameParticles[0].transform
+                        : null;
+            }
+
+            if (gameplayFlameLight == null)
+                gameplayFlameLight = FindFlameLight(gameplayLanternRoot);
+
+            if (gameplayFlameParticles == null || gameplayFlameParticles.Length == 0)
+                gameplayFlameParticles = gameplayLanternRoot != null ? gameplayLanternRoot.GetComponentsInChildren<ParticleSystem>(true) : Array.Empty<ParticleSystem>();
+        }
+
+        private void ResolveDangerTarget()
+        {
+            if (dangerTarget != null)
+                return;
+
+            if (ghost != null)
+            {
+                dangerTarget = ghost.transform;
+                return;
+            }
+
+            var p2Ghost = FindFirstObjectByType<P2GhostController>(FindObjectsInactive.Include);
+            if (p2Ghost != null)
+            {
+                ghost = p2Ghost;
+                dangerTarget = p2Ghost.transform;
+                return;
+            }
+
+            var p1Monster = FindFirstObjectByType<global::MonsterAI>(FindObjectsInactive.Include);
+            if (p1Monster != null)
+                dangerTarget = p1Monster.transform;
+        }
+
+        private float DistanceToDangerTarget()
+        {
+            ResolveDangerTarget();
+            if (dangerTarget == null)
+                return 999f;
+
+            var controller = P2GameController.Instance;
+            if (controller != null)
+                return controller.DistanceToPlayer(dangerTarget.position);
+
+            var player = FindFirstObjectByType<FpsHorrorKit.FpsController>(FindObjectsInactive.Include);
+            var playerPosition = player != null ? player.transform.position : transform.position;
+            return Vector3.Distance(playerPosition, dangerTarget.position);
+        }
+
+        private void ShowLampMessage(string message)
+        {
+            if (P2GameController.Instance != null)
+            {
+                P2GameController.Instance.ShowPrompt(message);
+                return;
+            }
+
+            FpsHorrorKit.InteractMessageScript.Instance?.ShowMessage(message);
         }
 
         private void OnDrawGizmos()
@@ -295,11 +614,45 @@ namespace MainGame.P2
             Gizmos.DrawWireSphere(origin, nearGhostEffectStartDistance);
             Gizmos.color = new Color(0.05f, 0.35f, 1f, 0.8f);
             Gizmos.DrawWireSphere(origin, nearGhostFullEffectDistance);
-            if (ghost != null)
+
+            var target = dangerTarget != null ? dangerTarget : ghost != null ? ghost.transform : null;
+            if (target != null)
             {
                 Gizmos.color = new Color(0.25f, 0.85f, 1f, 0.25f);
-                Gizmos.DrawLine(origin, ghost.transform.position);
+                Gizmos.DrawLine(origin, target.position);
             }
+        }
+
+        private static Transform FindLantern(string lanternName, string requiredParentName)
+        {
+            foreach (var transform in FindObjectsByType<Transform>(FindObjectsInactive.Include, FindObjectsSortMode.None))
+            {
+                if (transform == null || transform.name != lanternName)
+                    continue;
+
+                if (string.IsNullOrWhiteSpace(requiredParentName))
+                    return transform;
+
+                var parent = transform.parent;
+                while (parent != null)
+                {
+                    if (parent.name == requiredParentName)
+                        return transform;
+
+                    parent = parent.parent;
+                }
+            }
+
+            return null;
+        }
+
+        private static Light FindFlameLight(Transform lantern)
+        {
+            if (lantern == null)
+                return null;
+
+            var flame = lantern.Find("P2_Lantern_FireFX/P2_Lantern_FlameLight");
+            return flame != null ? flame.GetComponent<Light>() : lantern.GetComponentInChildren<Light>(true);
         }
     }
 }
