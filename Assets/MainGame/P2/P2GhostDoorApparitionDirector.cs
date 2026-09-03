@@ -14,6 +14,10 @@ namespace MainGame.P2
         [SerializeField] private Transform visualRoot;
         [SerializeField] private Transform patrolRoot;
         [SerializeField] private Transform doorApparitionRoot;
+        [SerializeField] private Transform downstairsPatrolRoot;
+        [SerializeField] private Transform upstairsPatrolRoot;
+        [SerializeField] private Transform downstairsDoorApparitionRoot;
+        [SerializeField] private Transform upstairsDoorApparitionRoot;
         [SerializeField] private NavMeshAgent agent;
 
         [Header("Patrol")]
@@ -25,6 +29,11 @@ namespace MainGame.P2
         [SerializeField, Min(0.1f)] private float awakenedSpeed = 2.2f;
         [SerializeField, Min(0.1f)] private float navMeshSampleRadius = 2.5f;
         [SerializeField] private bool beginAwakened;
+
+        [Header("Floor Routing")]
+        [SerializeField] private bool lockUpperFloorUntilAwakened = true;
+        [SerializeField, Min(0f)] private float upperFloorMinY = 2.4f;
+        [SerializeField] private bool showUpperFloorAfterAwakened = true;
 
         [Header("Door Apparition")]
         [SerializeField] private bool enableDoorApparitions = true;
@@ -49,6 +58,8 @@ namespace MainGame.P2
         private int patrolDirection = 1;
         private int lastPatrolChildCount = -1;
         private int lastApparitionChildCount = -1;
+        private string lastPatrolSignature;
+        private string lastApparitionSignature;
         private Vector3 lastDestination;
         private bool hasDestination;
         private bool apparitionRunning;
@@ -202,14 +213,22 @@ namespace MainGame.P2
         {
             points.Clear();
 
-            if (useDoorApparitionPoints && doorApparitionRoot != null)
+            var roots = GetActiveDoorApparitionRoots();
+            if (useDoorApparitionPoints && roots.Length > 0)
             {
                 RefreshApparitionRootCache();
-                for (int i = 0; i < doorApparitionRoot.childCount; i++)
+                for (int rootIndex = 0; rootIndex < roots.Length; rootIndex++)
                 {
-                    Transform child = doorApparitionRoot.GetChild(i);
-                    if (child != null && child.gameObject.activeSelf)
-                        points.Add(child);
+                    Transform root = roots[rootIndex];
+                    if (root == null)
+                        continue;
+
+                    for (int i = 0; i < root.childCount; i++)
+                    {
+                        Transform child = root.GetChild(i);
+                        if (child != null && child.gameObject.activeSelf)
+                            points.Add(child);
+                    }
                 }
             }
 
@@ -226,36 +245,53 @@ namespace MainGame.P2
 
         private void RefreshPatrolPoints(bool force)
         {
-            if (!autoCollectPointsFromChildren || patrolRoot == null)
+            if (!autoCollectPointsFromChildren)
                 return;
 
-            if (!force && lastPatrolChildCount == patrolRoot.childCount)
+            var roots = GetActivePatrolRoots();
+            if (roots.Length == 0)
                 return;
 
-            patrolPoints = CollectDirectChildren(patrolRoot);
-            lastPatrolChildCount = patrolRoot.childCount;
+            string signature = BuildChildSignature(roots);
+            if (!force && lastPatrolSignature == signature)
+                return;
+
+            patrolPoints = CollectDirectChildren(roots);
+            lastPatrolSignature = signature;
+            lastPatrolChildCount = patrolPoints.Length;
             patrolIndex = Mathf.Clamp(patrolIndex, 0, Mathf.Max(0, patrolPoints.Length - 1));
+            ClearDestination();
         }
 
         private void RefreshApparitionRootCache()
         {
-            if (doorApparitionRoot == null || lastApparitionChildCount == doorApparitionRoot.childCount)
+            var roots = GetActiveDoorApparitionRoots();
+            string signature = BuildChildSignature(roots);
+            if (lastApparitionSignature == signature)
                 return;
 
-            lastApparitionChildCount = doorApparitionRoot.childCount;
+            lastApparitionSignature = signature;
+            lastApparitionChildCount = CountActiveChildren(roots);
         }
 
-        private Transform[] CollectDirectChildren(Transform root)
+        private Transform[] CollectDirectChildren(params Transform[] roots)
         {
-            if (root == null || root.childCount == 0)
+            if (roots == null || roots.Length == 0)
                 return Array.Empty<Transform>();
 
-            var points = new List<Transform>(root.childCount);
-            for (int i = 0; i < root.childCount; i++)
+            var points = new List<Transform>();
+            for (int rootIndex = 0; rootIndex < roots.Length; rootIndex++)
             {
-                Transform child = root.GetChild(i);
-                if (child != null && child.gameObject.activeSelf)
-                    points.Add(child);
+                Transform root = roots[rootIndex];
+                if (root == null)
+                    continue;
+
+                for (int i = 0; i < root.childCount; i++)
+                {
+                    Transform child = root.GetChild(i);
+                    if (child != null && child.gameObject.activeSelf)
+                        points.Add(child);
+                }
             }
 
             return points.ToArray();
@@ -449,6 +485,14 @@ namespace MainGame.P2
                 patrolRoot = FindSceneTransform("P2_GhostPatrolPoints") ?? FindSceneTransform("P2_GhostWaypoints");
             if (doorApparitionRoot == null)
                 doorApparitionRoot = FindSceneTransform("P2_GhostDoorApparitionPoints");
+            if (downstairsPatrolRoot == null)
+                downstairsPatrolRoot = FindSceneTransform("P2_GhostPatrol_Downstairs");
+            if (upstairsPatrolRoot == null)
+                upstairsPatrolRoot = FindSceneTransform("P2_GhostPatrol_Upstairs");
+            if (downstairsDoorApparitionRoot == null)
+                downstairsDoorApparitionRoot = FindSceneTransform("P2_GhostDoorApparition_Downstairs");
+            if (upstairsDoorApparitionRoot == null)
+                upstairsDoorApparitionRoot = FindSceneTransform("P2_GhostDoorApparition_Upstairs");
         }
 
         private void CacheVisualRenderers()
@@ -514,6 +558,93 @@ namespace MainGame.P2
         private void ClearDestination()
         {
             hasDestination = false;
+        }
+
+        private bool UpperFloorUnlocked => !lockUpperFloorUntilAwakened || IsAwakened;
+
+        private Transform[] GetActivePatrolRoots()
+        {
+            var roots = new List<Transform>(3);
+            AddUniqueRoot(roots, downstairsPatrolRoot != null ? downstairsPatrolRoot : patrolRoot);
+
+            if (showUpperFloorAfterAwakened && UpperFloorUnlocked)
+                AddUniqueRoot(roots, upstairsPatrolRoot);
+
+            if (roots.Count == 0)
+                AddUniqueRoot(roots, patrolRoot);
+
+            return roots.ToArray();
+        }
+
+        private Transform[] GetActiveDoorApparitionRoots()
+        {
+            var roots = new List<Transform>(3);
+            AddUniqueRoot(roots, downstairsDoorApparitionRoot != null ? downstairsDoorApparitionRoot : doorApparitionRoot);
+
+            if (showUpperFloorAfterAwakened && UpperFloorUnlocked)
+                AddUniqueRoot(roots, upstairsDoorApparitionRoot);
+
+            if (roots.Count == 0)
+                AddUniqueRoot(roots, doorApparitionRoot);
+
+            return roots.ToArray();
+        }
+
+        private static void AddUniqueRoot(List<Transform> roots, Transform root)
+        {
+            if (root != null && !roots.Contains(root))
+                roots.Add(root);
+        }
+
+        private static int CountActiveChildren(params Transform[] roots)
+        {
+            int count = 0;
+            if (roots == null)
+                return count;
+
+            for (int rootIndex = 0; rootIndex < roots.Length; rootIndex++)
+            {
+                Transform root = roots[rootIndex];
+                if (root == null)
+                    continue;
+
+                for (int i = 0; i < root.childCount; i++)
+                {
+                    Transform child = root.GetChild(i);
+                    if (child != null && child.gameObject.activeSelf)
+                        count++;
+                }
+            }
+
+            return count;
+        }
+
+        private static string BuildChildSignature(params Transform[] roots)
+        {
+            if (roots == null || roots.Length == 0)
+                return string.Empty;
+
+            var builder = new System.Text.StringBuilder();
+            for (int rootIndex = 0; rootIndex < roots.Length; rootIndex++)
+            {
+                Transform root = roots[rootIndex];
+                if (root == null)
+                    continue;
+
+                builder.Append(root.GetInstanceID()).Append(':').Append(root.childCount).Append('|');
+                for (int i = 0; i < root.childCount; i++)
+                {
+                    Transform child = root.GetChild(i);
+                    if (child == null)
+                        continue;
+
+                    builder.Append(child.GetInstanceID())
+                        .Append(child.gameObject.activeSelf ? '1' : '0')
+                        .Append(';');
+                }
+            }
+
+            return builder.ToString();
         }
 
         private static Transform FindChildRecursive(Transform root, string childName)

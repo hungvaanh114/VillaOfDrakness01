@@ -89,3 +89,5 @@ MonoBehaviour:
   p2Ma02: {fileID: 8300000, guid: 318372d1432d8f7459404619ff12aa99, type: 3}
   p2MaDa02: {fileID: 8300000, guid: 7e267e6fc6728ec49bc300282f047451, type: 3}
   p2MaDa03: {fileID: 8300000, guid: 68645ff774f00d84cba7366f99122748, type: 3}
+  p2AudioLogBL02: {fileID: 8300000, guid: 3bf0998fc8bc4044183462b3b45e2310, type: 3}
+  p2AudioLogBL03: {fileID: 8300000, guid: ecef0c275b836c24982d0e5154fe5cdd, type: 3}

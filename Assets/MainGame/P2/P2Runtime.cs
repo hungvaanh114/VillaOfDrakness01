@@ -105,6 +105,8 @@ namespace MainGame.P2
         [SerializeField] private AudioClip maDaMirror01;
         [SerializeField] private AudioClip maDaMirror02;
         [SerializeField] private AudioClip ngocFinalLine;
+        [SerializeField] private AudioClip audioLogBL02;
+        [SerializeField] private AudioClip audioLogBL03;
 
         [Header("SFX")]
         [SerializeField] private AudioClip knockSolidClip;
@@ -144,6 +146,8 @@ namespace MainGame.P2
                 oilLamp = FindGameplayOilLamp();
             if (ghost == null)
                 ghost = FindFirstObjectByType<P2GhostController>();
+
+            ApplyAudioDataFallbacks();
 
             if (deathCard != null)
                 deathCard.SetActive(false);
@@ -259,7 +263,7 @@ namespace MainGame.P2
                     break;
 
                 case P2InteractableKind.AudioLogBL02:
-                    PlayVoice(null,
+                    PlayVoice(audioLogBL02,
                         "Mấy đêm nay tôi không sao ngủ được. Có tiếng gõ vào mặt gương lúc nửa đêm... " +
                         "Bài nhạc... tôi mới ghi được năm nốt đầu. Hai nốt cuối... tôi không biết mình còn đủ can đảm để tìm ra hay không.",
                         9f);
@@ -286,7 +290,7 @@ namespace MainGame.P2
                     break;
 
                 case P2InteractableKind.AudioLogBL03:
-                    PlayVoice(null,
+                    PlayVoice(audioLogBL03,
                         "Đây là chỗ duy nhất trong nhà tôi còn thấy yên tâm để viết. Năm nốt... tôi khắc bằng phấn để nhớ, vì tôi sợ trí nhớ của mình không còn đáng tin nữa.",
                         7f);
                     SetStage(P2Stage.RecorderHeard);
@@ -384,6 +388,7 @@ namespace MainGame.P2
             PlaySfx(glassBreakClip);
             P2MirrorBreakable.BreakAll();
             ghost?.Awaken();
+            FindFirstObjectByType<P2GhostDoorApparitionDirector>(FindObjectsInactive.Include)?.Awaken();
             if (ambienceSource != null)
                 ambienceSource.pitch = 0.82f;
 
@@ -413,9 +418,36 @@ namespace MainGame.P2
 
         public void PlayGhostLine()
         {
-            PlayVoice(UnityEngine.Random.value > 0.5f ? maVuDaiLine01 : maVuDaiLine02,
-                UnityEngine.Random.value > 0.5f ? "Ngọc ơi... con ở đâu vậy..." : "Sao mấy đứa cứ chạy trốn má hoài... má có làm gì đâu...",
+            bool firstLine = UnityEngine.Random.value > 0.5f;
+            PlayVoice(firstLine ? maVuDaiLine01 : maVuDaiLine02,
+                firstLine ? "Ngọc ơi... con ở đâu vậy..." : "Sao mấy đứa cứ chạy trốn má hoài... má có làm gì đâu...",
                 4f);
+        }
+
+        private void ApplyAudioDataFallbacks()
+        {
+            var data = Resources.Load<AudioData>("Audio/AudioData");
+            if (data == null)
+                return;
+
+            ngocIntro01 ??= data.p2Ngoc01;
+            ngocIntro02 ??= data.p2Ngoc02;
+            linhHallAutoLog ??= data.p2Linh01;
+            ngocAfterJournal ??= data.p2Ngoc03;
+            ngocBathWarning ??= data.p2Ngoc04;
+            linhDollLog ??= data.p2Linh02;
+            ngocCandleReaction ??= data.p2Ngoc05;
+            ngocChalkReaction ??= data.p2Ngoc06;
+            ngocHollowWall ??= data.p2Ngoc07;
+            ngocMirrorFound ??= data.p2Ngoc08;
+            ngocMirrorBreak ??= data.p2Ngoc09;
+            maVuDaiLine01 ??= data.p2Ma01;
+            maVuDaiLine02 ??= data.p2Ma02;
+            maDaMirror01 ??= data.p2MaDa02;
+            maDaMirror02 ??= data.p2MaDa03;
+            ngocFinalLine ??= data.p2Ngoc10;
+            audioLogBL02 ??= data.p2AudioLogBL02;
+            audioLogBL03 ??= data.p2AudioLogBL03;
         }
 
         public void StartEndingSequence()

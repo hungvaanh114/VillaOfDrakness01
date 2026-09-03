@@ -926,6 +926,8 @@ public static class GameP2IntroLanternHudUpdater
         Set(serialized, "p2Ma02", FindClip(clips, "ma 2_1"));
         Set(serialized, "p2MaDa02", FindClip(clips, "ma da 2_1"));
         Set(serialized, "p2MaDa03", FindClip(clips, "ma da 3_1"));
+        Set(serialized, "p2AudioLogBL02", FindClip(clips, "Mấy đêm nay tôi-197da84be4_a84be4"));
+        Set(serialized, "p2AudioLogBL03", FindClip(clips, "Đây_là_chỗ_duy_nhất_3201f8dbc67d"));
         serialized.ApplyModifiedPropertiesWithoutUndo();
         EditorUtility.SetDirty(data);
         AssetDatabase.SaveAssets();
@@ -955,6 +957,8 @@ public static class GameP2IntroLanternHudUpdater
             "p2_ma_02" => FindClip(clips, "ma 2_1"),
             "p2_ma_da_02" => FindClip(clips, "ma da 2_1"),
             "p2_ma_da_03" => FindClip(clips, "ma da 3_1"),
+            "p2_bl_log_02" => FindClip(clips, "Mấy đêm nay tôi-197da84be4_a84be4"),
+            "p2_bl_log_03" => FindClip(clips, "Đây_là_chỗ_duy_nhất_3201f8dbc67d"),
             _ => null
         };
     }

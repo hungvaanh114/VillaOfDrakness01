@@ -431,6 +431,8 @@ public sealed class AudioManager : MonoBehaviour
             "p2_ma_02" => audioData != null ? audioData.p2Ma02 : null,
             "p2_ma_da_02" => audioData != null ? audioData.p2MaDa02 : null,
             "p2_ma_da_03" => audioData != null ? audioData.p2MaDa03 : null,
+            "p2_bl_log_02" => audioData != null ? audioData.p2AudioLogBL02 : null,
+            "p2_bl_log_03" => audioData != null ? audioData.p2AudioLogBL03 : null,
             _ => null
         };
     }

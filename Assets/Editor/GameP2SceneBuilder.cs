@@ -539,6 +539,8 @@ public static class GameP2SceneBuilder
         SetObject(controller, "maDaMirror01", Clip("Assets/MainGame/Audio/Phan 2/ma da 2_1.mp3"));
         SetObject(controller, "maDaMirror02", Clip("Assets/MainGame/Audio/Phan 2/ma da 3_1.mp3"));
         SetObject(controller, "ngocFinalLine", Clip("Assets/MainGame/Audio/Phan 2/ngọc 10_1.mp3"));
+        SetObject(controller, "audioLogBL02", Clip("Assets/MainGame/Audio/Phan 2/Mấy đêm nay tôi-197da84be4_a84be4.mp3"));
+        SetObject(controller, "audioLogBL03", Clip("Assets/MainGame/Audio/Phan 2/Đây_là_chỗ_duy_nhất_3201f8dbc67d.mp3"));
 
         SetObject(controller, "knockSolidClip", Clip("Assets/MainGame/Audio/SFX/SFX_Interact_Generic_01.wav"));
         SetObject(controller, "knockHollowClip", Clip("Assets/MainGame/Audio/SFX/SFX_Door_Unlock.mp3"));

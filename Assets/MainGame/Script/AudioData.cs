@@ -83,4 +83,6 @@ public sealed class AudioData : ScriptableObject
     public AudioClip p2Ma02;
     public AudioClip p2MaDa02;
     public AudioClip p2MaDa03;
+    public AudioClip p2AudioLogBL02;
+    public AudioClip p2AudioLogBL03;
 }

@@ -7,6 +7,7 @@ using UnityEngine.AI;
 public static class GameP2MirrorGhostSetup
 {
     private const string ScenePath = "Assets/MainGame/GameP2.unity";
+    private const float UpperFloorMinY = 2.4f;
 
     [MenuItem("MainGame/P2/Apply P2 Mirror And Ghost Systems")]
     public static void Apply()
@@ -48,20 +49,30 @@ public static class GameP2MirrorGhostSetup
             director = ghostRoot.gameObject.AddComponent<P2GhostDoorApparitionDirector>();
 
         var patrolRoot = EnsureRoot("P2_GhostPatrolPoints");
-        SeedPatrolPointsIfEmpty(patrolRoot);
+        var downstairsPatrolRoot = EnsureRoot("P2_GhostPatrol_Downstairs");
+        var upstairsPatrolRoot = EnsureRoot("P2_GhostPatrol_Upstairs");
+        SeedPatrolPointsIfEmpty(downstairsPatrolRoot, upstairsPatrolRoot, patrolRoot);
 
         var apparitionRoot = EnsureRoot("P2_GhostDoorApparitionPoints");
-        SeedDoorApparitionPointsIfEmpty(apparitionRoot);
+        var downstairsApparitionRoot = EnsureRoot("P2_GhostDoorApparition_Downstairs");
+        var upstairsApparitionRoot = EnsureRoot("P2_GhostDoorApparition_Upstairs");
+        SeedDoorApparitionPointsIfEmpty(downstairsApparitionRoot, upstairsApparitionRoot);
 
         var serialized = new SerializedObject(director);
         Set(serialized, "player", FindPlayer());
         Set(serialized, "visualRoot", FindChildRecursive(ghostRoot, "mada2") ?? ghostRoot);
         Set(serialized, "patrolRoot", patrolRoot);
         Set(serialized, "doorApparitionRoot", apparitionRoot);
+        Set(serialized, "downstairsPatrolRoot", downstairsPatrolRoot);
+        Set(serialized, "upstairsPatrolRoot", upstairsPatrolRoot);
+        Set(serialized, "downstairsDoorApparitionRoot", downstairsApparitionRoot);
+        Set(serialized, "upstairsDoorApparitionRoot", upstairsApparitionRoot);
         Set(serialized, "agent", agent);
         Set(serialized, "autoCollectPointsFromChildren", true);
         Set(serialized, "pingPongPatrol", true);
-        Set(serialized, "beginAwakened", true);
+        Set(serialized, "beginAwakened", false);
+        Set(serialized, "lockUpperFloorUntilAwakened", true);
+        Set(serialized, "showUpperFloorAfterAwakened", true);
         Set(serialized, "enableDoorApparitions", true);
         Set(serialized, "useDoorApparitionPoints", true);
         Set(serialized, "hideVisualBetweenApparitions", false);
@@ -135,43 +146,81 @@ public static class GameP2MirrorGhostSetup
         return obj.transform;
     }
 
-    private static void SeedPatrolPointsIfEmpty(Transform patrolRoot)
+    private static void SeedPatrolPointsIfEmpty(Transform downstairsRoot, Transform upstairsRoot, Transform fallbackRoot)
     {
-        if (patrolRoot == null || patrolRoot.childCount > 0)
+        if (downstairsRoot == null || upstairsRoot == null)
             return;
 
+        if (downstairsRoot.childCount == 0)
+            SeedPatrolFloor(downstairsRoot, fallbackRoot, false);
+        if (upstairsRoot.childCount == 0)
+            SeedPatrolFloor(upstairsRoot, fallbackRoot, true);
+    }
+
+    private static void SeedPatrolFloor(Transform root, Transform fallbackRoot, bool upstairs)
+    {
         int created = 0;
-        foreach (var marker in Object.FindObjectsByType<Transform>(FindObjectsInactive.Include, FindObjectsSortMode.None))
+        foreach (var marker in EnumeratePatrolSourcePoints(fallbackRoot))
         {
-            if (marker == null || !marker.name.StartsWith("MonsterPatrolPoint_", System.StringComparison.OrdinalIgnoreCase))
+            if (marker == null || IsUpperFloor(marker.position) != upstairs)
                 continue;
 
             created++;
-            var point = EnsureChild(patrolRoot, $"Patrol_{created:00}");
+            var point = EnsureChild(root, $"Patrol_{created:00}");
             point.position = marker.position;
             point.rotation = marker.rotation;
         }
     }
 
-    private static void SeedDoorApparitionPointsIfEmpty(Transform root)
+    private static System.Collections.Generic.IEnumerable<Transform> EnumeratePatrolSourcePoints(Transform fallbackRoot)
     {
-        if (root == null || root.childCount > 0)
+        foreach (var marker in Object.FindObjectsByType<Transform>(FindObjectsInactive.Include, FindObjectsSortMode.None))
+        {
+            if (marker != null && marker.name.StartsWith("MonsterPatrolPoint_", System.StringComparison.OrdinalIgnoreCase))
+                yield return marker;
+        }
+
+        if (fallbackRoot == null)
+            yield break;
+
+        for (int i = 0; i < fallbackRoot.childCount; i++)
+            yield return fallbackRoot.GetChild(i);
+    }
+
+    private static void SeedDoorApparitionPointsIfEmpty(Transform downstairsRoot, Transform upstairsRoot)
+    {
+        if (downstairsRoot == null || upstairsRoot == null)
             return;
 
         var doors = Object.FindObjectsByType<FpsHorrorKit.DoorSystem>(FindObjectsInactive.Exclude, FindObjectsSortMode.None);
+        int downstairsCount = downstairsRoot.childCount;
+        int upstairsCount = upstairsRoot.childCount;
+        bool seedDownstairs = downstairsCount == 0;
+        bool seedUpstairs = upstairsCount == 0;
         for (int i = 0; i < doors.Length; i++)
         {
             var door = doors[i];
             if (door == null)
                 continue;
 
-            var point = EnsureChild(root, $"DoorApparition_{i + 1:00}_{door.name}");
+            bool upstairs = IsUpperFloor(door.transform.position);
+            var root = upstairs ? upstairsRoot : downstairsRoot;
+            if ((!upstairs && !seedDownstairs) || (upstairs && !seedUpstairs))
+                continue;
+
+            int index = upstairs ? ++upstairsCount : ++downstairsCount;
+            var point = EnsureChild(root, $"DoorApparition_{index:00}_{door.name}");
             Vector3 position = door.transform.position + door.transform.forward * 1.15f;
             if (NavMesh.SamplePosition(position, out var hit, 2.5f, NavMesh.AllAreas))
                 position = hit.position;
             point.position = position;
             point.rotation = Quaternion.LookRotation(-door.transform.forward, Vector3.up);
         }
+    }
+
+    private static bool IsUpperFloor(Vector3 position)
+    {
+        return position.y >= UpperFloorMinY;
     }
 
     private static Transform FindPlayer()
