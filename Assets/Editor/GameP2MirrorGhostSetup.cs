@@ -8,6 +8,8 @@ public static class GameP2MirrorGhostSetup
 {
     private const string ScenePath = "Assets/MainGame/GameP2.unity";
     private const float UpperFloorMinY = 2.4f;
+    private const string MirrorClothMaterialPath = "Assets/MainGame/Materials/InventoryProgression/P2_MirrorClothCover.mat";
+    private const string ScreenJumpscareTexturePath = "Assets/MainGame/UI/anhHuMa.png";
 
     [MenuItem("MainGame/P2/Apply P2 Mirror And Ghost Systems")]
     public static void Apply()
@@ -114,16 +116,84 @@ public static class GameP2MirrorGhostSetup
         if (revealPoint.localPosition == Vector3.zero)
             revealPoint.localPosition = new Vector3(0f, 1.15f, -0.7f);
 
+        var clothCover = EnsureMirrorClothCover(mirror);
+        var audioData = Resources.Load<AudioData>("Audio/AudioData");
+
         var serialized = new SerializedObject(p2Mirror);
         Set(serialized, "reflection", mirror.GetComponent<MirrorReflectionCamera>());
         Set(serialized, "mirrorRaycastTarget", FindChildRecursive(mirror, "MirrorSurface") ?? mirror);
+        Set(serialized, "clothCover", clothCover);
+        Set(serialized, "requiredMirrorLookSeconds", 1f);
+        Set(serialized, "startCovered", true);
+        Set(serialized, "coveredInteractText", "[E] Kéo tấm vải");
+        Set(serialized, "uncoveredInteractText", "Nhìn vào gương");
+        Set(serialized, "clothPullSeconds", 0.8f);
+        Set(serialized, "clothPulledLocalOffset", new Vector3(0f, -1.7f, 0.08f));
+        Set(serialized, "clothPulledLocalEulerOffset", new Vector3(0f, 0f, -12f));
+        Set(serialized, "clothPullClip", audioData != null ? audioData.clothTearOff : null);
         Set(serialized, "ghostDirector", ghost);
         Set(serialized, "ghostController", Object.FindFirstObjectByType<P2GhostController>(FindObjectsInactive.Include));
         Set(serialized, "ghostRevealPoint", revealPoint);
         Set(serialized, "triggerP2MirrorBreakEvent", true);
         Set(serialized, "awakenGhostAfterEvent", true);
+        Set(serialized, "mirrorEventClip", audioData != null ? audioData.ghostJumpscare : null);
+        Set(serialized, "screenJumpscareTexture", AssetDatabase.LoadAssetAtPath<Texture2D>(ScreenJumpscareTexturePath));
+        Set(serialized, "screenImagePopDuration", 0.22f);
+        Set(serialized, "screenImageHoldDuration", 2.5f);
+        Set(serialized, "screenImageStartScale", 0.18f);
+        Set(serialized, "screenImageImpactScale", 2f);
+        Set(serialized, "screenImageOpacity", 1f);
+        Set(serialized, "screenDarkBackdropOpacity", 0.906f);
+        Set(serialized, "fallRoll", 62f);
+        Set(serialized, "fallPitch", 28f);
         serialized.ApplyModifiedPropertiesWithoutUndo();
         EditorUtility.SetDirty(p2Mirror);
+    }
+
+    private static GameObject EnsureMirrorClothCover(Transform mirror)
+    {
+        var child = mirror.Find("P2_MirrorClothCover");
+        GameObject cloth;
+        if (child != null)
+        {
+            cloth = child.gameObject;
+        }
+        else
+        {
+            cloth = GameObject.CreatePrimitive(PrimitiveType.Cube);
+            cloth.name = "P2_MirrorClothCover";
+            cloth.transform.SetParent(mirror, false);
+        }
+
+        var surface = FindChildRecursive(mirror, "MirrorSurface");
+        if (surface != null)
+        {
+            cloth.transform.localPosition = surface.localPosition + new Vector3(0f, 0f, -0.035f);
+            cloth.transform.localRotation = surface.localRotation;
+            Vector3 surfaceScale = surface.localScale;
+            cloth.transform.localScale = new Vector3(
+                Mathf.Max(1.35f, Mathf.Abs(surfaceScale.x) * 1.08f),
+                Mathf.Max(2.15f, Mathf.Abs(surfaceScale.y) * 1.08f),
+                0.035f);
+        }
+        else
+        {
+            cloth.transform.localPosition = new Vector3(0f, 1.25f, -0.08f);
+            cloth.transform.localRotation = Quaternion.identity;
+            cloth.transform.localScale = new Vector3(1.55f, 2.35f, 0.035f);
+        }
+
+        cloth.SetActive(true);
+        SetMaterial(cloth, EnsureMaterial(MirrorClothMaterialPath, new Color(0.36f, 0.035f, 0.035f, 1f)));
+
+        var collider = cloth.GetComponent<BoxCollider>();
+        if (collider == null)
+            collider = cloth.AddComponent<BoxCollider>();
+        collider.isTrigger = false;
+        EditorUtility.SetDirty(collider);
+
+        EditorUtility.SetDirty(cloth);
+        return cloth;
     }
 
     private static Transform EnsureRoot(string name)
@@ -269,5 +339,53 @@ public static class GameP2MirrorGhostSetup
         var property = serialized.FindProperty(propertyName);
         if (property != null)
             property.boolValue = value;
+    }
+
+    private static void Set(SerializedObject serialized, string propertyName, string value)
+    {
+        var property = serialized.FindProperty(propertyName);
+        if (property != null)
+            property.stringValue = value;
+    }
+
+    private static void Set(SerializedObject serialized, string propertyName, float value)
+    {
+        var property = serialized.FindProperty(propertyName);
+        if (property != null)
+            property.floatValue = value;
+    }
+
+    private static void Set(SerializedObject serialized, string propertyName, Vector3 value)
+    {
+        var property = serialized.FindProperty(propertyName);
+        if (property != null)
+            property.vector3Value = value;
+    }
+
+    private static void SetMaterial(GameObject obj, Material material)
+    {
+        if (obj == null || material == null)
+            return;
+
+        var renderer = obj.GetComponent<Renderer>();
+        if (renderer != null)
+        {
+            renderer.sharedMaterial = material;
+            EditorUtility.SetDirty(renderer);
+        }
+    }
+
+    private static Material EnsureMaterial(string path, Color color)
+    {
+        var material = AssetDatabase.LoadAssetAtPath<Material>(path);
+        if (material == null)
+        {
+            material = new Material(Shader.Find("Universal Render Pipeline/Lit") ?? Shader.Find("Standard"));
+            AssetDatabase.CreateAsset(material, path);
+        }
+
+        material.color = color;
+        EditorUtility.SetDirty(material);
+        return material;
     }
 }

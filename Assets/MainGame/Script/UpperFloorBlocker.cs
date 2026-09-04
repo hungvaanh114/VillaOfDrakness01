@@ -201,7 +201,7 @@ namespace FpsHorrorKit
                 ? AudioManager.Instance.PlayVoice(triggerVoiceClip)
                 : messageDuration;
 
-            if (!string.IsNullOrWhiteSpace(triggerSubtitle))
+            if (!triggerOnlyMode && !string.IsNullOrWhiteSpace(triggerSubtitle))
                 InteractMessageScript.Instance?.ShowMessage($"\"{triggerSubtitle}\"", Mathf.Max(messageDuration, duration));
         }
 

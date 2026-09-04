@@ -106,8 +106,33 @@ public static class GameP2CabinetDollSetup
         var dollPickup = doll.GetComponent<P2DollPickup>();
         if (dollPickup == null)
             dollPickup = doll.AddComponent<P2DollPickup>();
+
+        var dollAudioSource = doll.GetComponent<AudioSource>();
+        if (dollAudioSource == null)
+            dollAudioSource = doll.AddComponent<AudioSource>();
+        dollAudioSource.clip = linh02;
+        dollAudioSource.playOnAwake = false;
+        dollAudioSource.loop = false;
+        dollAudioSource.spatialBlend = 1f;
+        dollAudioSource.rolloffMode = AudioRolloffMode.Logarithmic;
+        dollAudioSource.minDistance = 6f;
+        dollAudioSource.maxDistance = 35f;
+        EditorUtility.SetDirty(dollAudioSource);
+
         SetPrivate(dollPickup, "dollItem", dollItem);
         SetPrivate(dollPickup, "linhVoiceClip", linh02);
+        SetPrivate(dollPickup, "dollAudioSource", dollAudioSource);
+        SetPrivate(dollPickup, "audioSpatialBlend", 1f);
+        SetPrivate(dollPickup, "audioMinDistance", 6f);
+        SetPrivate(dollPickup, "audioMaxDistance", 35f);
+        SetPrivate(dollPickup, "audioPlayingMessage", "Đang phát nhạc...");
+        SetPrivate(dollPickup, "audioMessageRefreshSeconds", 1.1f);
+        SetPrivate(dollPickup, "inspectRoot", doll.transform);
+        SetPrivate(dollPickup, "interactText", "[E] Cầm búp bê");
+        SetPrivate(dollPickup, "heldLocalPosition", new Vector3(0f, -0.18f, 0.68f));
+        SetPrivate(dollPickup, "heldLocalEulerAngles", new Vector3(12f, 0f, 0f));
+        SetPrivate(dollPickup, "moveSeconds", 0.18f);
+        SetPrivate(dollPickup, "mouseRotationDegreesPerPixel", 0.18f);
         EditorUtility.SetDirty(dollPickup);
 
         var cabinetCollider = cabinet.GetComponent<BoxCollider>();
@@ -125,6 +150,8 @@ public static class GameP2CabinetDollSetup
         SetPrivate(lockedCabinet, "closedVisual", closedVisual);
         SetPrivate(lockedCabinet, "openVisual", openVisual);
         SetPrivate(lockedCabinet, "contentsRoot", contents);
+        SetPrivate(lockedCabinet, "useKeyFirstText", "Hãy sử dụng chìa khóa tủ trong hành trang trước.");
+        SetPrivate(lockedCabinet, "wrongKeyText", "Chìa khóa này không mở được tủ.");
         SetPrivate(lockedCabinet, "lockedText", "Tủ bị khóa. Cần chìa khóa tủ.");
         SetPrivate(lockedCabinet, "openText", "[E] Mở tủ");
         SetPrivate(lockedCabinet, "openedText", "Đã mở tủ. Bên trong có một con búp bê.");
@@ -156,6 +183,7 @@ public static class GameP2CabinetDollSetup
         SetPrivate(component, "triggerVoiceClip", linh01);
         SetPrivate(component, "triggerSubtitle", "Má ơi... con thấy nó lại rồi. Trong cái gương ở phòng tắm...");
         SetPrivate(component, "showMessageOnlyOnce", true);
+        SetPrivate(component, "triggerSubtitle", string.Empty);
         EditorUtility.SetDirty(component);
     }
 
@@ -338,6 +366,24 @@ public static class GameP2CabinetDollSetup
         var property = serialized.FindProperty(propertyName);
         if (property != null)
             property.boolValue = value;
+        serialized.ApplyModifiedPropertiesWithoutUndo();
+    }
+
+    private static void SetPrivate(Object target, string propertyName, float value)
+    {
+        var serialized = new SerializedObject(target);
+        var property = serialized.FindProperty(propertyName);
+        if (property != null)
+            property.floatValue = value;
+        serialized.ApplyModifiedPropertiesWithoutUndo();
+    }
+
+    private static void SetPrivate(Object target, string propertyName, Vector3 value)
+    {
+        var serialized = new SerializedObject(target);
+        var property = serialized.FindProperty(propertyName);
+        if (property != null)
+            property.vector3Value = value;
         serialized.ApplyModifiedPropertiesWithoutUndo();
     }
 

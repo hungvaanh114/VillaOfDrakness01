@@ -11,6 +11,8 @@ namespace MainGame.P2
         [SerializeField] private GameObject openVisual;
         [SerializeField] private GameObject contentsRoot;
         [SerializeField] private string lockedText = "Tủ bị khóa. Cần chìa khóa tủ.";
+        [SerializeField] private string useKeyFirstText = "Hãy sử dụng chìa khóa tủ trong hành trang trước.";
+        [SerializeField] private string wrongKeyText = "Chìa khóa này không mở được tủ.";
         [SerializeField] private string openText = "[E] Mở tủ";
         [SerializeField] private string openedText = "Đã mở tủ. Bên trong có một con búp bê.";
         [SerializeField] private bool consumeKey;
@@ -39,6 +41,13 @@ namespace MainGame.P2
                 return;
             }
 
+            if (requiredKey != null && !HasUsedRequiredKey(inventory))
+            {
+                InteractMessageScript.Instance?.ShowMessage(GetLockedUseMessage(inventory));
+                AudioManager.Instance?.PlayDoorLocked();
+                return;
+            }
+
             opened = true;
             if (consumeKey && inventory != null && requiredKey != null)
                 inventory.RemoveItem(requiredKey, 1);
@@ -59,6 +68,31 @@ namespace MainGame.P2
 
         public void UnHighlight()
         {
+        }
+
+        private bool HasUsedRequiredKey(InventoryManager inventory)
+        {
+            if (inventory == null || requiredKey == null)
+                return requiredKey == null;
+
+            var equippedKey = inventory.CurrentEquippedKey;
+            if (equippedKey == null)
+                return false;
+
+            if (equippedKey == requiredKey)
+                return true;
+
+            return !string.IsNullOrWhiteSpace(requiredKey.keyID)
+                && equippedKey.keyID == requiredKey.keyID;
+        }
+
+        private string GetLockedUseMessage(InventoryManager inventory)
+        {
+            var equippedKey = inventory != null ? inventory.CurrentEquippedKey : null;
+            if (equippedKey != null && equippedKey != requiredKey)
+                return wrongKeyText;
+
+            return useKeyFirstText;
         }
 
         private void Awake()

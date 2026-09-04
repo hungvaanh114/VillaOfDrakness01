@@ -1,18 +1,21 @@
 using System.Collections;
+using FpsHorrorKit;
 using UnityEngine;
+using UnityEngine.UI;
 
 namespace MainGame.P2
 {
     [RequireComponent(typeof(BoxCollider))]
-    public sealed class P2MirrorJumpscare : MonoBehaviour
+    public sealed class P2MirrorJumpscare : MonoBehaviour, IInteractable
     {
         [Header("Mirror")]
         [SerializeField] private MirrorReflectionCamera reflection;
         [SerializeField] private Transform mirrorRaycastTarget;
+        [SerializeField] private GameObject clothCover;
         [SerializeField] private bool triggerOnlyOnce = true;
 
         [Header("Trigger")]
-        [SerializeField, Min(0f)] private float requiredMirrorLookSeconds = 1.35f;
+        [SerializeField, Min(0f)] private float requiredMirrorLookSeconds = 1f;
         [SerializeField, Min(0.1f)] private float requiredPlayerDistance = 5f;
         [SerializeField] private bool requirePlayerInsideTrigger;
         [SerializeField] private bool requirePlayerInFront = true;
@@ -20,6 +23,15 @@ namespace MainGame.P2
         [SerializeField, Min(0.1f)] private float mirrorRaycastDistance = 8f;
         [SerializeField, Min(0f)] private float mirrorRaycastRadius = 0.08f;
         [SerializeField, Range(0.1f, 1f)] private float mirrorAimFallbackDot = 0.94f;
+
+        [Header("Cloth Cover")]
+        [SerializeField] private bool startCovered = true;
+        [SerializeField] private string coveredInteractText = "[E] Kéo tấm vải";
+        [SerializeField] private string uncoveredInteractText = "Nhìn vào gương";
+        [SerializeField, Min(0.01f)] private float clothPullSeconds = 0.8f;
+        [SerializeField] private Vector3 clothPulledLocalOffset = new(0f, -1.7f, 0.08f);
+        [SerializeField] private Vector3 clothPulledLocalEulerOffset = new(0f, 0f, -12f);
+        [SerializeField] private AudioClip clothPullClip;
 
         [Header("Chapter 2 Event")]
         [SerializeField] private P2GhostDoorApparitionDirector ghostDirector;
@@ -32,12 +44,30 @@ namespace MainGame.P2
         [SerializeField] private AudioSource sfxSource;
         [SerializeField] private AudioClip mirrorEventClip;
 
+        [Header("Screen Image Jumpscare")]
+        [SerializeField] private Texture2D screenJumpscareTexture;
+        [SerializeField, Min(0.05f)] private float screenImagePopDuration = 0.22f;
+        [SerializeField, Min(0f)] private float screenImageHoldDuration = 2.5f;
+        [SerializeField, Min(0.05f)] private float screenImageStartScale = 0.18f;
+        [SerializeField, Min(0.5f)] private float screenImageImpactScale = 1.25f;
+        [SerializeField, Range(0f, 1f)] private float screenImageOpacity = 1f;
+        [SerializeField, Range(0f, 1f)] private float screenDarkBackdropOpacity = 0.72f;
+        [SerializeField, Min(0f)] private float fallRoll = 62f;
+        [SerializeField, Min(0f)] private float fallPitch = 28f;
+
         private BoxCollider triggerCollider;
         private FpsHorrorKit.FpsController playerController;
+        private Transform playerFollowTarget;
+        private Vector3 followTargetStartPosition;
+        private Quaternion followTargetStartRotation;
         private bool hasTriggered;
         private bool isRunning;
         private bool playerInsideTrigger;
+        private bool isUncovered;
+        private bool isPullingCloth;
         private float mirrorLookTimer;
+        private Vector3 clothCoveredLocalPosition;
+        private Quaternion clothCoveredLocalRotation;
 
         private void Awake()
         {
@@ -51,12 +81,20 @@ namespace MainGame.P2
 
             ResolveMirrorRaycastTarget();
             ResolveP2References();
+            ResolveClothCover();
+            CaptureClothCoveredPose();
+            ApplyClothStateInstant();
         }
 
         private void Update()
         {
             if (isRunning || (triggerOnlyOnce && hasTriggered))
                 return;
+            if (!isUncovered)
+            {
+                mirrorLookTimer = 0f;
+                return;
+            }
 
             var candidate = playerController != null
                 ? playerController
@@ -100,6 +138,27 @@ namespace MainGame.P2
             playerController = candidate;
         }
 
+        public void Interact()
+        {
+            if (isUncovered || isPullingCloth || isRunning || (triggerOnlyOnce && hasTriggered))
+                return;
+
+            StartCoroutine(PullClothRoutine());
+        }
+
+        public void Highlight()
+        {
+            PlayerInteract.Instance?.ChangeInteractText(isUncovered ? uncoveredInteractText : coveredInteractText);
+        }
+
+        public void HoldInteract()
+        {
+        }
+
+        public void UnHighlight()
+        {
+        }
+
         private void TickLookTrigger(FpsHorrorKit.FpsController candidate)
         {
             if (candidate == null || !CanTrigger(candidate))
@@ -120,6 +179,8 @@ namespace MainGame.P2
         private bool CanTrigger(FpsHorrorKit.FpsController candidate)
         {
             if (candidate == null || FpsHorrorKit.ClosetHiding.IsAnyPlayerHidden)
+                return false;
+            if (!isUncovered)
                 return false;
 
             var gameController = GameController.Instance;
@@ -143,6 +204,43 @@ namespace MainGame.P2
             return !requireMirrorRaycast || IsPlayerLookingAtMirror(candidate);
         }
 
+        private IEnumerator PullClothRoutine()
+        {
+            ResolveClothCover();
+            CaptureClothCoveredPose();
+            isPullingCloth = true;
+            AudioManager.Instance?.PlayGenericInteract();
+            PlayClothPullSound();
+
+            if (clothCover == null)
+            {
+                isUncovered = true;
+                isPullingCloth = false;
+                yield break;
+            }
+
+            Transform cloth = clothCover.transform;
+            Vector3 startPosition = cloth.localPosition;
+            Quaternion startRotation = cloth.localRotation;
+            Vector3 endPosition = clothCoveredLocalPosition + clothPulledLocalOffset;
+            Quaternion endRotation = clothCoveredLocalRotation * Quaternion.Euler(clothPulledLocalEulerOffset);
+
+            float timer = 0f;
+            while (timer < clothPullSeconds)
+            {
+                timer += Time.deltaTime;
+                float t = Mathf.SmoothStep(0f, 1f, Mathf.Clamp01(timer / clothPullSeconds));
+                cloth.localPosition = Vector3.Lerp(startPosition, endPosition, t);
+                cloth.localRotation = Quaternion.Slerp(startRotation, endRotation, t);
+                yield return null;
+            }
+
+            clothCover.SetActive(false);
+            isUncovered = true;
+            isPullingCloth = false;
+            mirrorLookTimer = 0f;
+        }
+
         private IEnumerator MirrorEventRoutine(FpsHorrorKit.FpsController candidate)
         {
             isRunning = true;
@@ -155,13 +253,18 @@ namespace MainGame.P2
             else
                 SetFallbackPlayerLocked(candidate, true);
 
+            playerFollowTarget = candidate != null ? candidate.followTarget : null;
+            followTargetStartPosition = playerFollowTarget != null ? playerFollowTarget.localPosition : Vector3.zero;
+            followTargetStartRotation = playerFollowTarget != null ? playerFollowTarget.localRotation : Quaternion.identity;
+
             reflection?.SetBloodStained();
             PlayMirrorEventSound();
             ShowRevealObject(true, candidate);
             ghostDirector?.ForceApparitionNearPlayer();
 
-            if (mirrorHoldSeconds > 0f)
-                yield return new WaitForSeconds(mirrorHoldSeconds);
+            Camera playerCamera = Camera.main;
+            yield return PlayScreenImageJumpscare(playerCamera);
+            AnimatePlayerFall(0f, playerCamera);
 
             ShowRevealObject(false, candidate);
 
@@ -203,13 +306,194 @@ namespace MainGame.P2
 
         private void PlayMirrorEventSound()
         {
-            if (mirrorEventClip == null)
+            if (mirrorEventClip != null && sfxSource != null)
+                sfxSource.PlayOneShot(mirrorEventClip);
+            else if (mirrorEventClip != null)
+                AudioSource.PlayClipAtPoint(mirrorEventClip, transform.position);
+            else
+                AudioManager.Instance?.PlayGhostJumpscare();
+        }
+
+        private void PlayClothPullSound()
+        {
+            if (clothPullClip == null)
                 return;
 
             if (sfxSource != null)
-                sfxSource.PlayOneShot(mirrorEventClip);
+                sfxSource.PlayOneShot(clothPullClip);
             else
-                AudioSource.PlayClipAtPoint(mirrorEventClip, transform.position);
+                AudioSource.PlayClipAtPoint(clothPullClip, transform.position);
+        }
+
+        private IEnumerator PlayScreenImageJumpscare(Camera playerCamera)
+        {
+            RectTransform imageRect = null;
+            CanvasGroup canvasGroup = null;
+            GameObject canvasObject = BuildScreenJumpscareUi(out imageRect, out canvasGroup);
+            if (imageRect == null || canvasObject == null)
+            {
+                if (mirrorHoldSeconds > 0f)
+                    yield return new WaitForSeconds(mirrorHoldSeconds);
+                yield break;
+            }
+
+            RectTransform canvasRect = canvasObject.GetComponent<RectTransform>();
+            Vector2 startPosition = GetMirrorScreenAnchoredPosition(canvasRect, playerCamera);
+            Vector2 impactPosition = Vector2.zero;
+            imageRect.anchoredPosition = startPosition;
+            imageRect.localScale = Vector3.one * screenImageStartScale;
+
+            float elapsed = 0f;
+            while (elapsed < screenImagePopDuration)
+            {
+                float t = Mathf.Clamp01(elapsed / screenImagePopDuration);
+                float eased = 1f - Mathf.Pow(1f - t, 4f);
+                imageRect.anchoredPosition = Vector2.LerpUnclamped(startPosition, impactPosition, eased);
+                imageRect.localScale = Vector3.one * Mathf.Lerp(screenImageStartScale, screenImageImpactScale, eased);
+                if (canvasGroup != null)
+                    canvasGroup.alpha = Mathf.Lerp(0.2f, screenImageOpacity, eased);
+
+                AnimatePlayerFall(Mathf.Min(eased * 0.8f, 0.8f), playerCamera);
+                elapsed += Time.deltaTime;
+                yield return null;
+            }
+
+            imageRect.anchoredPosition = impactPosition;
+            imageRect.localScale = Vector3.one * screenImageImpactScale;
+            if (canvasGroup != null)
+                canvasGroup.alpha = screenImageOpacity;
+
+            elapsed = 0f;
+            while (elapsed < screenImageHoldDuration)
+            {
+                float shake = Mathf.Sin(Time.unscaledTime * 85f) * 8f;
+                imageRect.anchoredPosition = impactPosition + new Vector2(shake, -shake * 0.45f);
+                elapsed += Time.deltaTime;
+                yield return null;
+            }
+
+            canvasObject.SetActive(false);
+            Destroy(canvasObject);
+        }
+
+        private GameObject BuildScreenJumpscareUi(out RectTransform imageRect, out CanvasGroup canvasGroup)
+        {
+            imageRect = null;
+            canvasGroup = null;
+
+            var canvasObject = new GameObject(
+                "P2MirrorJumpscareImageUI",
+                typeof(RectTransform),
+                typeof(Canvas),
+                typeof(CanvasScaler),
+                typeof(GraphicRaycaster),
+                typeof(CanvasGroup));
+
+            var canvas = canvasObject.GetComponent<Canvas>();
+            canvas.renderMode = RenderMode.ScreenSpaceOverlay;
+            canvas.sortingOrder = 900;
+
+            var scaler = canvasObject.GetComponent<CanvasScaler>();
+            scaler.uiScaleMode = CanvasScaler.ScaleMode.ScaleWithScreenSize;
+            scaler.referenceResolution = new Vector2(1920f, 1080f);
+            scaler.matchWidthOrHeight = 0.5f;
+
+            canvasGroup = canvasObject.GetComponent<CanvasGroup>();
+            canvasGroup.alpha = 0f;
+            canvasGroup.blocksRaycasts = false;
+            canvasGroup.interactable = false;
+
+            var backdropRect = new GameObject("DarkBackdrop", typeof(RectTransform), typeof(CanvasRenderer), typeof(Image)).GetComponent<RectTransform>();
+            backdropRect.SetParent(canvasObject.transform, false);
+            Stretch(backdropRect);
+            var backdrop = backdropRect.GetComponent<Image>();
+            backdrop.raycastTarget = false;
+            backdrop.color = new Color(0f, 0f, 0f, screenDarkBackdropOpacity);
+
+            imageRect = new GameObject("AnhHuMa", typeof(RectTransform), typeof(CanvasRenderer), typeof(Image)).GetComponent<RectTransform>();
+            imageRect.SetParent(canvasObject.transform, false);
+            imageRect.anchorMin = new Vector2(0.5f, 0.5f);
+            imageRect.anchorMax = new Vector2(0.5f, 0.5f);
+            imageRect.pivot = new Vector2(0.5f, 0.5f);
+
+            var image = imageRect.GetComponent<Image>();
+            image.raycastTarget = false;
+            image.preserveAspect = true;
+            image.sprite = CreateScreenSprite();
+            image.color = Color.white;
+
+            float aspect = screenJumpscareTexture != null && screenJumpscareTexture.height > 0
+                ? (float)screenJumpscareTexture.width / screenJumpscareTexture.height
+                : 1f;
+            float height = 1180f;
+            imageRect.sizeDelta = new Vector2(height * aspect, height);
+
+            return canvasObject;
+        }
+
+        private static void Stretch(RectTransform rect)
+        {
+            rect.anchorMin = Vector2.zero;
+            rect.anchorMax = Vector2.one;
+            rect.offsetMin = Vector2.zero;
+            rect.offsetMax = Vector2.zero;
+        }
+
+        private Sprite CreateScreenSprite()
+        {
+            Texture2D texture = screenJumpscareTexture;
+            if (texture == null)
+                return null;
+
+            return Sprite.Create(
+                texture,
+                new Rect(0f, 0f, texture.width, texture.height),
+                new Vector2(0.5f, 0.5f),
+                100f);
+        }
+
+        private Vector2 GetMirrorScreenAnchoredPosition(RectTransform canvasRect, Camera playerCamera)
+        {
+            Vector3 mirrorPoint = GetMirrorLookPoint();
+            Vector2 screenPoint = playerCamera != null
+                ? RectTransformUtility.WorldToScreenPoint(playerCamera, mirrorPoint)
+                : new Vector2(Screen.width * 0.5f, Screen.height * 0.5f);
+
+            if (playerCamera != null)
+            {
+                Vector3 viewportPoint = playerCamera.WorldToViewportPoint(mirrorPoint);
+                if (viewportPoint.z < 0f)
+                    screenPoint = new Vector2(Screen.width * 0.5f, Screen.height * 0.5f);
+            }
+
+            if (RectTransformUtility.ScreenPointToLocalPointInRectangle(canvasRect, screenPoint, null, out var anchoredPosition))
+                return anchoredPosition;
+
+            return Vector2.zero;
+        }
+
+        private void AnimatePlayerFall(float amount, Camera playerCamera)
+        {
+            if (playerFollowTarget != null)
+            {
+                Quaternion fallRotation = followTargetStartRotation
+                    * Quaternion.Euler(fallPitch * amount, 0f, -fallRoll * amount);
+                playerFollowTarget.localRotation = Quaternion.Slerp(
+                    followTargetStartRotation,
+                    fallRotation,
+                    amount);
+                playerFollowTarget.localPosition = Vector3.Lerp(
+                    followTargetStartPosition,
+                    followTargetStartPosition + new Vector3(0f, -0.12f, 0f),
+                    amount);
+            }
+            else if (playerCamera != null)
+            {
+                playerCamera.transform.rotation = Quaternion.Slerp(
+                    playerCamera.transform.rotation,
+                    playerCamera.transform.rotation * Quaternion.Euler(fallPitch, 0f, -fallRoll),
+                    amount);
+            }
         }
 
         private bool IsPlayerLookingAtMirror(FpsHorrorKit.FpsController candidate)
@@ -294,6 +578,36 @@ namespace MainGame.P2
             }
 
             return transform;
+        }
+
+        private void ResolveClothCover()
+        {
+            if (clothCover != null)
+                return;
+
+            var child = transform.Find("P2_MirrorClothCover");
+            if (child != null)
+                clothCover = child.gameObject;
+        }
+
+        private void CaptureClothCoveredPose()
+        {
+            if (clothCover == null)
+                return;
+
+            clothCoveredLocalPosition = clothCover.transform.localPosition;
+            clothCoveredLocalRotation = clothCover.transform.localRotation;
+        }
+
+        private void ApplyClothStateInstant()
+        {
+            isUncovered = !startCovered;
+            if (clothCover != null)
+            {
+                clothCover.SetActive(startCovered);
+                clothCover.transform.localPosition = clothCoveredLocalPosition;
+                clothCover.transform.localRotation = clothCoveredLocalRotation;
+            }
         }
 
         private void ResolveP2References()

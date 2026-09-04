@@ -114,7 +114,8 @@ public static class GameP2AudioLogSetup
 
         var serialized = new SerializedObject(item);
         Set(serialized, "clip", AssetDatabase.LoadAssetAtPath<AudioClip>(clipPath));
-        Set(serialized, "subtitle", subtitle);
+        Set(serialized, "playbackMessage", "Hộp ghi âm... nhấn SPACE để bỏ qua.");
+        Set(serialized, "messageRefreshSeconds", 1.1f);
         Set(serialized, "interactText", interactText);
         Set(serialized, "canReplay", canReplay);
         Set(serialized, "fallbackSource", source);
@@ -177,5 +178,12 @@ public static class GameP2AudioLogSetup
         var property = serialized.FindProperty(propertyName);
         if (property != null)
             property.boolValue = value;
+    }
+
+    private static void Set(SerializedObject serialized, string propertyName, float value)
+    {
+        var property = serialized.FindProperty(propertyName);
+        if (property != null)
+            property.floatValue = value;
     }
 }

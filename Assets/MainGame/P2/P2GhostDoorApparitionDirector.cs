@@ -62,6 +62,8 @@ namespace MainGame.P2
         private Vector3 lastDestination;
         private bool hasDestination;
         private bool apparitionRunning;
+        private bool scriptedPassRunning;
+        private Coroutine scriptedPassRoutine;
         private float nextApparitionTime;
 
         private void Awake()
@@ -92,7 +94,7 @@ namespace MainGame.P2
             if (IsGameLocked())
                 return;
 
-            if (!apparitionRunning)
+            if (!apparitionRunning && !scriptedPassRunning)
             {
                 TickPatrol();
                 TickDoorApparition();
@@ -112,6 +114,20 @@ namespace MainGame.P2
 
             StopCoroutine(nameof(ApparitionRoutine));
             StartCoroutine(nameof(ApparitionRoutine), true);
+        }
+
+        public void PlayScriptedPass(Transform startPoint, Transform endPoint, Action onComplete = null)
+        {
+            if (!isActiveAndEnabled || startPoint == null || endPoint == null)
+            {
+                onComplete?.Invoke();
+                return;
+            }
+
+            if (scriptedPassRoutine != null)
+                StopCoroutine(scriptedPassRoutine);
+
+            scriptedPassRoutine = StartCoroutine(ScriptedPassRoutine(startPoint, endPoint, onComplete));
         }
 
         private void TickPatrol()
@@ -165,6 +181,50 @@ namespace MainGame.P2
 
             ScheduleNextApparition();
             apparitionRunning = false;
+        }
+
+        private IEnumerator ScriptedPassRoutine(Transform startPoint, Transform endPoint, Action onComplete)
+        {
+            scriptedPassRunning = true;
+            apparitionRunning = true;
+            int resumePatrolIndex = patrolIndex;
+            int resumePatrolDirection = patrolDirection;
+            ResolveReferences();
+            CacheVisualRenderers();
+
+            WarpTo(startPoint.position, startPoint.rotation);
+            SetVisualVisible(true);
+            if (agent != null && agent.enabled && agent.isOnNavMesh)
+                agent.isStopped = false;
+
+            const float maxSeconds = 12f;
+            float timer = 0f;
+            while (timer < maxSeconds)
+            {
+                timer += Time.deltaTime;
+                if (MoveTo(endPoint.position, IsAwakened ? awakenedSpeed : patrolSpeed, waypointReachDistance))
+                    break;
+
+                yield return null;
+            }
+
+            if (endPoint != null)
+                WarpTo(endPoint.position, endPoint.rotation);
+
+            if (hideVisualBetweenApparitions)
+                SetVisualVisible(false);
+
+            if (agent != null && agent.enabled && agent.isOnNavMesh)
+                agent.isStopped = false;
+
+            patrolIndex = Mathf.Clamp(resumePatrolIndex, 0, Mathf.Max(0, patrolPoints != null ? patrolPoints.Length - 1 : 0));
+            patrolDirection = resumePatrolDirection == 0 ? 1 : resumePatrolDirection;
+            ClearDestination();
+            ScheduleNextApparition();
+            apparitionRunning = false;
+            scriptedPassRunning = false;
+            scriptedPassRoutine = null;
+            onComplete?.Invoke();
         }
 
         private bool TryChooseApparitionPoint(out Transform point)

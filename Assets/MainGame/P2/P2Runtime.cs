@@ -585,6 +585,12 @@ namespace MainGame.P2
             if (!enableP2VoiceLines)
                 return;
 
+            if (ShouldSuppressSubtitleForClip(clip))
+            {
+                PlayVoiceNoSubtitle(clip);
+                return;
+            }
+
             if (clip != null && voiceSource != null)
             {
                 voiceSource.Stop();
@@ -596,6 +602,30 @@ namespace MainGame.P2
 
             if (!string.IsNullOrWhiteSpace(fallbackSubtitle))
                 ShowSubtitle(fallbackSubtitle, fallbackSeconds);
+        }
+
+        private bool ShouldSuppressSubtitleForClip(AudioClip clip)
+        {
+            return clip != null
+                && (clip == linhHallAutoLog
+                    || clip == linhDollLog
+                    || clip == audioLogBL02
+                    || clip == audioLogBL03
+                    || clip == maVuDaiLine01
+                    || clip == maVuDaiLine02
+                    || clip == maDaMirror01
+                    || clip == maDaMirror02);
+        }
+
+        private float PlayVoiceNoSubtitle(AudioClip clip)
+        {
+            if (!enableP2VoiceLines || clip == null || voiceSource == null)
+                return 0f;
+
+            voiceSource.Stop();
+            voiceSource.clip = clip;
+            voiceSource.Play();
+            return clip.length;
         }
 
         private void PlaySfx(AudioClip clip)
