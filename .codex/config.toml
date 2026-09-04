@@ -2,3 +2,6 @@
 command = "node"
 args = ["Library/PackageCache/com.gamelovers.mcp-unity@0e9fdb65b3cc/Server~/build/index.js"]
 env = { MCP_UNITY_SETTINGS_PATH = "D:/unity/UnityProject/VillaOfDrakness01/ProjectSettings/McpUnitySettings.json" }
+
+[mcp_servers.mcp-unity.tools.save_scene]
+approval_mode = "approve"

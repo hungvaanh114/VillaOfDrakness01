@@ -1,5 +1,6 @@
 namespace FpsHorrorKit
 {
+    using System;
     using TMPro;
     using UnityEngine;
     using UnityEngine.UI;
@@ -93,32 +94,45 @@ namespace FpsHorrorKit
             }
 
             var ray = Camera.main.ScreenPointToRay(new Vector3(Screen.width / 2f, Screen.height / 2f, 0f));
-            if (!Physics.Raycast(ray, out var hit, interactRange, ~0, QueryTriggerInteraction.Ignore))
+            var hits = Physics.RaycastAll(ray, interactRange, ~0, QueryTriggerInteraction.Ignore);
+            if (hits.Length == 0)
             {
                 UnHighlight();
                 return;
             }
 
-            var interactable = hit.collider.GetComponent<IInteractable>() ?? hit.collider.GetComponentInParent<IInteractable>();
-            if (interactable == null)
+            Array.Sort(hits, (a, b) => a.distance.CompareTo(b.distance));
+            foreach (var hit in hits)
             {
-                UnHighlight();
+                var filter = hit.collider.GetComponent<IInteractionRaycastFilter>() ?? hit.collider.GetComponentInParent<IInteractionRaycastFilter>();
+                if (filter != null && !filter.BlocksInteractionRaycast(hit.collider))
+                    continue;
+
+                var interactable = hit.collider.GetComponent<IInteractable>() ?? hit.collider.GetComponentInParent<IInteractable>();
+                if (interactable == null)
+                {
+                    UnHighlight();
+                    return;
+                }
+
+                if (currentInteractable != null && currentInteractable != interactable)
+                    currentInteractable.UnHighlight();
+
+                currentInteractable = interactable;
+                canDragDoor = CanHoldInteract(currentInteractable);
+                Highlight();
+
+                if (input != null && input.interact && higlightObject != null && higlightObject.activeSelf)
+                {
+                    currentInteractable.Interact();
+                    input.interact = false;
+                    UnHighlight();
+                }
+
                 return;
             }
 
-            if (currentInteractable != null && currentInteractable != interactable)
-                currentInteractable.UnHighlight();
-
-            currentInteractable = interactable;
-            canDragDoor = CanHoldInteract(currentInteractable);
-            Highlight();
-
-            if (input != null && input.interact && higlightObject != null && higlightObject.activeSelf)
-            {
-                currentInteractable.Interact();
-                input.interact = false;
-                UnHighlight();
-            }
+            UnHighlight();
         }
 
         private void OnDrawGizmosSelected()

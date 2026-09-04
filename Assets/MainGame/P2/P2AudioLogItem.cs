@@ -21,8 +21,19 @@ namespace MainGame.P2
         private bool isPlaying;
         private Coroutine playbackCompletedRoutine;
         private Coroutine messageRoutine;
+        private static bool blockSpaceJumpUntilRelease;
 
         public static bool IsSpaceSkipActive { get; private set; }
+        public static bool ShouldBlockSpaceJump
+        {
+            get
+            {
+                if (blockSpaceJumpUntilRelease && (Keyboard.current == null || !Keyboard.current.spaceKey.isPressed))
+                    blockSpaceJumpUntilRelease = false;
+
+                return IsSpaceSkipActive || blockSpaceJumpUntilRelease;
+            }
+        }
 
         public event Action<P2AudioLogItem, float> PlaybackStarted;
         public event Action<P2AudioLogItem> PlaybackCompleted;
@@ -51,6 +62,7 @@ namespace MainGame.P2
             StopMessageRoutine();
             if (IsSpaceSkipActive)
                 IsSpaceSkipActive = false;
+            blockSpaceJumpUntilRelease = false;
             if (playbackCompletedRoutine != null)
             {
                 StopCoroutine(playbackCompletedRoutine);
@@ -135,6 +147,8 @@ namespace MainGame.P2
             StopMessageRoutine();
             if (skipped)
             {
+                if (skipKey == Key.Space)
+                    blockSpaceJumpUntilRelease = true;
                 AudioManager.Instance?.StopVoice();
                 if (fallbackSource != null)
                     fallbackSource.Stop();

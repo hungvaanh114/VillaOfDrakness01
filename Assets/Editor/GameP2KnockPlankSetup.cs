@@ -1,5 +1,7 @@
 using System;
+using FpsHorrorKit;
 using MainGame.P2;
+using Unity.Cinemachine;
 using UnityEditor;
 using UnityEditor.SceneManagement;
 using UnityEngine;
@@ -214,6 +216,7 @@ public static class GameP2KnockPlankSetup
         Set(serialized, "triggerOnce", true);
         Set(serialized, "delayAfterAudio", 0.35f);
         Set(serialized, "targetCamera", Camera.main);
+        Set(serialized, "targetVirtualCamera", FindGameplayVirtualCamera());
         Set(serialized, "cameraZoomPoint", cameraPoint);
         Set(serialized, "lookTarget", lookTarget);
         Set(serialized, "zoomFieldOfView", 38f);
@@ -233,6 +236,15 @@ public static class GameP2KnockPlankSetup
         for (var i = 0; i < clips.Length; i++)
             clips[i] = AssetDatabase.LoadAssetAtPath<AudioClip>(NoteClipPaths[i]);
         return clips;
+    }
+
+    private static CinemachineCamera FindGameplayVirtualCamera()
+    {
+        var controller = UnityEngine.Object.FindFirstObjectByType<FpsController>(FindObjectsInactive.Include);
+        if (controller != null && controller.virtualCamera != null)
+            return controller.virtualCamera;
+
+        return UnityEngine.Object.FindFirstObjectByType<CinemachineCamera>(FindObjectsInactive.Include);
     }
 
     private static Transform EnsureRoot(string name)

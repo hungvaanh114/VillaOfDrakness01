@@ -4,7 +4,7 @@ using UnityEngine;
 namespace MainGame.P2
 {
     [RequireComponent(typeof(Collider))]
-    public sealed class P2LockedCabinet : MonoBehaviour, IInteractable
+    public sealed class P2LockedCabinet : MonoBehaviour, IInteractable, IInteractionRaycastFilter
     {
         [SerializeField] private ItemData requiredKey;
         [SerializeField] private GameObject closedVisual;
@@ -16,8 +16,20 @@ namespace MainGame.P2
         [SerializeField] private string openText = "[E] Mở tủ";
         [SerializeField] private string openedText = "Đã mở tủ. Bên trong có một con búp bê.";
         [SerializeField] private bool consumeKey;
+        [SerializeField] private bool disableInteractionRaycastWhenOpened = true;
 
         private bool opened;
+
+        public bool BlocksInteractionRaycast(Collider hitCollider)
+        {
+            if (!opened || !disableInteractionRaycastWhenOpened)
+                return true;
+
+            if (contentsRoot != null && hitCollider != null && hitCollider.transform.IsChildOf(contentsRoot.transform))
+                return true;
+
+            return false;
+        }
 
         public void Configure(ItemData key, GameObject closed, GameObject openedObject, GameObject contents)
         {

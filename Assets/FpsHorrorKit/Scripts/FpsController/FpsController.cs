@@ -637,7 +637,8 @@ namespace FpsHorrorKit
 
         private void CaptureJumpInputFallback()
         {
-            if (global::GameController.IsGameplayInputLocked())
+            if (global::GameController.IsGameplayInputLocked()
+                || global::MainGame.P2.P2AudioLogItem.ShouldBlockSpaceJump)
                 return;
 
             if (_input == null || Keyboard.current == null)

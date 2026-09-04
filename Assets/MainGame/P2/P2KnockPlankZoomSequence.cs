@@ -1,5 +1,6 @@
 using System.Collections;
 using FpsHorrorKit;
+using Unity.Cinemachine;
 using UnityEngine;
 
 namespace MainGame.P2
@@ -15,6 +16,7 @@ namespace MainGame.P2
 
         [Header("Camera")]
         [SerializeField] private Camera targetCamera;
+        [SerializeField] private CinemachineCamera targetVirtualCamera;
         [SerializeField] private Transform cameraZoomPoint;
         [SerializeField] private Transform lookTarget;
         [SerializeField, Range(20f, 80f)] private float zoomFieldOfView = 38f;
@@ -29,6 +31,10 @@ namespace MainGame.P2
         private bool hasTriggered;
         private bool puzzleCompleted;
         private Coroutine sequenceRoutine;
+        private CameraTarget previousVirtualCameraTarget;
+        private LensSettings previousVirtualCameraLens;
+        private Transform runtimeTrackingTarget;
+        private Transform runtimeLookTarget;
 
         public static bool IsAnyZoomActive { get; private set; }
 
@@ -50,7 +56,10 @@ namespace MainGame.P2
                 audioLog.PlaybackCompleted -= HandlePlaybackCompleted;
 
             if (IsAnyZoomActive)
+            {
+                RestoreVirtualCameraDriver();
                 UnlockPlayer();
+            }
         }
 
         private void HandlePlaybackCompleted(P2AudioLogItem item)
@@ -77,27 +86,40 @@ namespace MainGame.P2
             }
 
             var cameraTransform = ResolveCameraTransform();
-            if (cameraTransform == null)
+            var virtualCamera = ResolveVirtualCamera();
+            if (cameraTransform == null && virtualCamera == null)
             {
                 sequenceRoutine = null;
                 yield break;
             }
 
-            var originalLocalPosition = cameraTransform.localPosition;
-            var originalLocalRotation = cameraTransform.localRotation;
-            var originalFieldOfView = targetCamera.fieldOfView;
+            var originalLocalPosition = cameraTransform != null ? cameraTransform.localPosition : Vector3.zero;
+            var originalLocalRotation = cameraTransform != null ? cameraTransform.localRotation : Quaternion.identity;
+            var originalWorldPosition = cameraTransform != null ? cameraTransform.position : virtualCamera.transform.position;
+            var originalWorldRotation = cameraTransform != null ? cameraTransform.rotation : virtualCamera.transform.rotation;
+            var originalLookPosition = originalWorldPosition + originalWorldRotation * Vector3.forward * 4f;
+            var originalFieldOfView = GetCurrentFieldOfView();
 
             LockPlayer();
+            PrepareVirtualCameraDriver(originalWorldPosition, originalLookPosition);
 
-            var targetPosition = cameraZoomPoint != null ? cameraZoomPoint.position : cameraTransform.position;
-            var targetRotation = GetZoomRotation(cameraTransform);
+            var targetPosition = cameraZoomPoint != null
+                ? cameraZoomPoint.position
+                : cameraTransform != null
+                    ? cameraTransform.position
+                    : virtualCamera.transform.position;
+            var targetLookPosition = lookTarget != null
+                ? lookTarget.position
+                : targetPosition + GetZoomRotation(cameraTransform != null ? cameraTransform : virtualCamera.transform) * Vector3.forward * 4f;
             yield return MoveCamera(
                 cameraTransform,
-                cameraTransform.position,
-                cameraTransform.rotation,
-                targetCamera.fieldOfView,
+                cameraTransform != null ? cameraTransform.position : virtualCamera.transform.position,
+                cameraTransform != null ? cameraTransform.rotation : virtualCamera.transform.rotation,
+                originalLookPosition,
+                originalFieldOfView,
                 targetPosition,
-                targetRotation,
+                GetZoomRotation(cameraTransform != null ? cameraTransform : virtualCamera.transform),
+                targetLookPosition,
                 zoomFieldOfView,
                 enterZoomSeconds);
 
@@ -109,26 +131,32 @@ namespace MainGame.P2
                 yield return null;
             }
 
-            var restoreWorldPosition = cameraTransform.parent != null
+            var restoreWorldPosition = cameraTransform != null && cameraTransform.parent != null
                 ? cameraTransform.parent.TransformPoint(originalLocalPosition)
-                : originalLocalPosition;
-            var restoreWorldRotation = cameraTransform.parent != null
+                : originalWorldPosition;
+            var restoreWorldRotation = cameraTransform != null && cameraTransform.parent != null
                 ? cameraTransform.parent.rotation * originalLocalRotation
-                : originalLocalRotation;
+                : originalWorldRotation;
 
             yield return MoveCamera(
                 cameraTransform,
-                cameraTransform.position,
-                cameraTransform.rotation,
-                targetCamera.fieldOfView,
+                cameraTransform != null ? cameraTransform.position : originalWorldPosition,
+                cameraTransform != null ? cameraTransform.rotation : originalWorldRotation,
+                targetLookPosition,
+                GetCurrentFieldOfView(),
                 restoreWorldPosition,
                 restoreWorldRotation,
+                originalLookPosition,
                 originalFieldOfView,
                 exitZoomSeconds);
 
-            cameraTransform.localPosition = originalLocalPosition;
-            cameraTransform.localRotation = originalLocalRotation;
-            targetCamera.fieldOfView = originalFieldOfView;
+            RestoreVirtualCameraDriver();
+            if (cameraTransform != null)
+            {
+                cameraTransform.localPosition = originalLocalPosition;
+                cameraTransform.localRotation = originalLocalRotation;
+            }
+            SetFieldOfView(originalFieldOfView);
 
             UnlockPlayer();
             sequenceRoutine = null;
@@ -138,9 +166,11 @@ namespace MainGame.P2
             Transform cameraTransform,
             Vector3 fromPosition,
             Quaternion fromRotation,
+            Vector3 fromLookPosition,
             float fromFov,
             Vector3 toPosition,
             Quaternion toRotation,
+            Vector3 toLookPosition,
             float toFov,
             float seconds)
         {
@@ -150,16 +180,17 @@ namespace MainGame.P2
             {
                 timer += Time.deltaTime;
                 float t = Mathf.SmoothStep(0f, 1f, Mathf.Clamp01(timer / seconds));
-                cameraTransform.position = Vector3.Lerp(fromPosition, toPosition, t);
-                cameraTransform.rotation = Quaternion.Slerp(fromRotation, toRotation, t);
-                targetCamera.fieldOfView = Mathf.Lerp(fromFov, toFov, t);
+                ApplyCameraPose(
+                    cameraTransform,
+                    Vector3.Lerp(fromPosition, toPosition, t),
+                    Quaternion.Slerp(fromRotation, toRotation, t),
+                    Vector3.Lerp(fromLookPosition, toLookPosition, t),
+                    Mathf.Lerp(fromFov, toFov, t));
                 FpsAssetsInputs.Instance?.ClearGameplayInput();
                 yield return null;
             }
 
-            cameraTransform.position = toPosition;
-            cameraTransform.rotation = toRotation;
-            targetCamera.fieldOfView = toFov;
+            ApplyCameraPose(cameraTransform, toPosition, toRotation, toLookPosition, toFov);
         }
 
         private Quaternion GetZoomRotation(Transform cameraTransform)
@@ -172,6 +203,88 @@ namespace MainGame.P2
 
             var direction = lookTarget.position - (cameraZoomPoint != null ? cameraZoomPoint.position : cameraTransform.position);
             return direction.sqrMagnitude > 0.001f ? Quaternion.LookRotation(direction.normalized, Vector3.up) : cameraTransform.rotation;
+        }
+
+        private void ApplyCameraPose(Transform cameraTransform, Vector3 position, Quaternion rotation, Vector3 lookPosition, float fieldOfView)
+        {
+            if (runtimeTrackingTarget != null)
+            {
+                runtimeTrackingTarget.position = position;
+                runtimeTrackingTarget.rotation = rotation;
+            }
+
+            if (runtimeLookTarget != null)
+                runtimeLookTarget.position = lookPosition;
+
+            if (runtimeTrackingTarget == null && cameraTransform != null)
+            {
+                cameraTransform.position = position;
+                cameraTransform.rotation = rotation;
+            }
+
+            SetFieldOfView(fieldOfView);
+        }
+
+        private void PrepareVirtualCameraDriver(Vector3 startPosition, Vector3 startLookPosition)
+        {
+            var virtualCamera = ResolveVirtualCamera();
+            if (virtualCamera == null)
+                return;
+
+            previousVirtualCameraTarget = virtualCamera.Target;
+            previousVirtualCameraLens = virtualCamera.Lens;
+
+            runtimeTrackingTarget = new GameObject("P2_WallPlankZoom_RuntimeCameraTarget").transform;
+            runtimeTrackingTarget.hideFlags = HideFlags.HideAndDontSave;
+            runtimeTrackingTarget.SetPositionAndRotation(startPosition, virtualCamera.transform.rotation);
+
+            runtimeLookTarget = new GameObject("P2_WallPlankZoom_RuntimeLookTarget").transform;
+            runtimeLookTarget.hideFlags = HideFlags.HideAndDontSave;
+            runtimeLookTarget.position = startLookPosition;
+
+            virtualCamera.Target.TrackingTarget = runtimeTrackingTarget;
+            virtualCamera.Target.LookAtTarget = runtimeLookTarget;
+            virtualCamera.Target.CustomLookAtTarget = true;
+        }
+
+        private void RestoreVirtualCameraDriver()
+        {
+            var virtualCamera = ResolveVirtualCamera();
+            if (virtualCamera != null)
+            {
+                virtualCamera.Target = previousVirtualCameraTarget;
+                virtualCamera.Lens = previousVirtualCameraLens;
+            }
+
+            if (runtimeTrackingTarget != null)
+                Destroy(runtimeTrackingTarget.gameObject);
+            if (runtimeLookTarget != null)
+                Destroy(runtimeLookTarget.gameObject);
+
+            runtimeTrackingTarget = null;
+            runtimeLookTarget = null;
+        }
+
+        private float GetCurrentFieldOfView()
+        {
+            var virtualCamera = ResolveVirtualCamera();
+            if (virtualCamera != null)
+                return virtualCamera.Lens.FieldOfView;
+            return targetCamera != null ? targetCamera.fieldOfView : 60f;
+        }
+
+        private void SetFieldOfView(float fieldOfView)
+        {
+            var virtualCamera = ResolveVirtualCamera();
+            if (virtualCamera != null)
+            {
+                var lens = virtualCamera.Lens;
+                lens.FieldOfView = fieldOfView;
+                virtualCamera.Lens = lens;
+            }
+
+            if (targetCamera != null)
+                targetCamera.fieldOfView = fieldOfView;
         }
 
         private void LockPlayer()
@@ -217,12 +330,27 @@ namespace MainGame.P2
             return targetCamera != null ? targetCamera.transform : null;
         }
 
+        private CinemachineCamera ResolveVirtualCamera()
+        {
+            if (targetVirtualCamera != null)
+                return targetVirtualCamera;
+
+            var fpsController = GameController.Instance != null && GameController.Instance.playerController != null
+                ? GameController.Instance.playerController
+                : FindFirstObjectByType<FpsController>();
+            if (fpsController != null)
+                targetVirtualCamera = fpsController.virtualCamera;
+
+            return targetVirtualCamera;
+        }
+
         private void ResolveReferences()
         {
             if (audioLog == null)
                 audioLog = GetComponent<P2AudioLogItem>();
             if (targetCamera == null)
                 targetCamera = Camera.main;
+            ResolveVirtualCamera();
             if (puzzle == null)
                 puzzle = FindFirstObjectByType<P2KnockPlankPuzzle>(FindObjectsInactive.Include);
         }
