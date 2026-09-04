@@ -36,6 +36,7 @@ namespace FpsHorrorKit
         [Header("Defaults")]
         [SerializeField] private Sprite flashlightFallbackIcon;
         [SerializeField] private Sprite keyFallbackIcon;
+        [SerializeField] private bool hideMusicSheetTab;
 
         private readonly List<InventorySlotUI> inventorySlots = new();
         private readonly List<Image> musicIcons = new();
@@ -142,6 +143,8 @@ namespace FpsHorrorKit
 
             AudioManager.Instance?.PlayButtonClick();
             root.SetActive(true);
+            if (hideMusicSheetTab && currentTab == InventoryTab.Music)
+                currentTab = InventoryTab.Inventory;
             SetTab(currentTab);
             RefreshAll();
             SetGameplayBlocked(true);
@@ -200,20 +203,36 @@ namespace FpsHorrorKit
 
         private void ChangeTab(int direction)
         {
+            if (hideMusicSheetTab)
+            {
+                SetTab(InventoryTab.Inventory);
+                return;
+            }
+
             int next = ((int)currentTab + direction + 2) % 2;
             SetTab((InventoryTab)next);
         }
 
         private void SetTab(InventoryTab tab)
         {
+            if (hideMusicSheetTab && tab == InventoryTab.Music)
+                tab = InventoryTab.Inventory;
+
             currentTab = tab;
             if (IsOpen)
                 AudioManager.Instance?.PlayButtonClick();
             if (inventoryTabRoot != null) inventoryTabRoot.SetActive(tab == InventoryTab.Inventory);
-            if (musicTabRoot != null) musicTabRoot.SetActive(tab == InventoryTab.Music);
+            if (musicTabRoot != null) musicTabRoot.SetActive(!hideMusicSheetTab && tab == InventoryTab.Music);
 
             for (int i = 0; i < tabButtons.Count; i++)
             {
+                if (hideMusicSheetTab && i == (int)InventoryTab.Music)
+                {
+                    tabButtons[i].gameObject.SetActive(false);
+                    continue;
+                }
+
+                tabButtons[i].gameObject.SetActive(true);
                 var image = tabButtons[i].GetComponent<Image>();
                 bool selected = i == (int)tab;
                 if (image != null) image.sprite = selected && selectedTabSprite != null ? selectedTabSprite : tabSprite;
@@ -226,7 +245,8 @@ namespace FpsHorrorKit
         private void RefreshAll()
         {
             RefreshInventory();
-            RefreshMusic();
+            if (!hideMusicSheetTab)
+                RefreshMusic();
         }
 
         private void RefreshInventory()
@@ -272,6 +292,9 @@ namespace FpsHorrorKit
 
         private void RefreshMusic()
         {
+            if (hideMusicSheetTab)
+                return;
+
             var manager = MusicSheetManager.Instance;
             var sheets = manager != null ? manager.Sheets : new List<MusicSheetData>();
             int total = manager != null ? manager.RequiredMusicSheetCount : 5;

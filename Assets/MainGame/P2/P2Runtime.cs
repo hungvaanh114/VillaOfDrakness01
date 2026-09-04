@@ -243,7 +243,6 @@ namespace MainGame.P2
                 case P2InteractableKind.Key05:
                     HasKey05 = true;
                     PlaySfx(pickupClip);
-                    ShowSubtitle("Đã lấy KEY_05 - chìa khóa tủ trang sức phòng Bà Lan.", 3f);
                     SetStage(P2Stage.HasKey05);
                     interactable.gameObject.SetActive(false);
                     break;
@@ -257,7 +256,6 @@ namespace MainGame.P2
                     }
 
                     PlaySfx(cabinetUnlockClip);
-                    ShowSubtitle("Ổ khóa mở khẽ. Bên trong có một hộp ghi âm cơ học.", 3f);
                     SetStage(P2Stage.CabinetOpened);
                     interactable.OpenLinkedObject();
                     break;
@@ -376,7 +374,6 @@ namespace MainGame.P2
             lastShardNoiseTime = Time.time;
             PlaySfx(glassStepClip);
             ghost?.Investigate(position);
-            ShowSubtitle("Mảnh gương vỡ lạo xạo dưới chân.", 1.8f);
         }
 
         public void TriggerMirrorBreakEvent()

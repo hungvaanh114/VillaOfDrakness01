@@ -32,7 +32,6 @@ namespace MainGame.P2
 
         [Header("Floor Routing")]
         [SerializeField] private bool lockUpperFloorUntilAwakened = true;
-        [SerializeField, Min(0f)] private float upperFloorMinY = 2.4f;
         [SerializeField] private bool showUpperFloorAfterAwakened = true;
 
         [Header("Door Apparition")]

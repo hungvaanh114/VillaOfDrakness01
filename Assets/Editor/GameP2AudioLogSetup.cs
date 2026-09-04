@@ -30,7 +30,7 @@ public static class GameP2AudioLogSetup
             "BL_LOG_02_MechanicalRecorder",
             BL02ClipPath,
             BL02Text,
-            "[E] Nghe BL-LOG-02",
+            "[E] Hộp ghi âm",
             new Vector3(9.1f, 4.05f, 7.3f),
             Quaternion.Euler(0f, 35f, 0f),
             true);
@@ -40,7 +40,7 @@ public static class GameP2AudioLogSetup
             "BL_LOG_03_LinhRoomRecorder",
             BL03ClipPath,
             BL03Text,
-            "[E] Nghe BL-LOG-03",
+            "[E] Hộp ghi âm",
             new Vector3(2.2f, 3.25f, -3.1f),
             Quaternion.Euler(0f, -20f, 0f),
             true);

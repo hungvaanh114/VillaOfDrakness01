@@ -438,7 +438,7 @@ public static class GameP2SceneBuilder
         cabinetContent.SetActive(false);
         var recorder02 = CreatePrimitive("BL_LOG_02_MechanicalRecorder", PrimitiveType.Cylinder, cabinetContent.transform, new Vector3(0f, 0f, 0f), new Vector3(0.35f, 0.14f, 0.35f), brassMaterial);
         recorder02.transform.position = new Vector3(9.1f, 4.05f, 7.3f);
-        AddInteractable(recorder02, P2InteractableKind.AudioLogBL02, "Nghe BL-LOG-02", true, false);
+        AddInteractable(recorder02, P2InteractableKind.AudioLogBL02, "Hộp ghi âm", true, false);
 
         var cabinet = CreateFurnitureBlock("BaLan_JewelryCabinet_LOCKED", new Vector3(9f, 3.65f, 7.3f), new Vector3(1.3f, 1.2f, 0.7f), roots.Gameplay);
         AddInteractable(cabinet, P2InteractableKind.JewelryCabinet, "Mở tủ trang sức bằng KEY_05", true, false, cabinetContent);
@@ -457,7 +457,7 @@ public static class GameP2SceneBuilder
         AddInteractable(chalk.gameObject, P2InteractableKind.ChalkNotes, "Đọc nét phấn", true, false);
 
         var recorder03 = CreatePrimitive("BL_LOG_03_WindowRecorder", PrimitiveType.Cylinder, roots.Gameplay, new Vector3(2.2f, 3.25f, -3.1f), new Vector3(0.28f, 0.12f, 0.28f), brassMaterial);
-        AddInteractable(recorder03, P2InteractableKind.AudioLogBL03, "Nghe BL-LOG-03", true, true);
+        AddInteractable(recorder03, P2InteractableKind.AudioLogBL03, "Hộp ghi âm", true, true);
 
         refs.HiddenCavity = new GameObject("HiddenWallCavity_SilverMirror");
         refs.HiddenCavity.transform.SetParent(roots.Gameplay);

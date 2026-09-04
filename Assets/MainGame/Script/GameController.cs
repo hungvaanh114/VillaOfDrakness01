@@ -140,7 +140,7 @@ public class GameController : MonoBehaviour
         if (Keyboard.current == null)
             return;
 
-        if (JournalInteractable.IsAnyPaperOpen)
+        if (JournalInteractable.IsAnyPaperOpen || MainGame.P2.P2JournalPaperInteractable.IsAnyPaperOpen)
             return;
 
         if (Keyboard.current.escapeKey.wasPressedThisFrame && !isDead && currentGameState != GameState.Ending)
