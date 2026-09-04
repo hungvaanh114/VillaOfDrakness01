@@ -124,21 +124,3 @@ public static class FirstPersonPresentationSceneUpdater
         return null;
     }
 }
-
-[InitializeOnLoad]
-public static class FirstPersonPresentationSceneUpdaterAutoRun
-{
-    static FirstPersonPresentationSceneUpdaterAutoRun()
-    {
-        EditorApplication.delayCall += ConfigureIfGameSceneIsOpen;
-    }
-
-    private static void ConfigureIfGameSceneIsOpen()
-    {
-        var scene = EditorSceneManager.GetActiveScene();
-        if (scene.path != "Assets/MainGame/Game.unity")
-            return;
-
-        FirstPersonPresentationSceneUpdater.ConfigureActiveScene();
-    }
-}

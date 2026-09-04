@@ -12,19 +12,6 @@ public static class MainGameInventoryProgressionSetup
     private const string DataFolder = "Assets/MainGame/Data/InventoryProgression";
     private const string PrefabFolder = "Assets/MainGame/Prefab";
     private const string MaterialFolder = "Assets/MainGame/Materials/InventoryProgression";
-    private const string AutoBuildSessionKey = "MainGameInventoryProgressionSetup.AutoBuildComplete";
-
-    [InitializeOnLoadMethod]
-    private static void AutoBuildOnceIfMissing()
-    {
-        if (SessionState.GetBool(AutoBuildSessionKey, false))
-            return;
-        if (AssetDatabase.LoadAssetAtPath<ItemData>($"{DataFolder}/Item_Battery.asset") != null)
-            return;
-
-        SessionState.SetBool(AutoBuildSessionKey, true);
-        EditorApplication.delayCall += Build;
-    }
 
     [MenuItem("Tools/MainGame/Build Inventory Progression System")]
     [MenuItem("Assets/MainGame/Build Inventory Progression System")]

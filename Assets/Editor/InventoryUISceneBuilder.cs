@@ -286,25 +286,3 @@ public static class InventoryUISceneBuilder
         }
     }
 }
-
-[InitializeOnLoad]
-public static class InventoryUISceneBuilderAutoRun
-{
-    static InventoryUISceneBuilderAutoRun()
-    {
-        EditorApplication.delayCall += RebuildIfGameSceneNeedsInventoryHierarchy;
-    }
-
-    private static void RebuildIfGameSceneNeedsInventoryHierarchy()
-    {
-        var scene = EditorSceneManager.GetActiveScene();
-        if (scene.path != "Assets/MainGame/Game.unity")
-            return;
-
-        var ui = Object.FindFirstObjectByType<InventoryUI>(FindObjectsInactive.Include);
-        if (ui == null || ui.transform.Find("InventoryOverlay") != null)
-            return;
-
-        InventoryUISceneBuilder.RebuildInventoryUIHierarchy();
-    }
-}
