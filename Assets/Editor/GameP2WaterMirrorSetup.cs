@@ -9,6 +9,8 @@ public static class GameP2WaterMirrorSetup
     private const string RootName = "P2_WaterMirror_Setup";
     private const string WaterName = "P2_WaterMirror_Jumpscare";
     private const string MaterialPath = "Assets/MainGame/Materials/InventoryProgression/P2_WaterMirror.mat";
+    private const string ShaderPath = "Assets/MainGame/Shaders/P2_BlackWaterMirror.shader";
+    private const string ShaderName = "MainGame/P2/Black Water Mirror";
     private const string JumpscareTexturePath = "Assets/MainGame/UI/anhHuMa.png";
 
     [MenuItem("MainGame/P2/Apply P2 Water Mirror Jumpscare")]
@@ -18,6 +20,15 @@ public static class GameP2WaterMirrorSetup
             EditorSceneManager.OpenScene(ScenePath);
 
         var material = EnsureWaterMaterial();
+        if (ApplyMaterialOnlyToExistingWater(material))
+        {
+            EditorSceneManager.MarkSceneDirty(EditorSceneManager.GetActiveScene());
+            EditorSceneManager.SaveScene(EditorSceneManager.GetActiveScene());
+            AssetDatabase.SaveAssets();
+            Debug.Log("P2 water mirror material updated only. Existing water mirror setup was kept unchanged.");
+            return;
+        }
+
         var water = EnsureWaterObject(material);
         ConfigureJumpscare(water);
 
@@ -98,20 +109,55 @@ public static class GameP2WaterMirrorSetup
     private static Material EnsureWaterMaterial()
     {
         var material = AssetDatabase.LoadAssetAtPath<Material>(MaterialPath);
+        var shader = Shader.Find(ShaderName) ?? AssetDatabase.LoadAssetAtPath<Shader>(ShaderPath);
         if (material == null)
         {
-            material = new Material(Shader.Find("Universal Render Pipeline/Lit") ?? Shader.Find("Standard"));
+            material = new Material(shader != null ? shader : Shader.Find("HDRP/Unlit") ?? Shader.Find("Standard"));
             AssetDatabase.CreateAsset(material, MaterialPath);
         }
 
-        material.color = new Color(0.025f, 0.09f, 0.12f, 0.92f);
-        material.SetColor("_BaseColor", new Color(0.025f, 0.09f, 0.12f, 0.92f));
-        material.SetFloat("_Metallic", 0.9f);
-        material.SetFloat("_Smoothness", 0.96f);
-        material.SetFloat("_Glossiness", 0.96f);
-        material.EnableKeyword("_SPECULARHIGHLIGHTS_ON");
+        if (shader != null)
+            material.shader = shader;
+
+        SetColorIfPresent(material, "_DeepColor", new Color(0.003f, 0.006f, 0.009f, 1f));
+        SetColorIfPresent(material, "_EdgeColor", new Color(0.045f, 0.105f, 0.13f, 1f));
+        SetColorIfPresent(material, "_HighlightColor", new Color(0.18f, 0.32f, 0.36f, 1f));
+        SetFloatIfPresent(material, "_Alpha", 0.96f);
+        SetFloatIfPresent(material, "_Smoothness", 0.98f);
+        SetFloatIfPresent(material, "_FresnelPower", 3.2f);
+        SetFloatIfPresent(material, "_RippleStrength", 0.008f);
+        SetFloatIfPresent(material, "_RippleScale", 4.5f);
+        SetFloatIfPresent(material, "_RippleSpeed", 0.38f);
         EditorUtility.SetDirty(material);
         return material;
+    }
+
+    private static bool ApplyMaterialOnlyToExistingWater(Material material)
+    {
+        var water = FindSceneTransform(WaterName);
+        if (water == null)
+            return false;
+
+        var renderer = water.GetComponent<Renderer>();
+        if (renderer != null && renderer.sharedMaterial != material)
+        {
+            renderer.sharedMaterial = material;
+            EditorUtility.SetDirty(renderer);
+        }
+
+        return true;
+    }
+
+    private static void SetColorIfPresent(Material material, string propertyName, Color value)
+    {
+        if (material.HasProperty(propertyName))
+            material.SetColor(propertyName, value);
+    }
+
+    private static void SetFloatIfPresent(Material material, string propertyName, float value)
+    {
+        if (material.HasProperty(propertyName))
+            material.SetFloat(propertyName, value);
     }
 
     private static Vector3 FindDefaultPosition()

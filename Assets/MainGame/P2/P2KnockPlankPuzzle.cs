@@ -68,6 +68,7 @@ namespace MainGame.P2
             nextExpectedIndex = 0;
             resolving = false;
             isActive = true;
+            KeepCursorVisible();
             SetAllPlankColliders(true);
             InteractMessageScript.Instance?.ShowMessage("Bấm lần lượt từng tấm ván.");
         }
@@ -77,6 +78,7 @@ namespace MainGame.P2
             if (!isActive || resolving)
                 return;
 
+            KeepCursorVisible();
             UpdateFocusedPlank();
 
             var mouse = Mouse.current;
@@ -211,6 +213,14 @@ namespace MainGame.P2
                 if (plank != null)
                     plank.SetColliderEnabled(enabled);
             }
+        }
+
+        private static void KeepCursorVisible()
+        {
+            if (Cursor.lockState != CursorLockMode.None)
+                Cursor.lockState = CursorLockMode.None;
+            if (!Cursor.visible)
+                Cursor.visible = true;
         }
     }
 }
