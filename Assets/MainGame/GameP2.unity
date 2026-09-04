@@ -22145,7 +22145,7 @@ Transform:
   m_GameObject: {fileID: 728792967}
   serializedVersion: 2
   m_LocalRotation: {x: -0, y: -0, z: -0, w: 1}
-  m_LocalPosition: {x: -4.73, y: 0.66, z: -35.57}
+  m_LocalPosition: {x: -4.73, y: 0.66, z: -19.05}
   m_LocalScale: {x: 1, y: 1, z: 1}
   m_ConstrainProportionsScale: 0
   m_Children: []
@@ -38924,7 +38924,7 @@ MonoBehaviour:
   currentChapterPhase: 0
   playerController: {fileID: 5007748992797593523}
   cutSceneManager: {fileID: 1449414379}
-  playIntroOnStart: 0
+  playIntroOnStart: 1
   useChapterOneCheckpoints: 0
   gameUI: {fileID: 1389903339}
   pauseUI: {fileID: 944257167}
@@ -44269,7 +44269,7 @@ Transform:
   m_GameObject: {fileID: 1477586544}
   serializedVersion: 2
   m_LocalRotation: {x: -0, y: -0, z: -0, w: 1}
-  m_LocalPosition: {x: -4.3, y: 0.8, z: -17.6}
+  m_LocalPosition: {x: -4.3, y: 0.8, z: -15.08}
   m_LocalScale: {x: 1, y: 1, z: 1}
   m_ConstrainProportionsScale: 0
   m_Children: []
@@ -46954,13 +46954,13 @@ Transform:
   m_PrefabAsset: {fileID: 0}
   m_GameObject: {fileID: 1557202578}
   serializedVersion: 2
-  m_LocalRotation: {x: 0, y: 0.7071068, z: 0, w: 0.7071068}
-  m_LocalPosition: {x: -3.5, y: 1.07, z: -22.6}
+  m_LocalRotation: {x: 0, y: 0, z: 0, w: 1}
+  m_LocalPosition: {x: -3.5, y: 1.07, z: -15.01}
   m_LocalScale: {x: 1, y: 1, z: 1}
   m_ConstrainProportionsScale: 0
   m_Children: []
   m_Father: {fileID: 517294594}
-  m_LocalEulerAnglesHint: {x: 0, y: 90, z: 0}
+  m_LocalEulerAnglesHint: {x: 0, y: 0, z: 0}
 --- !u!1 &1557556476
 GameObject:
   m_ObjectHideFlags: 0
@@ -51721,7 +51721,7 @@ Transform:
   m_GameObject: {fileID: 1797694375}
   serializedVersion: 2
   m_LocalRotation: {x: 0, y: 0, z: 0, w: 1}
-  m_LocalPosition: {x: -5.3, y: 1.07, z: -30.2}
+  m_LocalPosition: {x: -5.3, y: 1.07, z: -15.72}
   m_LocalScale: {x: 1, y: 1, z: 1}
   m_ConstrainProportionsScale: 0
   m_Children: []
@@ -51909,7 +51909,7 @@ MonoBehaviour:
   interactText: "M\u1EDF /\u0110\xF3ng C\u1EEDa [E]"
   doorLockedText: "C\u1EEDa Kho\xE1"
   useKeyText: "S\u1EED D\u1EE5ng Ch\xECa Kho\xE1"
-  isLocked: 1
+  isLocked: 0
   hasKey: 0
   requiredKeyID: 
   consumeKeyOnUse: 0
@@ -60117,8 +60117,8 @@ MonoBehaviour:
       ch\u1EADm, m\u1ED9t tay c\u1EA7m \u0111\xE8n d\u1EA7u, tay kia gi\u1EEF cu\u1ED1n
       s\u1ED5 c\u0169 c\u1EE7a b\xE0."
     overrideAudioClip: {fileID: 0}
-    overrideFallbackDuration: 7.5
-    waitAfter: 0.12
+    overrideFallbackDuration: 0.5
+    waitAfter: 0
     cameraShot: 0
     cameraPositionOverride: {fileID: 0}
     cameraLookAtOverride: {fileID: 0}
@@ -60135,28 +60135,9 @@ MonoBehaviour:
     dialogueId: p2_ngoc_01
     overrideText: "\"B\xE0 \u01A1i, con \u0111\xE3 \u0111\u1EBFn r\u1ED3i.\""
     overrideAudioClip: {fileID: 8300000, guid: c303da944d1f61f449bc1bd1cd76ddc8, type: 3}
-    overrideFallbackDuration: 3.2
-    waitAfter: 0.12
+    overrideFallbackDuration: 0.5
+    waitAfter: 0
     cameraShot: 1
-    cameraPositionOverride: {fileID: 0}
-    cameraLookAtOverride: {fileID: 0}
-    cameraLookAtPlayer: 1
-    cameraLookHeight: 1.35
-    cameraSmoothTimeOverride: -1
-    useCustomCameraOffset: 0
-    customCameraOffset: {x: 0.45, y: 2.1, z: -3.2}
-  - name: Read gate sign
-    point: {fileID: 2134968814}
-    moveToPoint: 0
-    moveSpeedOverride: -1
-    turnSpeedOverride: -1
-    dialogueId: intro_dogia_sign
-    overrideText: "T\u1EA5m b\u1EA3ng t\xEAn c\u0169 hi\u1EC7n l\xEAn d\u01B0\u1EDBi
-      \xE1nh \u0111\xE8n d\u1EA7u: \u0110\u1ED7 Gia."
-    overrideAudioClip: {fileID: 0}
-    overrideFallbackDuration: 3.2
-    waitAfter: 0.12
-    cameraShot: 2
     cameraPositionOverride: {fileID: 0}
     cameraLookAtOverride: {fileID: 0}
     cameraLookAtPlayer: 1
@@ -60174,8 +60155,8 @@ MonoBehaviour:
       th\u1EC3 c\u1EE9u h\u1ECD. Con kh\xF4ng hi\u1EC3u h\u1EBFt, nh\u01B0ng con
       tin b\xE0.\""
     overrideAudioClip: {fileID: 8300000, guid: 9933ce3575c905d40bd64188edfc18a0, type: 3}
-    overrideFallbackDuration: 6
-    waitAfter: 0.12
+    overrideFallbackDuration: 0.5
+    waitAfter: 0
     cameraShot: 2
     cameraPositionOverride: {fileID: 0}
     cameraLookAtOverride: {fileID: 0}
@@ -60184,28 +60165,9 @@ MonoBehaviour:
     cameraSmoothTimeOverride: -1
     useCustomCameraOffset: 0
     customCameraOffset: {x: 0.45, y: 2.1, z: -3.2}
-  - name: Walk to front door
-    point: {fileID: 728792968}
-    moveToPoint: 1
-    moveSpeedOverride: -1
-    turnSpeedOverride: -1
-    dialogueId: intro_walk_front_door
-    overrideText: "Ng\u1ECDc \u0111\u1EA9y c\u1ED5ng s\u1EAFt, b\u01B0\u1EDBc qua
-      s\xE2n tr\u01B0\u1EDBc v\xE0 \u0111i th\u1EB3ng v\u1EC1 ph\xEDa c\u1EEDa ch\xEDnh."
-    overrideAudioClip: {fileID: 0}
-    overrideFallbackDuration: 5.2
-    waitAfter: 0.12
-    cameraShot: 1
-    cameraPositionOverride: {fileID: 0}
-    cameraLookAtOverride: {fileID: 0}
-    cameraLookAtPlayer: 1
-    cameraLookHeight: 1.35
-    cameraSmoothTimeOverride: -1
-    useCustomCameraOffset: 0
-    customCameraOffset: {x: 0.45, y: 2.1, z: -3.2}
   - name: Open front door
-    point: {fileID: 728792968}
-    moveToPoint: 0
+    point: {fileID: 1557202579}
+    moveToPoint: 1
     moveSpeedOverride: -1
     turnSpeedOverride: -1
     dialogueId: p2_ngoc_03
@@ -60213,8 +60175,8 @@ MonoBehaviour:
       th\xEC \u0111em v\u1EC1. B\xE0 d\u1EB7n... \u0111\u1EEBng nh\xECn v\xE0o m\u1EB7t
       n\u01B0\u1EDBc trong nh\xE0. Tuy\u1EC7t \u0111\u1ED1i kh\xF4ng.\""
     overrideAudioClip: {fileID: 8300000, guid: aabf08c587797194db179da6163e814b, type: 3}
-    overrideFallbackDuration: 6.2
-    waitAfter: 0.12
+    overrideFallbackDuration: 0.5
+    waitAfter: 0
     cameraShot: 3
     cameraPositionOverride: {fileID: 0}
     cameraLookAtOverride: {fileID: 0}
@@ -60231,8 +60193,8 @@ MonoBehaviour:
     dialogueId: intro_enter_front_door
     overrideText: 
     overrideAudioClip: {fileID: 0}
-    overrideFallbackDuration: 1.2
-    waitAfter: 0.12
+    overrideFallbackDuration: 0.5
+    waitAfter: 0
     cameraShot: 5
     cameraPositionOverride: {fileID: 0}
     cameraLookAtOverride: {fileID: 0}
@@ -101530,7 +101492,7 @@ Transform:
   m_PrefabAsset: {fileID: 0}
   m_GameObject: {fileID: 2757047177667886844}
   serializedVersion: 2
-  m_LocalRotation: {x: 0.000000021845338, y: 0.030787993, z: -6.7289313e-10, w: 0.99952596}
+  m_LocalRotation: {x: 0, y: 0, z: 0, w: 1}
   m_LocalPosition: {x: -41.929, y: -11.99, z: -11.997}
   m_LocalScale: {x: -2.1, y: 1, z: 1}
   m_ConstrainProportionsScale: 0
@@ -101552,7 +101514,7 @@ MonoBehaviour:
   interactText: "M\u1EDF /\u0110\xF3ng C\u1EEDa [E]"
   doorLockedText: "C\u1EEDa Kho\xE1"
   useKeyText: "S\u1EED D\u1EE5ng Ch\xECa Kho\xE1"
-  isLocked: 1
+  isLocked: 0
   hasKey: 0
   requiredKeyID: 
   consumeKeyOnUse: 0
@@ -101562,7 +101524,7 @@ MonoBehaviour:
   pianoLookAtDoorTime: 1.2
   pianoThoughtTextTime: 4
   rotationSpeed: 100
-  endRotation: 0
+  endRotation: -90
   doorAudioSource: {fileID: 0}
 --- !u!222 &2768150368490891847
 CanvasRenderer:
@@ -176928,7 +176890,7 @@ Transform:
   m_PrefabAsset: {fileID: 0}
   m_GameObject: {fileID: 7917018672783029696}
   serializedVersion: 2
-  m_LocalRotation: {x: -0, y: -0, z: -0, w: 1}
+  m_LocalRotation: {x: 0, y: 0, z: 0, w: 1}
   m_LocalPosition: {x: -38.071, y: -11.99, z: -11.998535}
   m_LocalScale: {x: 2.1, y: 1, z: 1}
   m_ConstrainProportionsScale: 0
@@ -177027,7 +176989,7 @@ MonoBehaviour:
   interactText: "M\u1EDF /\u0110\xF3ng C\u1EEDa [E]"
   doorLockedText: "C\u1EEDa Kho\xE1"
   useKeyText: "S\u1EED D\u1EE5ng Ch\xECa Kho\xE1"
-  isLocked: 1
+  isLocked: 0
   hasKey: 0
   requiredKeyID: 
   consumeKeyOnUse: 0
@@ -177037,7 +176999,7 @@ MonoBehaviour:
   pianoLookAtDoorTime: 1.2
   pianoThoughtTextTime: 4
   rotationSpeed: 100
-  endRotation: 0
+  endRotation: 90
   doorAudioSource: {fileID: 0}
 --- !u!4 &7932780361135240082
 Transform:
