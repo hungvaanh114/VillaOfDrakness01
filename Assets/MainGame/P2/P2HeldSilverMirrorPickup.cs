@@ -25,12 +25,15 @@ namespace MainGame.P2
         [SerializeField] private bool allowPutDown;
         [SerializeField] private bool allowMouseRotation;
         [SerializeField] private bool matchHandLayerWhileHeld = true;
+        [SerializeField] private bool showHeldMirrorOnlyInCutscene = true;
 
         private Transform originalParent;
         private Vector3 originalLocalPosition;
         private Quaternion originalLocalRotation;
         private Vector3 originalLocalScale;
         private Collider[] colliders;
+        private Renderer[] heldRenderers;
+        private bool[] originalRendererStates;
         private Transform[] layerTargets;
         private int[] originalLayers;
         private FpsController fpsController;
@@ -41,7 +44,14 @@ namespace MainGame.P2
         private bool hasTriggeredGlassBreak;
         private int pickedFrame;
 
+        public static bool HasAnySilverMirrorBeenHeld { get; private set; }
         public bool IsHeld => isHeld;
+
+        [RuntimeInitializeOnLoadMethod(RuntimeInitializeLoadType.AfterSceneLoad)]
+        private static void ResetHeldMirrorState()
+        {
+            HasAnySilverMirrorBeenHeld = false;
+        }
 
         private void Awake()
         {
@@ -61,7 +71,12 @@ namespace MainGame.P2
 
         private void Update()
         {
-            if (!isHeld || isMoving)
+            if (!isHeld)
+                return;
+
+            UpdateHeldVisibility();
+
+            if (isMoving)
                 return;
 
             if (allowMouseRotation)
@@ -112,6 +127,7 @@ namespace MainGame.P2
 
             isHeld = true;
             isMoving = true;
+            HasAnySilverMirrorBeenHeld = true;
             pickedFrame = Time.frameCount;
 
             StoreOriginalPose();
@@ -121,6 +137,7 @@ namespace MainGame.P2
 
             heldRoot.SetParent(holdParent, true);
             ApplyHeldLayer(holdParent.gameObject.layer);
+            UpdateHeldVisibility();
             yield return MoveLocal(
                 heldRoot.localPosition,
                 heldRoot.localRotation,
@@ -161,6 +178,7 @@ namespace MainGame.P2
             isHeld = false;
             isMoving = false;
             RestoreLayers();
+            RestoreRendererStates();
             SetCollidersEnabled(true);
             SetPlayerInspectLock(false);
         }
@@ -188,6 +206,10 @@ namespace MainGame.P2
                 targetCamera = Camera.main;
             if (colliders == null || colliders.Length == 0)
                 colliders = GetComponentsInChildren<Collider>(true);
+            if (heldRenderers == null || heldRenderers.Length == 0)
+                heldRenderers = heldRoot != null
+                    ? heldRoot.GetComponentsInChildren<Renderer>(true)
+                    : GetComponentsInChildren<Renderer>(true);
             if (fpsController == null)
                 fpsController = FindFirstObjectByType<FpsController>();
         }
@@ -219,6 +241,7 @@ namespace MainGame.P2
             originalLocalRotation = heldRoot.localRotation;
             originalLocalScale = heldRoot.localScale;
             CaptureOriginalLayers();
+            CaptureOriginalRendererStates();
         }
 
         private void CaptureOriginalLayers()
@@ -268,8 +291,47 @@ namespace MainGame.P2
             isHeld = false;
             isMoving = false;
             RestoreLayers();
+            RestoreRendererStates();
             SetCollidersEnabled(true);
             SetPlayerInspectLock(false);
+        }
+
+        private void CaptureOriginalRendererStates()
+        {
+            heldRenderers = heldRoot != null
+                ? heldRoot.GetComponentsInChildren<Renderer>(true)
+                : System.Array.Empty<Renderer>();
+            originalRendererStates = new bool[heldRenderers.Length];
+            for (int i = 0; i < heldRenderers.Length; i++)
+                originalRendererStates[i] = heldRenderers[i] != null && heldRenderers[i].enabled;
+        }
+
+        private void UpdateHeldVisibility()
+        {
+            if (!showHeldMirrorOnlyInCutscene || heldRenderers == null)
+                return;
+
+            bool visible = GameController.Instance != null
+                && GameController.Instance.currentGameState == GameController.GameState.Cutscene;
+
+            for (int i = 0; i < heldRenderers.Length; i++)
+            {
+                if (heldRenderers[i] != null)
+                    heldRenderers[i].enabled = visible;
+            }
+        }
+
+        private void RestoreRendererStates()
+        {
+            if (heldRenderers == null || originalRendererStates == null)
+                return;
+
+            int count = Mathf.Min(heldRenderers.Length, originalRendererStates.Length);
+            for (int i = 0; i < count; i++)
+            {
+                if (heldRenderers[i] != null)
+                    heldRenderers[i].enabled = originalRendererStates[i];
+            }
         }
 
         private void SetCollidersEnabled(bool enabled)

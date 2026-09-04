@@ -85,12 +85,12 @@ public static class GameP2WaterMirrorSetup
         Set(serialized, "waterSurface", water);
         Set(serialized, "triggerOnlyOnce", true);
         Set(serialized, "requiredLookSeconds", 3f);
-        Set(serialized, "requiredPlayerDistance", 4.5f);
-        Set(serialized, "requirePlayerInFront", true);
+        Set(serialized, "requiredPlayerDistance", 7f);
+        Set(serialized, "requirePlayerInFront", false);
+        Set(serialized, "acceptEitherWaterSide", true);
         Set(serialized, "requireRaycastHit", true);
         Set(serialized, "lookRaycastDistance", 7f);
         Set(serialized, "lookRaycastRadius", 0.08f);
-        Set(serialized, "aimFallbackDot", 0.965f);
         Set(serialized, "screenJumpscareTexture", AssetDatabase.LoadAssetAtPath<Texture2D>(JumpscareTexturePath));
         Set(serialized, "popDuration", 0.2f);
         Set(serialized, "holdDuration", 2.35f);

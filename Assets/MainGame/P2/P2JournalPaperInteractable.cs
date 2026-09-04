@@ -1,6 +1,7 @@
 using System.Collections;
 using FpsHorrorKit;
 using TMPro;
+using Unity.Cinemachine;
 using UnityEngine;
 using UnityEngine.InputSystem;
 
@@ -11,27 +12,24 @@ namespace MainGame.P2
         [Header("Paper View")]
         [SerializeField] private Transform paperRoot;
         [SerializeField] private TextMeshProUGUI paperText;
-        [SerializeField] private Camera targetCamera;
-        [SerializeField] private string interactText = "[E] Đọc nhật ký";
-        [SerializeField] private Vector3 heldLocalPosition = new(0f, -0.16f, 0.58f);
-        [SerializeField] private Vector3 heldLocalEulerAngles = new(68f, 0f, 0f);
-        [SerializeField] private bool overrideHeldScale;
-        [SerializeField] private Vector3 heldLocalScale = new(0.55f, 0.002f, 0.75f);
-        [SerializeField, Min(0.01f)] private float moveSeconds = 0.22f;
+        [SerializeField] private CinemachineCamera journalCamera;
+        [SerializeField] private string interactText = "[E] \u0110\u1ecdc nh\u1eadt k\u00fd";
+        [SerializeField] private int readingCameraPriority = 100;
+        [SerializeField, Min(0f)] private float cameraBlendSeconds = 0.25f;
 
         [Header("Reaction")]
         [SerializeField] private AudioClip ngocReturnVoiceClip;
-        [SerializeField, TextArea(1, 3)] private string ngocReturnSubtitle = "Gió không đổi hướng. Phòng bé Linh. Tường phía tây.";
+        [SerializeField, TextArea(1, 3)] private string ngocReturnSubtitle = "Gi\u00f3 kh\u00f4ng \u0111\u1ed5i h\u01b0\u1edbng. Ph\u00f2ng b\u00e9 Linh. T\u01b0\u1eddng ph\u00eda t\u00e2y.";
         [SerializeField, Min(0.1f)] private float fallbackSubtitleSeconds = 4f;
         [SerializeField] private bool playReactionOnce = true;
 
-        private Transform originalParent;
-        private Vector3 originalLocalPosition;
-        private Quaternion originalLocalRotation;
-        private Vector3 originalLocalScale;
         private Collider[] colliders;
         private GameController.GameState previousGameState;
         private bool previousRaycastState = true;
+        private PrioritySettings previousJournalPriority;
+        private bool previousJournalCameraEnabled;
+        private bool previousJournalCameraActive;
+        private bool previousPaperTextActive;
         private bool isReading;
         private bool isMoving;
         private bool reactionPlayed;
@@ -87,13 +85,9 @@ namespace MainGame.P2
         private IEnumerator OpenPaperRoutine()
         {
             ResolveReferences();
-            if (paperRoot == null)
-                yield break;
-
-            var cameraTransform = ResolveCameraTransform();
-            if (cameraTransform == null)
+            if (journalCamera == null)
             {
-                InteractMessageScript.Instance?.ShowMessage("Chưa tìm thấy camera để xem nhật ký.");
+                InteractMessageScript.Instance?.ShowMessage("Ch\u01b0a g\u00e1n camera \u0111\u1ec3 xem nh\u1eadt k\u00fd.");
                 yield break;
             }
 
@@ -101,73 +95,48 @@ namespace MainGame.P2
             IsAnyPaperOpen = true;
             isMoving = true;
             openedFrame = Time.frameCount;
-            StoreOriginalPose();
+            StoreCameraState();
             SetCollidersEnabled(false);
-
-            if (paperText != null)
-                paperText.gameObject.SetActive(true);
+            SetPaperTextReading(true);
 
             AudioManager.Instance?.PlayPaperPickup();
             LockPlayer(true);
+            SwitchJournalCamera(true);
 
-            paperRoot.SetParent(cameraTransform, true);
-            yield return MoveLocal(
-                paperRoot.localPosition,
-                Quaternion.Euler(paperRoot.localEulerAngles),
-                paperRoot.localScale,
-                heldLocalPosition,
-                Quaternion.Euler(heldLocalEulerAngles),
-                overrideHeldScale ? heldLocalScale : paperRoot.localScale);
-
+            yield return WaitRealtime(cameraBlendSeconds);
             isMoving = false;
         }
 
         private IEnumerator ClosePaperRoutine()
         {
-            if (!isReading || paperRoot == null)
+            if (!isReading)
                 yield break;
 
             isMoving = true;
             AudioManager.Instance?.PlayGenericInteract();
-            paperRoot.SetParent(originalParent, true);
-            yield return MoveLocal(
-                paperRoot.localPosition,
-                paperRoot.localRotation,
-                paperRoot.localScale,
-                originalLocalPosition,
-                originalLocalRotation,
-                originalLocalScale);
+            SwitchJournalCamera(false);
 
+            yield return WaitRealtime(cameraBlendSeconds);
+
+            RestoreJournalCameraState();
             isReading = false;
             IsAnyPaperOpen = false;
             isMoving = false;
             SetCollidersEnabled(true);
+            SetPaperTextReading(false);
             LockPlayer(false);
             PlayReturnReaction();
         }
 
-        private IEnumerator MoveLocal(
-            Vector3 startPosition,
-            Quaternion startRotation,
-            Vector3 startScale,
-            Vector3 targetPosition,
-            Quaternion targetRotation,
-            Vector3 targetScale)
+        private static IEnumerator WaitRealtime(float seconds)
         {
             float timer = 0f;
-            while (timer < moveSeconds)
+            seconds = Mathf.Max(0f, seconds);
+            while (timer < seconds)
             {
                 timer += Time.unscaledDeltaTime;
-                float t = Mathf.SmoothStep(0f, 1f, Mathf.Clamp01(timer / moveSeconds));
-                paperRoot.localPosition = Vector3.Lerp(startPosition, targetPosition, t);
-                paperRoot.localRotation = Quaternion.Slerp(startRotation, targetRotation, t);
-                paperRoot.localScale = Vector3.Lerp(startScale, targetScale, t);
                 yield return null;
             }
-
-            paperRoot.localPosition = targetPosition;
-            paperRoot.localRotation = targetRotation;
-            paperRoot.localScale = targetScale;
         }
 
         private void PlayReturnReaction()
@@ -188,28 +157,15 @@ namespace MainGame.P2
                 InteractMessageScript.Instance?.ShowMessage($"\"{ngocReturnSubtitle}\"", duration > 0f ? duration : fallbackSubtitleSeconds);
         }
 
-        private void StoreOriginalPose()
-        {
-            originalParent = paperRoot.parent;
-            originalLocalPosition = paperRoot.localPosition;
-            originalLocalRotation = paperRoot.localRotation;
-            originalLocalScale = paperRoot.localScale;
-        }
-
         private void RestoreImmediately()
         {
-            if (paperRoot != null)
-            {
-                paperRoot.SetParent(originalParent, false);
-                paperRoot.localPosition = originalLocalPosition;
-                paperRoot.localRotation = originalLocalRotation;
-                paperRoot.localScale = originalLocalScale;
-            }
-
+            SwitchJournalCamera(false);
+            RestoreJournalCameraState();
             isReading = false;
             IsAnyPaperOpen = false;
             isMoving = false;
             SetCollidersEnabled(true);
+            SetPaperTextReading(false);
             LockPlayer(false);
         }
 
@@ -230,6 +186,7 @@ namespace MainGame.P2
                 }
 
                 P2GameController.Instance?.LockInput(true);
+                FpsAssetsInputs.Instance?.ClearGameplayInput();
                 return;
             }
 
@@ -240,6 +197,56 @@ namespace MainGame.P2
                 PlayerInteract.Instance.sendRaycast = previousRaycastState;
 
             P2GameController.Instance?.LockInput(false);
+            FpsAssetsInputs.Instance?.ClearGameplayInput();
+        }
+
+        private void StoreCameraState()
+        {
+            if (journalCamera == null)
+                return;
+
+            previousJournalPriority = journalCamera.Priority;
+            previousJournalCameraEnabled = journalCamera.enabled;
+            previousJournalCameraActive = journalCamera.gameObject.activeSelf;
+        }
+
+        private void SwitchJournalCamera(bool reading)
+        {
+            if (journalCamera == null)
+                return;
+
+            if (reading)
+            {
+                if (!journalCamera.gameObject.activeSelf)
+                    journalCamera.gameObject.SetActive(true);
+
+                journalCamera.enabled = true;
+                journalCamera.Priority = readingCameraPriority;
+                return;
+            }
+
+            journalCamera.Priority = previousJournalPriority;
+        }
+
+        private void RestoreJournalCameraState()
+        {
+            if (journalCamera == null)
+                return;
+
+            journalCamera.enabled = previousJournalCameraEnabled;
+            if (journalCamera.gameObject.activeSelf != previousJournalCameraActive)
+                journalCamera.gameObject.SetActive(previousJournalCameraActive);
+        }
+
+        private void SetPaperTextReading(bool reading)
+        {
+            if (paperText == null)
+                return;
+
+            if (reading)
+                previousPaperTextActive = paperText.gameObject.activeSelf;
+
+            paperText.gameObject.SetActive(reading || previousPaperTextActive);
         }
 
         private void SetCollidersEnabled(bool enabled)
@@ -254,21 +261,14 @@ namespace MainGame.P2
             }
         }
 
-        private Transform ResolveCameraTransform()
-        {
-            if (targetCamera == null)
-                targetCamera = Camera.main;
-            if (targetCamera == null)
-                targetCamera = FindFirstObjectByType<Camera>();
-            return targetCamera != null ? targetCamera.transform : null;
-        }
-
         private void ResolveReferences()
         {
             if (paperRoot == null)
                 paperRoot = transform;
             if (paperText == null)
                 paperText = GetComponentInChildren<TextMeshProUGUI>(true);
+            if (journalCamera == null)
+                journalCamera = GetComponentInChildren<CinemachineCamera>(true);
         }
     }
 }

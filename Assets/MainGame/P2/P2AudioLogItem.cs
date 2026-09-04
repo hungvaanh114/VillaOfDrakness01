@@ -15,15 +15,28 @@ namespace MainGame.P2
         [SerializeField] private Key skipKey = Key.Space;
         [SerializeField, Min(0.1f)] private float messageRefreshSeconds = 1.1f;
         [SerializeField] private bool canReplay = true;
+        [SerializeField] private bool lockPlayerDuringPlayback = true;
+        [SerializeField] private bool hideGhostDuringPlayback = true;
         [SerializeField] private AudioSource fallbackSource;
 
         private bool hasPlayed;
         private bool isPlaying;
+        private bool lockApplied;
+        private bool changedGameState;
+        private GameController.GameState previousGameState;
+        private bool previousRaycastState = true;
+        private bool changedRaycastState;
+        private bool previousCutSceneState;
+        private bool previousInteractingState;
+        private FpsController lockedPlayerController;
+        private P2GhostDoorApparitionDirector ghostDirector;
         private Coroutine playbackCompletedRoutine;
         private Coroutine messageRoutine;
+        private static int activePlaybackLocks;
         private static bool blockSpaceJumpUntilRelease;
 
         public static bool IsSpaceSkipActive { get; private set; }
+        public static bool IsAnyPlaybackLocked => activePlaybackLocks > 0;
         public static bool ShouldBlockSpaceJump
         {
             get
@@ -47,11 +60,16 @@ namespace MainGame.P2
 
         private void Update()
         {
-            if (!isPlaying || skipKey == Key.None)
+            if (!isPlaying)
                 return;
 
-            if (FpsAssetsInputs.Instance != null)
-                FpsAssetsInputs.Instance.jump = false;
+            FpsAssetsInputs.Instance?.ClearGameplayInput();
+            if (lockedPlayerController != null)
+                lockedPlayerController.StopCutSceneMovement();
+
+            if (skipKey == Key.None)
+                return;
+
             var keyboard = Keyboard.current;
             if (keyboard != null && keyboard[skipKey].wasPressedThisFrame)
                 CompletePlayback(true);
@@ -60,6 +78,7 @@ namespace MainGame.P2
         private void OnDisable()
         {
             StopMessageRoutine();
+            EndPlaybackLock();
             if (IsSpaceSkipActive)
                 IsSpaceSkipActive = false;
             blockSpaceJumpUntilRelease = false;
@@ -83,6 +102,7 @@ namespace MainGame.P2
             isPlaying = duration > 0f;
             IsSpaceSkipActive = isPlaying && skipKey == Key.Space;
             StartMessageRoutine();
+            BeginPlaybackLock();
 
             PlaybackStarted?.Invoke(this, duration);
             if (playbackCompletedRoutine != null)
@@ -145,6 +165,7 @@ namespace MainGame.P2
             }
 
             StopMessageRoutine();
+            EndPlaybackLock();
             if (skipped)
             {
                 if (skipKey == Key.Space)
@@ -159,6 +180,109 @@ namespace MainGame.P2
 
             if (wasPlaying)
                 PlaybackCompleted?.Invoke(this);
+        }
+
+        private void BeginPlaybackLock()
+        {
+            if (lockApplied)
+                return;
+
+            lockApplied = true;
+            activePlaybackLocks++;
+            lockedPlayerController = ResolvePlayerController();
+
+            if (lockPlayerDuringPlayback && lockedPlayerController != null)
+            {
+                previousCutSceneState = lockedPlayerController.isCutScene;
+                previousInteractingState = lockedPlayerController.isInteracting;
+            }
+
+            var gameController = GameController.Instance;
+            if (lockPlayerDuringPlayback && gameController != null)
+            {
+                previousGameState = gameController.currentGameState;
+                changedGameState = true;
+                if (previousGameState != GameController.GameState.Dead
+                    && previousGameState != GameController.GameState.Ending)
+                {
+                    gameController.SetGameState(GameController.GameState.Dialogue);
+                }
+            }
+
+            if (lockPlayerDuringPlayback && lockedPlayerController != null)
+            {
+                lockedPlayerController.isCutScene = true;
+                lockedPlayerController.isInteracting = true;
+                lockedPlayerController.StopCutSceneMovement();
+            }
+
+            if (PlayerInteract.Instance != null)
+            {
+                previousRaycastState = PlayerInteract.Instance.sendRaycast;
+                PlayerInteract.Instance.sendRaycast = false;
+                changedRaycastState = true;
+            }
+
+            if (lockPlayerDuringPlayback)
+                P2GameController.Instance?.LockInput(true);
+
+            if (hideGhostDuringPlayback)
+                ResolveGhostDirector()?.SetAudioLogSuspended(true);
+
+            FpsAssetsInputs.Instance?.ClearGameplayInput();
+        }
+
+        private void EndPlaybackLock()
+        {
+            if (!lockApplied)
+                return;
+
+            if (hideGhostDuringPlayback)
+                ResolveGhostDirector()?.SetAudioLogSuspended(false);
+
+            if (changedRaycastState && PlayerInteract.Instance != null)
+                PlayerInteract.Instance.sendRaycast = previousRaycastState;
+
+            if (lockPlayerDuringPlayback)
+                P2GameController.Instance?.LockInput(false);
+
+            var gameController = GameController.Instance;
+            if (changedGameState
+                && gameController != null
+                && gameController.currentGameState == GameController.GameState.Dialogue)
+            {
+                gameController.SetGameState(previousGameState);
+            }
+
+            if (lockPlayerDuringPlayback && lockedPlayerController != null)
+            {
+                lockedPlayerController.isCutScene = previousCutSceneState;
+                lockedPlayerController.isInteracting = previousInteractingState;
+                lockedPlayerController.StopCutSceneMovement();
+            }
+
+            FpsAssetsInputs.Instance?.ClearGameplayInput();
+            changedRaycastState = false;
+            changedGameState = false;
+            lockedPlayerController = null;
+            lockApplied = false;
+            activePlaybackLocks = Mathf.Max(0, activePlaybackLocks - 1);
+        }
+
+        private FpsController ResolvePlayerController()
+        {
+            if (GameController.Instance != null && GameController.Instance.playerController != null)
+                return GameController.Instance.playerController;
+
+            return FindFirstObjectByType<FpsController>(FindObjectsInactive.Include);
+        }
+
+        private P2GhostDoorApparitionDirector ResolveGhostDirector()
+        {
+            if (ghostDirector == null)
+                ghostDirector = FindFirstObjectByType<P2GhostDoorApparitionDirector>(FindObjectsInactive.Include);
+
+            return ghostDirector;
         }
 
         private void StartMessageRoutine()

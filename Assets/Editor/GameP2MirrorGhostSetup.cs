@@ -55,20 +55,15 @@ public static class GameP2MirrorGhostSetup
         var upstairsPatrolRoot = EnsureRoot("P2_GhostPatrol_Upstairs");
         SeedPatrolPointsIfEmpty(downstairsPatrolRoot, upstairsPatrolRoot, patrolRoot);
 
-        var apparitionRoot = EnsureRoot("P2_GhostDoorApparitionPoints");
-        var downstairsApparitionRoot = EnsureRoot("P2_GhostDoorApparition_Downstairs");
-        var upstairsApparitionRoot = EnsureRoot("P2_GhostDoorApparition_Upstairs");
-        SeedDoorApparitionPointsIfEmpty(downstairsApparitionRoot, upstairsApparitionRoot);
-
         var serialized = new SerializedObject(director);
         Set(serialized, "player", FindPlayer());
         Set(serialized, "visualRoot", FindChildRecursive(ghostRoot, "mada2") ?? ghostRoot);
         Set(serialized, "patrolRoot", patrolRoot);
-        Set(serialized, "doorApparitionRoot", apparitionRoot);
+        Set(serialized, "doorApparitionRoot", (Object)null);
         Set(serialized, "downstairsPatrolRoot", downstairsPatrolRoot);
         Set(serialized, "upstairsPatrolRoot", upstairsPatrolRoot);
-        Set(serialized, "downstairsDoorApparitionRoot", downstairsApparitionRoot);
-        Set(serialized, "upstairsDoorApparitionRoot", upstairsApparitionRoot);
+        Set(serialized, "downstairsDoorApparitionRoot", (Object)null);
+        Set(serialized, "upstairsDoorApparitionRoot", (Object)null);
         Set(serialized, "agent", agent);
         Set(serialized, "autoCollectPointsFromChildren", true);
         Set(serialized, "pingPongPatrol", true);
@@ -76,7 +71,11 @@ public static class GameP2MirrorGhostSetup
         Set(serialized, "lockUpperFloorUntilAwakened", true);
         Set(serialized, "showUpperFloorAfterAwakened", true);
         Set(serialized, "enableDoorApparitions", true);
-        Set(serialized, "useDoorApparitionPoints", true);
+        Set(serialized, "useDoorApparitionPoints", false);
+        Set(serialized, "useSceneDoorsForApparitions", true);
+        Set(serialized, "useDoorApparitionPointsForWalkAway", false);
+        Set(serialized, "avoidPlayerAfterTeleportSeconds", 3f);
+        Set(serialized, "lampOffDirectApproachSeconds", 10f);
         Set(serialized, "hideVisualBetweenApparitions", false);
         Set(serialized, "disableOtherGhostAiOnStart", true);
         serialized.ApplyModifiedPropertiesWithoutUndo();
@@ -128,9 +127,15 @@ public static class GameP2MirrorGhostSetup
         Set(serialized, "reflection", reflection);
         Set(serialized, "mirrorRaycastTarget", mirrorSurface ?? mirror);
         Set(serialized, "clothCover", clothCover);
-        Set(serialized, "requiredMirrorLookSeconds", 1f);
+        Set(serialized, "requiredMirrorLookSeconds", 0f);
+        Set(serialized, "requiredPlayerDistance", 8f);
+        Set(serialized, "requirePlayerInsideTrigger", true);
+        Set(serialized, "requirePlayerInFront", false);
+        Set(serialized, "requireMirrorRaycast", false);
         Set(serialized, "invertMirrorFrontDirection", true);
+        Set(serialized, "acceptEitherMirrorSide", true);
         Set(serialized, "startCovered", true);
+        Set(serialized, "triggerImmediatelyAfterClothRemoved", true);
         Set(serialized, "coveredInteractText", "[E] Kéo tấm vải");
         Set(serialized, "uncoveredInteractText", "Nhìn vào gương");
         Set(serialized, "clothPullSeconds", 0.8f);

@@ -1,6 +1,7 @@
 using System;
 using System.Collections;
 using System.Collections.Generic;
+using FpsHorrorKit;
 using TMPro;
 using UnityEngine;
 using UnityEngine.AI;
@@ -382,8 +383,7 @@ namespace MainGame.P2
                 return;
 
             MirrorEventTriggered = true;
-            PlaySfx(glassBreakClip);
-            P2BreakableWindowGlass.BreakAllHouseGlass(false);
+            P2BreakableWindowGlass.BreakAllHouseGlass(true);
             P2MirrorBreakable.BreakAll();
             ghost?.Awaken();
             FindFirstObjectByType<P2GhostDoorApparitionDirector>(FindObjectsInactive.Include)?.Awaken();
@@ -1479,6 +1479,579 @@ namespace MainGame.P2
             if (hiddenCavity != null)
                 hiddenCavity.SetActive(true);
             P2GameController.Instance?.RegisterWallOpened(hiddenCavity);
+        }
+    }
+
+    public enum P2StorySequenceTriggerKind
+    {
+        StairAfterGlass,
+        Endgame
+    }
+
+    public sealed class P2StorySequenceController : MonoBehaviour
+    {
+        private const string StairTriggerName = "P2_StairAfterGlassTrigger";
+        private const string EndgameTriggerName = "TriggerEnding";
+        private const string RuntimeControllerName = "P2_StorySequenceController";
+
+        private static P2StorySequenceController instance;
+        private static bool wallMirrorRevealed;
+        private static bool houseGlassBroken;
+        private static bool stairAfterGlassTriggered;
+        private static bool endgameTriggered;
+
+        private AudioSource monsterVoiceSource;
+        private Transform lastEndgameTrigger;
+        private Coroutine houseGlassLineRoutine;
+        private Coroutine stairGhostLineRoutine;
+        private Coroutine endgameRoutine;
+
+        public static bool HasHouseGlassBroken => houseGlassBroken;
+
+        [RuntimeInitializeOnLoadMethod(RuntimeInitializeLoadType.AfterSceneLoad)]
+        private static void ResetSceneState()
+        {
+            instance = null;
+            wallMirrorRevealed = false;
+            houseGlassBroken = false;
+            stairAfterGlassTriggered = false;
+            endgameTriggered = false;
+        }
+
+        public static void NotifyWallMirrorRevealed()
+        {
+            EnsureInstance().HandleWallMirrorRevealed();
+        }
+
+        public static void NotifyHouseGlassBroken()
+        {
+            EnsureInstance().HandleHouseGlassBroken();
+        }
+
+        public static void NotifyTriggerEntered(
+            P2StorySequenceTriggerKind triggerKind,
+            bool debugAllowBeforeGlassBroken = false,
+            Transform triggerTransform = null)
+        {
+            EnsureInstance().HandleTriggerEntered(triggerKind, debugAllowBeforeGlassBroken, triggerTransform);
+        }
+
+        private static P2StorySequenceController EnsureInstance()
+        {
+            if (instance != null)
+                return instance;
+
+            instance = FindFirstObjectByType<P2StorySequenceController>(FindObjectsInactive.Include);
+            if (instance != null)
+                return instance;
+
+            var obj = new GameObject(RuntimeControllerName);
+            instance = obj.AddComponent<P2StorySequenceController>();
+            return instance;
+        }
+
+        private void Awake()
+        {
+            if (instance != null && instance != this)
+            {
+                Destroy(gameObject);
+                return;
+            }
+
+            instance = this;
+        }
+
+        private void HandleWallMirrorRevealed()
+        {
+            if (wallMirrorRevealed)
+                return;
+
+            wallMirrorRevealed = true;
+            PlayPlayerLine("p2_ngoc_06", "Đây rồi... tấm gương bạc bà dặn.", 3f);
+        }
+
+        private void HandleHouseGlassBroken()
+        {
+            if (houseGlassBroken)
+                return;
+
+            houseGlassBroken = true;
+            if (houseGlassLineRoutine != null)
+                StopCoroutine(houseGlassLineRoutine);
+            houseGlassLineRoutine = StartCoroutine(PlayHouseGlassLinesRoutine());
+            EnablePostGlassTriggers();
+        }
+
+        private void HandleTriggerEntered(
+            P2StorySequenceTriggerKind triggerKind,
+            bool debugAllowBeforeGlassBroken,
+            Transform triggerTransform)
+        {
+            if (!houseGlassBroken && !debugAllowBeforeGlassBroken)
+                return;
+
+            switch (triggerKind)
+            {
+                case P2StorySequenceTriggerKind.StairAfterGlass:
+                    HandleStairAfterGlass();
+                    break;
+                case P2StorySequenceTriggerKind.Endgame:
+                    if (triggerTransform != null)
+                        lastEndgameTrigger = triggerTransform;
+                    StartEndgameCutscene();
+                    break;
+            }
+        }
+
+        private void HandleStairAfterGlass()
+        {
+            if (stairAfterGlassTriggered)
+                return;
+
+            stairAfterGlassTriggered = true;
+
+            var ghost = FindFirstObjectByType<P2GhostDoorApparitionDirector>(FindObjectsInactive.Include);
+            if (ghost != null)
+            {
+                ghost.Awaken();
+                ghost.ForceChaseFromNearestDoor(true);
+            }
+
+            if (stairGhostLineRoutine != null)
+                StopCoroutine(stairGhostLineRoutine);
+            stairGhostLineRoutine = StartCoroutine(PlayStairGhostLinesRoutine(ghost));
+        }
+
+        private IEnumerator PlayHouseGlassLinesRoutine()
+        {
+            yield return PlayPlayerLineAndWait("p2_ngoc_07", "...Cái gì vậy?!", 2.5f);
+            yield return PlayPlayerLineAndWait("p2_ngoc_08", "...Con phải đi thôi.", 3f);
+            houseGlassLineRoutine = null;
+        }
+
+        private void StartEndgameCutscene()
+        {
+            if (endgameTriggered)
+                return;
+
+            endgameTriggered = true;
+            if (endgameRoutine != null)
+                StopCoroutine(endgameRoutine);
+            endgameRoutine = StartCoroutine(EndgameCutsceneRoutine());
+        }
+
+        private void EnablePostGlassTriggers()
+        {
+            var stairAnchor = FindSceneTransform(StairTriggerName) ?? FindSceneTransform("Villa2_IntStairs_A") ?? FindSceneTransform("Villa2_Base_Stairs_A");
+            EnsureTrigger(
+                StairTriggerName,
+                P2StorySequenceTriggerKind.StairAfterGlass,
+                stairAnchor,
+                new Vector3(0f, 1.2f, 0f),
+                new Vector3(4.5f, 2.8f, 4.5f));
+
+            var endgameAnchor = FindSceneTransform(EndgameTriggerName);
+            EnsureTrigger(
+                EndgameTriggerName,
+                P2StorySequenceTriggerKind.Endgame,
+                endgameAnchor,
+                new Vector3(0f, 0.8f, 13f),
+                new Vector3(9f, 2f, 5f));
+        }
+
+        private static void EnsureTrigger(
+            string objectName,
+            P2StorySequenceTriggerKind triggerKind,
+            Transform anchor,
+            Vector3 fallbackPosition,
+            Vector3 defaultSize)
+        {
+            GameObject target;
+            if (anchor != null && anchor.name == objectName)
+            {
+                target = anchor.gameObject;
+            }
+            else
+            {
+                var existing = FindSceneTransform(objectName);
+                if (existing != null)
+                {
+                    target = existing.gameObject;
+                }
+                else
+                {
+                    target = new GameObject(objectName);
+                    target.transform.position = anchor != null ? anchor.position : fallbackPosition;
+                }
+            }
+
+            var collider = target.GetComponent<BoxCollider>();
+            if (collider == null)
+            {
+                collider = target.AddComponent<BoxCollider>();
+                collider.size = defaultSize;
+            }
+
+            collider.isTrigger = true;
+            collider.enabled = true;
+
+            var trigger = target.GetComponent<P2StorySequenceTrigger>();
+            if (trigger == null)
+                trigger = target.AddComponent<P2StorySequenceTrigger>();
+
+            trigger.Configure(triggerKind);
+            trigger.enabled = true;
+        }
+
+        private IEnumerator PlayStairGhostLinesRoutine(P2GhostDoorApparitionDirector ghost)
+        {
+            float firstDuration = PlayMonsterLine("p2_ma_01", ghost);
+            if (firstDuration > 0f)
+                yield return new WaitForSeconds(firstDuration);
+
+            PlayMonsterLine("p2_ma_02", ghost);
+            stairGhostLineRoutine = null;
+        }
+
+        private IEnumerator EndgameCutsceneRoutine()
+        {
+            var controller = GameController.Instance;
+            var player = ResolvePlayerController();
+            var ghost = FindFirstObjectByType<P2GhostDoorApparitionDirector>(FindObjectsInactive.Include);
+
+            if (controller != null)
+                controller.SetGameState(GameController.GameState.Cutscene);
+
+            if (player != null)
+            {
+                player.isCutScene = true;
+                player.isInteracting = true;
+                player.ForceIdleState();
+            }
+
+            FpsAssetsInputs.Instance?.ClearGameplayInput();
+            ghost?.SetAudioLogSuspended(true);
+
+            yield return RunPlayerToBackyard(player);
+            SetHeldMirrorRenderersVisible(true);
+            yield return AimPlayerAtEndgameMoon(player);
+
+            yield return PlayPlayerLineAndWait(
+                "p2_ngoc_09",
+                "Gương bạc... bà nói soi vào trăng thì có thể... nhưng bà không nói phải làm gì tiếp theo. Con còn thiếu gì đó.",
+                7f);
+
+            yield return new WaitForSeconds(0.35f);
+
+            yield return PlayPlayerLineAndWait("p2_ngoc_10", "...Bà ơi.", 2.5f);
+
+            SpawnDroppedMirrorShard(player);
+            SetPlayerRenderersVisible(player, false);
+            SetHeldMirrorRenderersVisible(false);
+
+            yield return FadeToBlack(1.1f);
+
+            if (controller != null)
+                controller.ShowEndingDeathScreenPresentation();
+        }
+
+        private void PlayPlayerLine(string audioId, string subtitle, float fallbackSeconds)
+        {
+            var audio = AudioManager.EnsureInstance();
+            var clip = audio.GetIntroVoiceClip(audioId);
+            float duration = audio.PlayPlayerVoice(clip);
+            InteractMessageScript.Instance?.ShowMessage($"\"{subtitle}\"", duration > 0f ? duration : fallbackSeconds);
+        }
+
+        private IEnumerator PlayPlayerLineAndWait(string audioId, string subtitle, float fallbackSeconds)
+        {
+            var audio = AudioManager.EnsureInstance();
+            var clip = audio.GetIntroVoiceClip(audioId);
+            float duration = audio.PlayPlayerVoice(clip);
+            float waitSeconds = duration > 0f ? duration : fallbackSeconds;
+            InteractMessageScript.Instance?.ShowMessage($"\"{subtitle}\"", waitSeconds);
+            if (waitSeconds > 0f)
+                yield return new WaitForSeconds(waitSeconds);
+        }
+
+        private IEnumerator RunPlayerToBackyard(FpsController player)
+        {
+            if (player == null)
+                yield break;
+
+            Vector3 target = ResolveEndgameRunTarget(player);
+            float distance = HorizontalDistance(player.transform.position, target);
+            if (distance < 1.25f)
+                target = player.transform.position + player.transform.forward * 5.5f;
+            target = SampleNavMeshPosition(target);
+
+            const float runSpeed = 4.4f;
+            const float arriveDistance = 0.45f;
+            const float turnSpeed = 620f;
+            const float maxRunSeconds = 8f;
+
+            float timer = 0f;
+            while (timer < maxRunSeconds && HorizontalDistance(player.transform.position, target) > arriveDistance)
+            {
+                timer += Time.deltaTime;
+                Vector3 direction = target - player.transform.position;
+                direction.y = 0f;
+                if (direction.sqrMagnitude <= 0.01f)
+                    break;
+
+                player.MoveCutScene(direction.normalized, runSpeed, true, turnSpeed);
+                yield return null;
+            }
+
+            player.StopCutSceneMovement();
+        }
+
+        private IEnumerator AimPlayerAtEndgameMoon(FpsController player)
+        {
+            if (player == null)
+                yield break;
+
+            Transform lookTarget = FindSceneTransform("P2_Endgame_MoonLookTarget")
+                ?? FindSceneTransform("P2_Endgame_LookTarget");
+
+            Vector3 lookDirection = lookTarget != null
+                ? lookTarget.position - player.transform.position
+                : player.transform.forward + Vector3.up * 0.55f;
+
+            lookDirection.y = 0f;
+            const float turnSpeed = 420f;
+            float timer = 0f;
+            while (timer < 1.15f)
+            {
+                timer += Time.deltaTime;
+                if (lookDirection.sqrMagnitude > 0.001f)
+                    player.RotateCutSceneTowards(lookDirection.normalized, turnSpeed);
+                player.SetCutSceneCameraPitch(-12f);
+                player.StopCutSceneMovement();
+                yield return null;
+            }
+        }
+
+        private Vector3 ResolveEndgameRunTarget(FpsController player)
+        {
+            Transform target = FindSceneTransform("P2_Endgame_RunTarget")
+                ?? FindSceneTransform("P2_Endgame_BackyardPoint")
+                ?? lastEndgameTrigger
+                ?? FindSceneTransform(EndgameTriggerName);
+
+            if (target != null)
+                return target.position;
+
+            return player != null
+                ? player.transform.position + player.transform.forward * 5.5f
+                : transform.position;
+        }
+
+        private static Vector3 SampleNavMeshPosition(Vector3 position)
+        {
+            return NavMesh.SamplePosition(position, out var hit, 2.5f, NavMesh.AllAreas)
+                ? hit.position
+                : position;
+        }
+
+        private static float HorizontalDistance(Vector3 a, Vector3 b)
+        {
+            a.y = 0f;
+            b.y = 0f;
+            return Vector3.Distance(a, b);
+        }
+
+        private float PlayMonsterLine(string audioId, P2GhostDoorApparitionDirector ghost)
+        {
+            var audio = AudioManager.EnsureInstance();
+            var clip = audio.GetIntroVoiceClip(audioId);
+            if (clip == null)
+                return 0f;
+
+            EnsureMonsterVoiceSource(ghost);
+            monsterVoiceSource.Stop();
+            monsterVoiceSource.clip = clip;
+            monsterVoiceSource.Play();
+            return clip.length;
+        }
+
+        private void EnsureMonsterVoiceSource(P2GhostDoorApparitionDirector ghost)
+        {
+            if (monsterVoiceSource != null)
+                return;
+
+            var sourceObject = new GameObject("P2_StoryMonsterVoice");
+            if (ghost != null)
+                sourceObject.transform.SetParent(ghost.transform, false);
+
+            monsterVoiceSource = sourceObject.AddComponent<AudioSource>();
+            monsterVoiceSource.playOnAwake = false;
+            monsterVoiceSource.loop = false;
+            monsterVoiceSource.spatialBlend = ghost != null ? 1f : 0f;
+            monsterVoiceSource.rolloffMode = AudioRolloffMode.Logarithmic;
+            monsterVoiceSource.minDistance = 4f;
+            monsterVoiceSource.maxDistance = 22f;
+            monsterVoiceSource.volume = 1f;
+        }
+
+        private static FpsController ResolvePlayerController()
+        {
+            if (GameController.Instance != null && GameController.Instance.playerController != null)
+                return GameController.Instance.playerController;
+
+            return FindFirstObjectByType<FpsController>(FindObjectsInactive.Include);
+        }
+
+        private static void SetPlayerRenderersVisible(FpsController player, bool visible)
+        {
+            if (player == null)
+                return;
+
+            var renderers = player.GetComponentsInChildren<Renderer>(true);
+            for (int i = 0; i < renderers.Length; i++)
+            {
+                if (renderers[i] != null)
+                    renderers[i].enabled = visible;
+            }
+        }
+
+        private static void SetHeldMirrorRenderersVisible(bool visible)
+        {
+            var mirror = FindFirstObjectByType<P2HeldSilverMirrorPickup>(FindObjectsInactive.Include);
+            if (mirror == null)
+                return;
+
+            var renderers = mirror.GetComponentsInChildren<Renderer>(true);
+            for (int i = 0; i < renderers.Length; i++)
+            {
+                if (renderers[i] != null)
+                    renderers[i].enabled = visible;
+            }
+        }
+
+        private static void SpawnDroppedMirrorShard(FpsController player)
+        {
+            if (player == null)
+                return;
+
+            Vector3 position = player.transform.position + player.transform.forward * 0.85f + Vector3.up * 0.08f;
+            if (Physics.Raycast(position + Vector3.up, Vector3.down, out var hit, 4f, Physics.DefaultRaycastLayers, QueryTriggerInteraction.Ignore))
+                position = hit.point + Vector3.up * 0.04f;
+
+            var mirror = GameObject.CreatePrimitive(PrimitiveType.Cube);
+            mirror.name = "P2_Endgame_DroppedSilverMirror";
+            mirror.transform.position = position;
+            mirror.transform.rotation = Quaternion.Euler(76f, player.transform.eulerAngles.y + 18f, -7f);
+            mirror.transform.localScale = new Vector3(0.04f, 0.42f, 0.28f);
+
+            var material = FindFirstObjectByType<P2HeldSilverMirrorPickup>(FindObjectsInactive.Include)
+                ?.GetComponentInChildren<Renderer>(true)
+                ?.sharedMaterial;
+            if (material != null && mirror.TryGetComponent<Renderer>(out var renderer))
+                renderer.sharedMaterial = material;
+
+            var shard = GameObject.CreatePrimitive(PrimitiveType.Cube);
+            shard.name = "P2_Endgame_DroppedSilverMirror_BrokenCorner";
+            shard.transform.position = position + player.transform.right * 0.24f + Vector3.up * 0.02f;
+            shard.transform.rotation = Quaternion.Euler(80f, player.transform.eulerAngles.y - 34f, 24f);
+            shard.transform.localScale = new Vector3(0.035f, 0.12f, 0.1f);
+            if (material != null && shard.TryGetComponent<Renderer>(out var shardRenderer))
+                shardRenderer.sharedMaterial = material;
+        }
+
+        private static IEnumerator FadeToBlack(float seconds)
+        {
+            var group = CreateBlackOverlay();
+            float elapsed = 0f;
+            while (elapsed < seconds)
+            {
+                elapsed += Time.deltaTime;
+                group.alpha = Mathf.Clamp01(elapsed / Mathf.Max(0.01f, seconds));
+                yield return null;
+            }
+
+            group.alpha = 1f;
+        }
+
+        private static CanvasGroup CreateBlackOverlay()
+        {
+            var canvasObject = new GameObject("P2_EndgameBlackOverlay", typeof(RectTransform), typeof(Canvas), typeof(CanvasScaler), typeof(GraphicRaycaster), typeof(CanvasGroup));
+            var canvas = canvasObject.GetComponent<Canvas>();
+            canvas.renderMode = RenderMode.ScreenSpaceOverlay;
+            canvas.sortingOrder = 12000;
+
+            var scaler = canvasObject.GetComponent<CanvasScaler>();
+            scaler.uiScaleMode = CanvasScaler.ScaleMode.ScaleWithScreenSize;
+            scaler.referenceResolution = new Vector2(1920f, 1080f);
+
+            var group = canvasObject.GetComponent<CanvasGroup>();
+            group.alpha = 0f;
+            group.interactable = false;
+            group.blocksRaycasts = true;
+
+            var image = new GameObject("Black", typeof(RectTransform), typeof(CanvasRenderer), typeof(Image)).GetComponent<Image>();
+            image.transform.SetParent(canvasObject.transform, false);
+            image.color = Color.black;
+            image.raycastTarget = false;
+            var rect = image.rectTransform;
+            rect.anchorMin = Vector2.zero;
+            rect.anchorMax = Vector2.one;
+            rect.offsetMin = Vector2.zero;
+            rect.offsetMax = Vector2.zero;
+
+            return group;
+        }
+
+        private static Transform FindSceneTransform(string objectName)
+        {
+            if (string.IsNullOrWhiteSpace(objectName))
+                return null;
+
+            foreach (var transform in Resources.FindObjectsOfTypeAll<Transform>())
+            {
+                if (transform != null && transform.name == objectName && transform.gameObject.scene.IsValid())
+                    return transform;
+            }
+
+            return null;
+        }
+    }
+
+    public sealed class P2StorySequenceTrigger : MonoBehaviour
+    {
+        [SerializeField] private P2StorySequenceTriggerKind triggerKind;
+        [SerializeField] private bool oneShot = true;
+        [Header("Debug")]
+        [SerializeField] private bool debugAllowBeforeGlassBroken;
+        [SerializeField] private bool debugStartOnPlay;
+        private bool triggered;
+
+        public void Configure(P2StorySequenceTriggerKind kind, bool singleUse = true)
+        {
+            triggerKind = kind;
+            oneShot = singleUse;
+        }
+
+        private void Start()
+        {
+            if (!debugStartOnPlay)
+                return;
+
+            triggered = true;
+            P2StorySequenceController.NotifyTriggerEntered(triggerKind, debugAllowBeforeGlassBroken, transform);
+        }
+
+        private void OnTriggerEnter(Collider other)
+        {
+            if (triggered && oneShot)
+                return;
+
+            if (other.GetComponentInParent<FpsController>() == null
+                && other.GetComponentInParent<P2FirstPersonController>() == null)
+                return;
+
+            triggered = true;
+            P2StorySequenceController.NotifyTriggerEntered(triggerKind, debugAllowBeforeGlassBroken, transform);
         }
     }
 

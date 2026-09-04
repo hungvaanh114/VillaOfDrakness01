@@ -7,13 +7,11 @@ namespace MainGame.P2
     [RequireComponent(typeof(P2AudioLogItem))]
     public sealed class P2AudioLogGhostPassSequence : MonoBehaviour
     {
-        [Header("Ghost Pass")]
+        [Header("Door Apparition")]
         [SerializeField] private P2GhostDoorApparitionDirector ghostDirector;
-        [SerializeField] private Transform ghostPassStart;
-        [SerializeField] private Transform ghostPassEnd;
         [SerializeField, Min(0f)] private float delayAfterAudio = 0.25f;
-        [SerializeField, Min(0f)] private float delayAfterGhostPass = 0.35f;
-        [SerializeField] private bool triggerOnce = true;
+        [SerializeField, Min(0f)] private float delayAfterGhostAppears = 0.35f;
+        [SerializeField] private bool triggerOnce;
 
         [Header("Optional Door")]
         [SerializeField] private DoorSystem doorToOpenBeforePass;
@@ -65,19 +63,11 @@ namespace MainGame.P2
             if (openDoorBeforePass && doorToOpenBeforePass != null)
                 doorToOpenBeforePass.TryOpenForMonster();
 
-            bool waitingForGhost = false;
             ResolveReferences();
-            if (ghostDirector != null && ghostPassStart != null && ghostPassEnd != null)
-            {
-                waitingForGhost = true;
-                ghostDirector.PlayScriptedPass(ghostPassStart, ghostPassEnd, () => waitingForGhost = false);
-            }
+            ghostDirector?.ForceApparitionAtNearestDoor();
 
-            while (waitingForGhost)
-                yield return null;
-
-            if (delayAfterGhostPass > 0f)
-                yield return new WaitForSeconds(delayAfterGhostPass);
+            if (delayAfterGhostAppears > 0f)
+                yield return new WaitForSeconds(delayAfterGhostAppears);
 
             PlayNgocReaction();
             sequenceRoutine = null;

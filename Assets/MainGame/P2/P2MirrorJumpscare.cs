@@ -15,18 +15,19 @@ namespace MainGame.P2
         [SerializeField] private bool triggerOnlyOnce = true;
 
         [Header("Trigger")]
-        [SerializeField, Min(0f)] private float requiredMirrorLookSeconds = 1f;
+        [SerializeField, Min(0f)] private float requiredMirrorLookSeconds;
         [SerializeField, Min(0.1f)] private float requiredPlayerDistance = 5f;
-        [SerializeField] private bool requirePlayerInsideTrigger;
-        [SerializeField] private bool requirePlayerInFront = true;
+        [SerializeField] private bool requirePlayerInsideTrigger = true;
+        [SerializeField] private bool requirePlayerInFront;
         [SerializeField] private bool invertMirrorFrontDirection = true;
-        [SerializeField] private bool requireMirrorRaycast = true;
+        [SerializeField] private bool acceptEitherMirrorSide = true;
+        [SerializeField] private bool requireMirrorRaycast;
         [SerializeField, Min(0.1f)] private float mirrorRaycastDistance = 8f;
         [SerializeField, Min(0f)] private float mirrorRaycastRadius = 0.08f;
-        [SerializeField, Range(0.1f, 1f)] private float mirrorAimFallbackDot = 0.94f;
 
         [Header("Cloth Cover")]
         [SerializeField] private bool startCovered = true;
+        [SerializeField] private bool triggerImmediatelyAfterClothRemoved = true;
         [SerializeField] private string coveredInteractText = "[E] Kéo tấm vải";
         [SerializeField] private string uncoveredInteractText = "Nhìn vào gương";
         [SerializeField, Min(0.01f)] private float clothPullSeconds = 0.8f;
@@ -81,6 +82,7 @@ namespace MainGame.P2
                 sfxSource = GetComponent<AudioSource>();
 
             ResolveMirrorRaycastTarget();
+            EnsureMirrorRaycastCollider();
             ResolveP2References();
             ResolveClothCover();
             CaptureClothCoveredPose();
@@ -199,7 +201,7 @@ namespace MainGame.P2
             if (toPlayer.magnitude > requiredPlayerDistance)
                 return false;
 
-            if (requirePlayerInFront && Vector3.Dot(GetMirrorForward(), toPlayer.normalized) < 0f)
+            if (requirePlayerInFront && !IsPlayerOnMirrorSide(toPlayer.normalized))
                 return false;
 
             return !requireMirrorRaycast || IsPlayerLookingAtMirror(candidate);
@@ -217,6 +219,7 @@ namespace MainGame.P2
             {
                 isUncovered = true;
                 isPullingCloth = false;
+                TryTriggerAfterClothRemoved();
                 yield break;
             }
 
@@ -240,6 +243,23 @@ namespace MainGame.P2
             isUncovered = true;
             isPullingCloth = false;
             mirrorLookTimer = 0f;
+            TryTriggerAfterClothRemoved();
+        }
+
+        private void TryTriggerAfterClothRemoved()
+        {
+            if (!triggerImmediatelyAfterClothRemoved || isRunning || (triggerOnlyOnce && hasTriggered))
+                return;
+
+            var candidate = playerController != null
+                ? playerController
+                : FindFirstObjectByType<FpsHorrorKit.FpsController>();
+            if (candidate == null)
+                return;
+
+            hasTriggered = true;
+            mirrorLookTimer = 0f;
+            StartCoroutine(MirrorEventRoutine(candidate));
         }
 
         private IEnumerator MirrorEventRoutine(FpsHorrorKit.FpsController candidate)
@@ -505,14 +525,7 @@ namespace MainGame.P2
 
             if (IsRaycastHittingMirror(candidate, source.position, source.forward, out bool blocked))
                 return true;
-            if (blocked)
-                return false;
-
-            Vector3 toMirror = GetMirrorLookPoint() - source.position;
-            if (toMirror.magnitude > mirrorRaycastDistance)
-                return false;
-
-            return Vector3.Dot(source.forward.normalized, toMirror.normalized) >= mirrorAimFallbackDot;
+            return false;
         }
 
         private bool IsRaycastHittingMirror(
@@ -556,7 +569,47 @@ namespace MainGame.P2
         private bool IsMirrorHit(Transform hitTransform)
         {
             var target = ResolveMirrorRaycastTarget();
-            return target != null && (hitTransform == target || hitTransform.IsChildOf(target));
+            return target != null
+                && (hitTransform == transform
+                    || hitTransform.IsChildOf(transform)
+                    || hitTransform == target
+                    || hitTransform.IsChildOf(target)
+                    || target.IsChildOf(hitTransform));
+        }
+
+        private void EnsureMirrorRaycastCollider()
+        {
+            var target = ResolveMirrorRaycastTarget();
+            if (target == null || target == transform)
+                return;
+
+            var colliders = target.GetComponentsInChildren<Collider>(true);
+            for (int i = 0; i < colliders.Length; i++)
+            {
+                if (colliders[i] != null && !colliders[i].isTrigger)
+                    return;
+            }
+
+            var box = target.GetComponent<BoxCollider>();
+            if (box == null)
+                box = target.gameObject.AddComponent<BoxCollider>();
+
+            box.isTrigger = false;
+            var renderer = target.GetComponentInChildren<Renderer>(true);
+            if (renderer == null)
+            {
+                box.center = Vector3.zero;
+                box.size = Vector3.one;
+                return;
+            }
+
+            Bounds bounds = renderer.bounds;
+            Vector3 localSize = target.InverseTransformVector(bounds.size);
+            box.center = target.InverseTransformPoint(bounds.center);
+            box.size = new Vector3(
+                Mathf.Max(0.04f, Mathf.Abs(localSize.x)),
+                Mathf.Max(0.04f, Mathf.Abs(localSize.y)),
+                Mathf.Max(0.04f, Mathf.Abs(localSize.z)));
         }
 
         private Transform ResolveMirrorRaycastTarget()
@@ -639,14 +692,20 @@ namespace MainGame.P2
             return forward.sqrMagnitude > 0.001f ? forward.normalized : transform.forward;
         }
 
+        private bool IsPlayerOnMirrorSide(Vector3 directionFromMirrorToPlayer)
+        {
+            float dot = Vector3.Dot(GetMirrorForward(), directionFromMirrorToPlayer);
+            return acceptEitherMirrorSide ? Mathf.Abs(dot) > 0.05f : dot >= 0f;
+        }
+
         private static Transform ResolveLookSource(FpsHorrorKit.FpsController candidate)
         {
-            if (candidate != null && candidate.followTarget != null)
-                return candidate.followTarget;
-
             Camera camera = Camera.main;
             if (camera != null && camera.isActiveAndEnabled)
                 return camera.transform;
+
+            if (candidate != null && candidate.followTarget != null)
+                return candidate.followTarget;
 
             return candidate != null ? candidate.transform : null;
         }

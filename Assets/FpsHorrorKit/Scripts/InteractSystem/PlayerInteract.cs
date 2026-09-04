@@ -20,11 +20,13 @@ namespace FpsHorrorKit
         public bool showHiglight = true;
 
         [SerializeField] private bool canDragDoor;
+        [SerializeField] private bool blockInteractionsWhenP2LampOff = true;
 
         private FpsAssetsInputs input;
         private IInteractable currentInteractable;
         private GameObject defaultHighlightObj;
         private string defaultInteractText;
+        private global::MainGame.P2.P2OilLamp p2OilLamp;
 
         private void Awake()
         {
@@ -55,6 +57,13 @@ namespace FpsHorrorKit
             if (global::GameController.IsGameplayInputLocked())
             {
                 input?.ClearGameplayInput();
+                UnHighlight();
+                return;
+            }
+
+            if (blockInteractionsWhenP2LampOff && IsP2LampOff())
+            {
+                sendRaycast = true;
                 UnHighlight();
                 return;
             }
@@ -207,6 +216,30 @@ namespace FpsHorrorKit
         private static bool CanHoldInteract(IInteractable interactable)
         {
             return interactable is DragToOpenSystem || interactable is DrawerSystem;
+        }
+
+        private bool IsP2LampOff()
+        {
+            if (p2OilLamp == null || !p2OilLamp.ControlsGameplaySystems)
+                p2OilLamp = FindGameplayP2OilLamp();
+
+            return p2OilLamp != null && !p2OilLamp.IsLit;
+        }
+
+        private static global::MainGame.P2.P2OilLamp FindGameplayP2OilLamp()
+        {
+            global::MainGame.P2.P2OilLamp fallback = null;
+            foreach (var lamp in FindObjectsByType<global::MainGame.P2.P2OilLamp>(FindObjectsInactive.Include, FindObjectsSortMode.None))
+            {
+                if (lamp == null)
+                    continue;
+
+                fallback ??= lamp;
+                if (lamp.ControlsGameplaySystems)
+                    return lamp;
+            }
+
+            return fallback;
         }
     }
 }

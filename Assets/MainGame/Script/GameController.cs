@@ -146,6 +146,12 @@ public class GameController : MonoBehaviour
             || MainGame.P2.P2KnockPlankZoomSequence.IsAnyZoomActive)
             return;
 
+        if (MainGame.P2.P2AudioLogItem.IsAnyPlaybackLocked)
+        {
+            FpsAssetsInputs.Instance?.ClearGameplayInput();
+            return;
+        }
+
         if (Keyboard.current.escapeKey.wasPressedThisFrame && !isDead && currentGameState != GameState.Ending)
         {
             if (PhysicalPianoController.CloseActivePiano())

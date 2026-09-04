@@ -11,6 +11,7 @@ namespace MainGame.P2
         [SerializeField] private Renderer targetRenderer;
         [SerializeField] private AudioSource audioSource;
         [SerializeField] private AudioClip glassBreakClip;
+        [SerializeField, Min(0f)] private float breakVolume = 4f;
         [SerializeField] private Material shardMaterial;
         [SerializeField] private bool breakOnCollision;
         [SerializeField] private bool breakOnTriggerEnter;
@@ -105,6 +106,9 @@ namespace MainGame.P2
                 brokenCount++;
             }
 
+            if (brokenCount > 0)
+                P2StorySequenceController.NotifyHouseGlassBroken();
+
             return brokenCount;
         }
 
@@ -132,11 +136,11 @@ namespace MainGame.P2
             if (audioSource != null)
             {
                 audioSource.transform.position = position;
-                audioSource.PlayOneShot(glassBreakClip);
+                audioSource.PlayOneShot(glassBreakClip, breakVolume);
                 return;
             }
 
-            AudioSource.PlayClipAtPoint(glassBreakClip, position, 1f);
+            AudioSource.PlayClipAtPoint(glassBreakClip, position, breakVolume);
         }
 
         private void SpawnShards(Bounds bounds)

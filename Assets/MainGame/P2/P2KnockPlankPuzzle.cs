@@ -127,6 +127,7 @@ namespace MainGame.P2
             if (hiddenCavity != null)
                 hiddenCavity.SetActive(true);
 
+            P2StorySequenceController.NotifyWallMirrorRevealed();
             P2GameController.Instance?.RegisterWallOpened(hiddenCavity);
 
             if (exitDelayAfterReveal > 0f)

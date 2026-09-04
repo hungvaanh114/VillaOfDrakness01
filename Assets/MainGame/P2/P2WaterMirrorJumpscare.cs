@@ -17,10 +17,10 @@ namespace MainGame.P2
         [SerializeField, Min(0f)] private float requiredLookSeconds = 3f;
         [SerializeField, Min(0.1f)] private float requiredPlayerDistance = 4.5f;
         [SerializeField] private bool requirePlayerInFront = true;
+        [SerializeField] private bool acceptEitherWaterSide = true;
         [SerializeField] private bool requireRaycastHit = true;
         [SerializeField, Min(0.1f)] private float lookRaycastDistance = 7f;
         [SerializeField, Min(0f)] private float lookRaycastRadius = 0.08f;
-        [SerializeField, Range(0.1f, 1f)] private float aimFallbackDot = 0.965f;
 
         [Header("Jumpscare")]
         [SerializeField] private Texture2D screenJumpscareTexture;
@@ -110,7 +110,7 @@ namespace MainGame.P2
             if (toPlayer.magnitude > requiredPlayerDistance)
                 return false;
 
-            if (requirePlayerInFront && Vector3.Dot(GetWaterNormal(), toPlayer.normalized) < 0.05f)
+            if (requirePlayerInFront && !IsPlayerOnWaterSide(toPlayer.normalized))
                 return false;
 
             return !requireRaycastHit || IsPlayerLookingAtWater(candidate);
@@ -124,14 +124,7 @@ namespace MainGame.P2
 
             if (IsRaycastHittingWater(candidate, source.position, source.forward, out bool blocked))
                 return true;
-            if (blocked)
-                return false;
-
-            Vector3 toWater = GetWaterLookPoint() - source.position;
-            if (toWater.magnitude > lookRaycastDistance)
-                return false;
-
-            return Vector3.Dot(source.forward.normalized, toWater.normalized) >= aimFallbackDot;
+            return false;
         }
 
         private bool IsRaycastHittingWater(FpsController candidate, Vector3 origin, Vector3 direction, out bool blocked)
@@ -375,6 +368,12 @@ namespace MainGame.P2
             return target != null ? target.up : transform.up;
         }
 
+        private bool IsPlayerOnWaterSide(Vector3 directionFromWaterToPlayer)
+        {
+            float dot = Vector3.Dot(GetWaterNormal(), directionFromWaterToPlayer);
+            return acceptEitherWaterSide ? Mathf.Abs(dot) > 0.02f : dot >= 0.05f;
+        }
+
         private bool IsWaterHit(Transform hitTransform)
         {
             var target = ResolveSurface();
@@ -393,12 +392,12 @@ namespace MainGame.P2
 
         private static Transform ResolveLookSource(FpsController candidate)
         {
-            if (candidate != null && candidate.followTarget != null)
-                return candidate.followTarget;
-
             var camera = Camera.main;
             if (camera != null && camera.isActiveAndEnabled)
                 return camera.transform;
+
+            if (candidate != null && candidate.followTarget != null)
+                return candidate.followTarget;
 
             return candidate != null ? candidate.transform : null;
         }
