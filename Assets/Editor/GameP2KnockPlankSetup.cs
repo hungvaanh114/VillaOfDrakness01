@@ -20,18 +20,28 @@ public static class GameP2KnockPlankSetup
     private static readonly string[] NoteLabels = { "E", "C", "F", "D", "G", "Bộp" };
     private static readonly string[] NoteClipPaths =
     {
-        "Assets/MainGame/Audio/wav/e1.wav",
-        "Assets/MainGame/Audio/wav/c1.wav",
-        "Assets/MainGame/Audio/wav/f1.wav",
-        "Assets/MainGame/Audio/wav/d1.wav",
-        "Assets/MainGame/Audio/wav/g1.wav"
+        "Assets/MainGame/Audio/SFX/P2_Planks/P2_WoodPlank_Note_E.wav",
+        "Assets/MainGame/Audio/SFX/P2_Planks/P2_WoodPlank_Note_C.wav",
+        "Assets/MainGame/Audio/SFX/P2_Planks/P2_WoodPlank_Note_F.wav",
+        "Assets/MainGame/Audio/SFX/P2_Planks/P2_WoodPlank_Note_D.wav",
+        "Assets/MainGame/Audio/SFX/P2_Planks/P2_WoodPlank_Note_G.wav"
     };
+    private const string HollowBreakClipPath = "Assets/MainGame/Audio/SFX/P2_Planks/P2_WoodPlank_Break.wav";
 
     [MenuItem("MainGame/P2/Apply P2 Knock Plank Puzzle")]
     public static void Apply()
     {
         if (EditorSceneManager.GetActiveScene().path != ScenePath)
             EditorSceneManager.OpenScene(ScenePath);
+
+        if (UpdateExistingPuzzleAudioOnly())
+        {
+            EditorSceneManager.MarkSceneDirty(EditorSceneManager.GetActiveScene());
+            EditorSceneManager.SaveScene(EditorSceneManager.GetActiveScene());
+            AssetDatabase.SaveAssets();
+            Debug.Log("P2 knock plank puzzle audio updated only. Existing plank scene setup was kept unchanged.");
+            return;
+        }
 
         var woodMaterial = EnsureMaterial("Assets/MainGame/Materials/InventoryProgression/P2_Block_Wood.mat", new Color(0.45f, 0.29f, 0.16f, 1f));
         var darkMaterial = EnsureMaterial("Assets/MainGame/Materials/InventoryProgression/P2_Block_DarkWood.mat", new Color(0.14f, 0.08f, 0.05f, 1f));
@@ -52,6 +62,23 @@ public static class GameP2KnockPlankSetup
         EditorSceneManager.SaveScene(EditorSceneManager.GetActiveScene());
         AssetDatabase.SaveAssets();
         Debug.Log("P2 knock plank puzzle applied.");
+    }
+
+    private static bool UpdateExistingPuzzleAudioOnly()
+    {
+        var root = FindSceneTransform(RootName);
+        var puzzle = root != null
+            ? root.GetComponent<P2KnockPlankPuzzle>()
+            : UnityEngine.Object.FindFirstObjectByType<P2KnockPlankPuzzle>(FindObjectsInactive.Include);
+        if (puzzle == null)
+            return false;
+
+        var serialized = new SerializedObject(puzzle);
+        SetArray(serialized, "noteClips", LoadNoteClips());
+        Set(serialized, "hollowThudClip", AssetDatabase.LoadAssetAtPath<AudioClip>(HollowBreakClipPath));
+        serialized.ApplyModifiedPropertiesWithoutUndo();
+        EditorUtility.SetDirty(puzzle);
+        return true;
     }
 
     private static P2KnockPlank[] EnsurePlanks(Transform root, Material woodMaterial)
@@ -180,7 +207,7 @@ public static class GameP2KnockPlankSetup
         Set(serialized, "requireSequentialClicks", true);
         Set(serialized, "hollowPlankIndex", 5);
         SetArray(serialized, "noteClips", LoadNoteClips());
-        Set(serialized, "hollowThudClip", AssetDatabase.LoadAssetAtPath<AudioClip>("Assets/MainGame/Audio/SFX/SFX_Interact_Generic_01.wav"));
+        Set(serialized, "hollowThudClip", AssetDatabase.LoadAssetAtPath<AudioClip>(HollowBreakClipPath));
         Set(serialized, "volume", 1f);
         Set(serialized, "audioMinDistance", 2f);
         Set(serialized, "audioMaxDistance", 18f);

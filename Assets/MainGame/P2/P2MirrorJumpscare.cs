@@ -19,6 +19,7 @@ namespace MainGame.P2
         [SerializeField, Min(0.1f)] private float requiredPlayerDistance = 5f;
         [SerializeField] private bool requirePlayerInsideTrigger;
         [SerializeField] private bool requirePlayerInFront = true;
+        [SerializeField] private bool invertMirrorFrontDirection = true;
         [SerializeField] private bool requireMirrorRaycast = true;
         [SerializeField, Min(0.1f)] private float mirrorRaycastDistance = 8f;
         [SerializeField, Min(0f)] private float mirrorRaycastRadius = 0.08f;
@@ -631,7 +632,11 @@ namespace MainGame.P2
         private Vector3 GetMirrorForward()
         {
             Transform target = ResolveMirrorRaycastTarget();
-            return target != null ? target.forward : transform.forward;
+            Vector3 forward = target != null ? target.forward : transform.forward;
+            if (invertMirrorFrontDirection)
+                forward = -forward;
+
+            return forward.sqrMagnitude > 0.001f ? forward.normalized : transform.forward;
         }
 
         private static Transform ResolveLookSource(FpsHorrorKit.FpsController candidate)

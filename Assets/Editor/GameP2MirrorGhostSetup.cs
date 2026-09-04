@@ -100,6 +100,9 @@ public static class GameP2MirrorGhostSetup
             EditorUtility.SetDirty(oldMirror);
         }
 
+        RemoveGeneratedMirrorFrame(mirror);
+        RemoveRuntimeMirrorFrame(mirror);
+
         var collider = mirror.GetComponent<BoxCollider>();
         if (collider == null)
             collider = mirror.gameObject.AddComponent<BoxCollider>();
@@ -112,18 +115,21 @@ public static class GameP2MirrorGhostSetup
         if (p2Mirror == null)
             p2Mirror = mirror.gameObject.AddComponent<P2MirrorJumpscare>();
 
+        var mirrorSurface = FindChildRecursive(mirror, "MirrorSurface");
         var revealPoint = EnsureChild(mirror, "P2_MirrorGhostRevealPoint");
-        if (revealPoint.localPosition == Vector3.zero)
-            revealPoint.localPosition = new Vector3(0f, 1.15f, -0.7f);
+        AlignMirrorRevealPoint(revealPoint);
 
         var clothCover = EnsureMirrorClothCover(mirror);
         var audioData = Resources.Load<AudioData>("Audio/AudioData");
 
         var serialized = new SerializedObject(p2Mirror);
-        Set(serialized, "reflection", mirror.GetComponent<MirrorReflectionCamera>());
-        Set(serialized, "mirrorRaycastTarget", FindChildRecursive(mirror, "MirrorSurface") ?? mirror);
+        var reflection = mirror.GetComponent<MirrorReflectionCamera>();
+        ConfigureP2Reflection(reflection);
+        Set(serialized, "reflection", reflection);
+        Set(serialized, "mirrorRaycastTarget", mirrorSurface ?? mirror);
         Set(serialized, "clothCover", clothCover);
         Set(serialized, "requiredMirrorLookSeconds", 1f);
+        Set(serialized, "invertMirrorFrontDirection", true);
         Set(serialized, "startCovered", true);
         Set(serialized, "coveredInteractText", "[E] Kéo tấm vải");
         Set(serialized, "uncoveredInteractText", "Nhìn vào gương");
@@ -148,6 +154,51 @@ public static class GameP2MirrorGhostSetup
         Set(serialized, "fallPitch", 28f);
         serialized.ApplyModifiedPropertiesWithoutUndo();
         EditorUtility.SetDirty(p2Mirror);
+    }
+
+    private static void RemoveGeneratedMirrorFrame(Transform mirror)
+    {
+        var frame = mirror != null ? mirror.Find("MirrorFrame") : null;
+        if (frame == null)
+            return;
+
+        Object.DestroyImmediate(frame.gameObject, true);
+    }
+
+    private static void RemoveRuntimeMirrorFrame(Transform mirror)
+    {
+        RemoveChild(mirror, "FrameTop");
+        RemoveChild(mirror, "FrameBottom");
+        RemoveChild(mirror, "FrameLeft");
+        RemoveChild(mirror, "FrameRight");
+    }
+
+    private static void RemoveChild(Transform parent, string childName)
+    {
+        var child = parent != null ? parent.Find(childName) : null;
+        if (child != null)
+            Object.DestroyImmediate(child.gameObject, true);
+    }
+
+    private static void ConfigureP2Reflection(MirrorReflectionCamera reflection)
+    {
+        if (reflection == null)
+            return;
+
+        var serialized = new SerializedObject(reflection);
+        Set(serialized, "createRuntimeFrame", false);
+        serialized.ApplyModifiedPropertiesWithoutUndo();
+        EditorUtility.SetDirty(reflection);
+    }
+
+    private static void AlignMirrorRevealPoint(Transform revealPoint)
+    {
+        if (revealPoint == null)
+            return;
+
+        revealPoint.localPosition = new Vector3(0f, 1.15f, 0.7f);
+        revealPoint.localRotation = Quaternion.identity;
+        EditorUtility.SetDirty(revealPoint);
     }
 
     private static GameObject EnsureMirrorClothCover(Transform mirror)

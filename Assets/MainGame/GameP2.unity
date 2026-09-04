@@ -547,7 +547,7 @@ MeshRenderer:
   m_RenderingLayerMask: 1
   m_RendererPriority: 0
   m_Materials:
-  - {fileID: 2100000, guid: dbc7472d48e3ea746ad01829adc331d7, type: 2}
+  - {fileID: 2100000, guid: 2d96e79d3d44b824381f64be7765f5c2, type: 2}
   m_StaticBatchInfo:
     firstSubMesh: 0
     subMeshCount: 0
@@ -7984,7 +7984,7 @@ MeshRenderer:
   m_RenderingLayerMask: 1
   m_RendererPriority: 0
   m_Materials:
-  - {fileID: 2100000, guid: dbc7472d48e3ea746ad01829adc331d7, type: 2}
+  - {fileID: 2100000, guid: 2d96e79d3d44b824381f64be7765f5c2, type: 2}
   m_StaticBatchInfo:
     firstSubMesh: 0
     subMeshCount: 0
@@ -11387,6 +11387,50 @@ CanvasRenderer:
   m_PrefabAsset: {fileID: 0}
   m_GameObject: {fileID: 252347477}
   m_CullTransparentMesh: 1
+--- !u!1 &254096205
+GameObject:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  serializedVersion: 6
+  m_Component:
+  - component: {fileID: 254096206}
+  - component: {fileID: 254096207}
+  m_Layer: 0
+  m_Name: P2_HouseWindowGlassBreakController
+  m_TagString: Untagged
+  m_Icon: {fileID: 0}
+  m_NavMeshLayer: 0
+  m_StaticEditorFlags: 0
+  m_IsActive: 1
+--- !u!4 &254096206
+Transform:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 254096205}
+  serializedVersion: 2
+  m_LocalRotation: {x: 0, y: 0, z: 0, w: 1}
+  m_LocalPosition: {x: 0, y: 0, z: 0}
+  m_LocalScale: {x: 1, y: 1, z: 1}
+  m_ConstrainProportionsScale: 0
+  m_Children: []
+  m_Father: {fileID: 1367883175}
+  m_LocalEulerAnglesHint: {x: 0, y: 0, z: 0}
+--- !u!114 &254096207
+MonoBehaviour:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 254096205}
+  m_Enabled: 1
+  m_EditorHideFlags: 0
+  m_Script: {fileID: 11500000, guid: 09093d7e9502e4747aaec2c092646c80, type: 3}
+  m_Name: 
+  m_EditorClassIdentifier: Assembly-CSharp::MainGame.P2.P2HouseWindowGlassBreakController
 --- !u!1 &254514681
 GameObject:
   m_ObjectHideFlags: 0
@@ -13498,8 +13542,8 @@ Transform:
   m_PrefabAsset: {fileID: 0}
   m_GameObject: {fileID: 327902032}
   serializedVersion: 2
-  m_LocalRotation: {x: 0, y: -0.7071068, z: 0, w: 0.7071068}
-  m_LocalPosition: {x: 3.33, y: 4, z: -0}
+  m_LocalRotation: {x: 0.032603245, y: -0.7063548, z: 0.032603245, w: 0.70635474}
+  m_LocalPosition: {x: 3, y: 3.94, z: -0}
   m_LocalScale: {x: 1, y: 1, z: 1}
   m_ConstrainProportionsScale: 0
   m_Children:
@@ -14657,8 +14701,8 @@ Transform:
   m_GameObject: {fileID: 363728468}
   serializedVersion: 2
   m_LocalRotation: {x: 1, y: 0, z: 0, w: 0}
-  m_LocalPosition: {x: 0, y: 2.1, z: 0.156}
-  m_LocalScale: {x: 1, y: 1, z: 1}
+  m_LocalPosition: {x: 0, y: 2.1, z: 0.145}
+  m_LocalScale: {x: 1, y: 1, z: 0.5}
   m_ConstrainProportionsScale: 0
   m_Children:
   - {fileID: 1752898879}
@@ -16263,7 +16307,7 @@ MeshRenderer:
   m_RenderingLayerMask: 1
   m_RendererPriority: 0
   m_Materials:
-  - {fileID: 2100000, guid: dbc7472d48e3ea746ad01829adc331d7, type: 2}
+  - {fileID: 2100000, guid: 2d96e79d3d44b824381f64be7765f5c2, type: 2}
   m_StaticBatchInfo:
     firstSubMesh: 0
     subMeshCount: 0
@@ -16964,6 +17008,11 @@ PrefabInstance:
 Transform:
   m_CorrespondingSourceObject: {fileID: 5449056819758505681, guid: b9a2eaa04226f2e429c7831d9f3b6ede, type: 3}
   m_PrefabInstance: {fileID: 486163466}
+  m_PrefabAsset: {fileID: 0}
+--- !u!1 &488801028 stripped
+GameObject:
+  m_CorrespondingSourceObject: {fileID: 117844, guid: 02a0e42f36bf76d4c946b93fc70c3cee, type: 3}
+  m_PrefabInstance: {fileID: 2516188103186512716}
   m_PrefabAsset: {fileID: 0}
 --- !u!1 &491821555
 GameObject:
@@ -18190,12 +18239,12 @@ MonoBehaviour:
   requireSequentialClicks: 1
   hollowPlankIndex: 5
   noteClips:
-  - {fileID: 8300000, guid: 69cd5df0a0a0cc345b2fbfbe1ef607fa, type: 3}
-  - {fileID: 8300000, guid: 48c3c8381e6c7c847ab89babe8a69ab4, type: 3}
-  - {fileID: 8300000, guid: 1b70e979068cd9d4aaa0c4b4fc450c9f, type: 3}
-  - {fileID: 8300000, guid: 1860b04ff901dc9479db9731586f8963, type: 3}
-  - {fileID: 8300000, guid: 8e54ec2f387889749b0476503f5f714b, type: 3}
-  hollowThudClip: {fileID: 8300000, guid: 0d384f898556b8a4099288246cf43319, type: 3}
+  - {fileID: 8300000, guid: cd416140f4b51a74b9ef0b031d1af63d, type: 3}
+  - {fileID: 8300000, guid: c11f792882325b94cac2db579490de08, type: 3}
+  - {fileID: 8300000, guid: 28657c2c30ed7ed40886f674e3eba884, type: 3}
+  - {fileID: 8300000, guid: 6a20fe0df0347bc48acdbeb58fcafe65, type: 3}
+  - {fileID: 8300000, guid: 666805abcaeaf27499aea19476051108, type: 3}
+  hollowThudClip: {fileID: 8300000, guid: 848946252d8a282419193b439be0948d, type: 3}
   volume: 1
   audioMinDistance: 2
   audioMaxDistance: 18
@@ -19661,7 +19710,7 @@ Transform:
   m_GameObject: {fileID: 604486576}
   serializedVersion: 2
   m_LocalRotation: {x: 0, y: 0, z: 0, w: 1}
-  m_LocalPosition: {x: 0, y: 1.15, z: -0.7}
+  m_LocalPosition: {x: 0, y: 1.15, z: 0.7}
   m_LocalScale: {x: 1, y: 1, z: 1}
   m_ConstrainProportionsScale: 0
   m_Children: []
@@ -22347,7 +22396,7 @@ Transform:
   m_GameObject: {fileID: 735973186}
   serializedVersion: 2
   m_LocalRotation: {x: -0, y: -0, z: -0, w: 1}
-  m_LocalPosition: {x: 0, y: 0, z: 0}
+  m_LocalPosition: {x: 0, y: 3.68, z: 0}
   m_LocalScale: {x: 1, y: 1, z: 1}
   m_ConstrainProportionsScale: 0
   m_Children: []
@@ -24018,7 +24067,7 @@ GameObject:
   - component: {fileID: 794911396}
   - component: {fileID: 794911395}
   - component: {fileID: 794911394}
-  - component: {fileID: 794911393}
+  - component: {fileID: 794911397}
   m_Layer: 0
   m_Name: P2_SilverMirror_Item
   m_TagString: Untagged
@@ -24041,21 +24090,6 @@ Transform:
   m_Children: []
   m_Father: {fileID: 1685142770}
   m_LocalEulerAnglesHint: {x: 0, y: 0, z: 0}
---- !u!114 &794911393
-MonoBehaviour:
-  m_ObjectHideFlags: 0
-  m_CorrespondingSourceObject: {fileID: 0}
-  m_PrefabInstance: {fileID: 0}
-  m_PrefabAsset: {fileID: 0}
-  m_GameObject: {fileID: 794911391}
-  m_Enabled: 1
-  m_EditorHideFlags: 0
-  m_Script: {fileID: 11500000, guid: 55bd73e2999e4e548b9d9f95f8775f58, type: 3}
-  m_Name: 
-  m_EditorClassIdentifier: Assembly-CSharp::FpsHorrorKit.ItemPickup
-  itemData: {fileID: 11400000, guid: f40823c8ceac7b94d9bdf019f34e4009, type: 2}
-  amount: 1
-  interactText: "[E] Nh\u1EB7t g\u01B0\u01A1ng b\u1EA1c"
 --- !u!23 &794911394
 MeshRenderer:
   m_ObjectHideFlags: 0
@@ -24134,6 +24168,35 @@ MeshFilter:
   m_PrefabAsset: {fileID: 0}
   m_GameObject: {fileID: 794911391}
   m_Mesh: {fileID: 10202, guid: 0000000000000000e000000000000000, type: 0}
+--- !u!114 &794911397
+MonoBehaviour:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 794911391}
+  m_Enabled: 1
+  m_EditorHideFlags: 0
+  m_Script: {fileID: 11500000, guid: 0981d338c8b6c904f8747f468c02fdb6, type: 3}
+  m_Name: 
+  m_EditorClassIdentifier: Assembly-CSharp::MainGame.P2.P2HeldSilverMirrorPickup
+  heldRoot: {fileID: 794911392}
+  targetCamera: {fileID: 542568970212482326}
+  handRootName: LeftHandProp
+  fallbackHandRootName: LeftHand
+  pickupClip: {fileID: 8300000, guid: 8c17a6180226bcc408326f891788adb2, type: 3}
+  interactText: "[E] C\u1EA7m g\u01B0\u01A1ng b\u1EA1c"
+  heldLocalPosition: {x: 0.02, y: 0.04, z: 0.02}
+  heldLocalEulerAngles: {x: 0, y: 90, z: 0}
+  overrideHeldScale: 0
+  heldLocalScale: {x: 1, y: 1, z: 1}
+  moveSeconds: 0.18
+  mouseRotationDegreesPerPixel: 0.12
+  breakHouseGlassWhenPickedUp: 1
+  lockPlayerWhileHeld: 0
+  allowPutDown: 0
+  allowMouseRotation: 0
+  matchHandLayerWhileHeld: 1
 --- !u!1 &795582956
 GameObject:
   m_ObjectHideFlags: 0
@@ -26941,6 +27004,11 @@ Transform:
   m_Children: []
   m_Father: {fileID: 410230597}
   m_LocalEulerAnglesHint: {x: 0, y: 0, z: 0}
+--- !u!1 &932242363 stripped
+GameObject:
+  m_CorrespondingSourceObject: {fileID: 117844, guid: 02a0e42f36bf76d4c946b93fc70c3cee, type: 3}
+  m_PrefabInstance: {fileID: 6968481884361703189}
+  m_PrefabAsset: {fileID: 0}
 --- !u!1 &932291569
 GameObject:
   m_ObjectHideFlags: 0
@@ -28681,7 +28749,7 @@ MeshRenderer:
   m_RenderingLayerMask: 1
   m_RendererPriority: 0
   m_Materials:
-  - {fileID: 2100000, guid: dbc7472d48e3ea746ad01829adc331d7, type: 2}
+  - {fileID: 2100000, guid: 2d96e79d3d44b824381f64be7765f5c2, type: 2}
   m_StaticBatchInfo:
     firstSubMesh: 0
     subMeshCount: 0
@@ -32251,13 +32319,13 @@ Transform:
   m_PrefabAsset: {fileID: 0}
   m_GameObject: {fileID: 1171074613}
   serializedVersion: 2
-  m_LocalRotation: {x: 0, y: 0, z: 0, w: 1}
+  m_LocalRotation: {x: 0, y: 1, z: 0, w: 0}
   m_LocalPosition: {x: 0, y: 0, z: 0}
   m_LocalScale: {x: 1, y: 1, z: 1}
   m_ConstrainProportionsScale: 0
   m_Children: []
   m_Father: {fileID: 1000000000750630402}
-  m_LocalEulerAnglesHint: {x: 0, y: 0, z: 0}
+  m_LocalEulerAnglesHint: {x: 0, y: 180, z: 0}
 --- !u!1 &1172371977
 GameObject:
   m_ObjectHideFlags: 0
@@ -40810,6 +40878,7 @@ Transform:
   m_Children:
   - {fileID: 6912644706050131302}
   - {fileID: 6912644706050131304}
+  - {fileID: 254096206}
   m_Father: {fileID: 0}
   m_LocalEulerAnglesHint: {x: 0, y: 0, z: 0}
 --- !u!1 &1369895898
@@ -48660,7 +48729,7 @@ MeshRenderer:
   m_RenderingLayerMask: 1
   m_RendererPriority: 0
   m_Materials:
-  - {fileID: 2100000, guid: dbc7472d48e3ea746ad01829adc331d7, type: 2}
+  - {fileID: 2100000, guid: 2d96e79d3d44b824381f64be7765f5c2, type: 2}
   m_StaticBatchInfo:
     firstSubMesh: 0
     subMeshCount: 0
@@ -50429,6 +50498,10 @@ PrefabInstance:
     - target: {fileID: 1674398136773721172, guid: d23dde54dd5d4e849b1062750af05679, type: 3}
       propertyPath: m_Name
       value: Curtain_2x3
+      objectReference: {fileID: 0}
+    - target: {fileID: 1674398136773721172, guid: d23dde54dd5d4e849b1062750af05679, type: 3}
+      propertyPath: m_IsActive
+      value: 1
       objectReference: {fileID: 0}
     - target: {fileID: 2164969769119665264, guid: d23dde54dd5d4e849b1062750af05679, type: 3}
       propertyPath: m_LocalScale.x
@@ -57864,7 +57937,7 @@ MeshRenderer:
   m_RenderingLayerMask: 1
   m_RendererPriority: 0
   m_Materials:
-  - {fileID: 2100000, guid: dbc7472d48e3ea746ad01829adc331d7, type: 2}
+  - {fileID: 2100000, guid: 2d96e79d3d44b824381f64be7765f5c2, type: 2}
   m_StaticBatchInfo:
     firstSubMesh: 0
     subMeshCount: 0
@@ -59796,7 +59869,7 @@ Transform:
   m_GameObject: {fileID: 2039740941}
   serializedVersion: 2
   m_LocalRotation: {x: 0, y: 0, z: 0, w: 1}
-  m_LocalPosition: {x: -33.15, y: -3.31, z: 0}
+  m_LocalPosition: {x: -71.54, y: -5.27, z: 0}
   m_LocalScale: {x: 1, y: 1, z: 1}
   m_ConstrainProportionsScale: 0
   m_Children: []
@@ -69163,6 +69236,7 @@ GameObject:
   - component: {fileID: 480269630939807719}
   - component: {fileID: 480269630941041173}
   - component: {fileID: 480269630941705329}
+  - component: {fileID: 480269630941705330}
   m_Layer: 0
   m_Name: Villa2_Deco_WindowGlass_A (7)
   m_TagString: Untagged
@@ -69227,6 +69301,31 @@ MeshRenderer:
   m_SortingOrder: 0
   m_MaskInteraction: 0
   m_AdditionalVertexStreams: {fileID: 0}
+--- !u!114 &480269630941705330
+MonoBehaviour:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 480269630940042999}
+  m_Enabled: 1
+  m_EditorHideFlags: 0
+  m_Script: {fileID: 11500000, guid: b968d44235acb2243b6e223e69fbae33, type: 3}
+  m_Name: 
+  m_EditorClassIdentifier: Assembly-CSharp::MainGame.P2.P2BreakableWindowGlass
+  targetRenderer: {fileID: 480269630941705329}
+  audioSource: {fileID: 0}
+  glassBreakClip: {fileID: 8300000, guid: 3220b092906c8e9409cdcabbb57bc668, type: 3}
+  shardMaterial: {fileID: 2100000, guid: dbb331028a61b2d4cab80478150ee615, type: 2}
+  breakOnCollision: 0
+  breakOnTriggerEnter: 0
+  disableCollidersAfterBreak: 1
+  shardCount: 18
+  shardLifetime: 6
+  shardImpulse: 2.4
+  upwardImpulse: 0.65
+  shardTorque: 7
+  shardSizeRange: {x: 0.055, y: 0.18}
 --- !u!4 &480538393331162442
 Transform:
   m_ObjectHideFlags: 0
@@ -69890,6 +69989,7 @@ GameObject:
   - component: {fileID: 521227659974496513}
   - component: {fileID: 521227659973655795}
   - component: {fileID: 521227659972205207}
+  - component: {fileID: 521227659974719506}
   m_Layer: 0
   m_Name: Villa2_Deco_WindowGlass_A (17)
   m_TagString: Untagged
@@ -69897,6 +69997,31 @@ GameObject:
   m_NavMeshLayer: 0
   m_StaticEditorFlags: 0
   m_IsActive: 1
+--- !u!114 &521227659974719506
+MonoBehaviour:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 521227659974719505}
+  m_Enabled: 1
+  m_EditorHideFlags: 0
+  m_Script: {fileID: 11500000, guid: b968d44235acb2243b6e223e69fbae33, type: 3}
+  m_Name: 
+  m_EditorClassIdentifier: Assembly-CSharp::MainGame.P2.P2BreakableWindowGlass
+  targetRenderer: {fileID: 521227659972205207}
+  audioSource: {fileID: 0}
+  glassBreakClip: {fileID: 8300000, guid: 3220b092906c8e9409cdcabbb57bc668, type: 3}
+  shardMaterial: {fileID: 2100000, guid: dbb331028a61b2d4cab80478150ee615, type: 2}
+  breakOnCollision: 0
+  breakOnTriggerEnter: 0
+  disableCollidersAfterBreak: 1
+  shardCount: 18
+  shardLifetime: 6
+  shardImpulse: 2.4
+  upwardImpulse: 0.65
+  shardTorque: 7
+  shardSizeRange: {x: 0.055, y: 0.18}
 --- !u!65 &532686634089535648
 BoxCollider:
   m_ObjectHideFlags: 0
@@ -71058,6 +71183,7 @@ GameObject:
   - component: {fileID: 688912716819662859}
   - component: {fileID: 688912716823012857}
   - component: {fileID: 688912716821824413}
+  - component: {fileID: 688912716823012858}
   m_Layer: 0
   m_Name: Villa2_Deco_WindowGlass_A (13)
   m_TagString: Untagged
@@ -71122,6 +71248,31 @@ MeshFilter:
   m_PrefabAsset: {fileID: 0}
   m_GameObject: {fileID: 688912716819915035}
   m_Mesh: {fileID: 4300000, guid: b4107ce16c2641447bb94ba8e62edb98, type: 3}
+--- !u!114 &688912716823012858
+MonoBehaviour:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 688912716819915035}
+  m_Enabled: 1
+  m_EditorHideFlags: 0
+  m_Script: {fileID: 11500000, guid: b968d44235acb2243b6e223e69fbae33, type: 3}
+  m_Name: 
+  m_EditorClassIdentifier: Assembly-CSharp::MainGame.P2.P2BreakableWindowGlass
+  targetRenderer: {fileID: 688912716821824413}
+  audioSource: {fileID: 0}
+  glassBreakClip: {fileID: 8300000, guid: 3220b092906c8e9409cdcabbb57bc668, type: 3}
+  shardMaterial: {fileID: 2100000, guid: dbb331028a61b2d4cab80478150ee615, type: 2}
+  breakOnCollision: 0
+  breakOnTriggerEnter: 0
+  disableCollidersAfterBreak: 1
+  shardCount: 18
+  shardLifetime: 6
+  shardImpulse: 2.4
+  upwardImpulse: 0.65
+  shardTorque: 7
+  shardSizeRange: {x: 0.055, y: 0.18}
 --- !u!1001 &694295175245908472
 PrefabInstance:
   m_ObjectHideFlags: 0
@@ -72445,6 +72596,7 @@ GameObject:
   - component: {fileID: 825946165256237151}
   - component: {fileID: 825946165253283245}
   - component: {fileID: 825946165254208457}
+  - component: {fileID: 825946165256411472}
   m_Layer: 0
   m_Name: Villa2_Deco_WindowGlass_A (2)
   m_TagString: Untagged
@@ -72452,6 +72604,31 @@ GameObject:
   m_NavMeshLayer: 0
   m_StaticEditorFlags: 0
   m_IsActive: 1
+--- !u!114 &825946165256411472
+MonoBehaviour:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 825946165256411471}
+  m_Enabled: 1
+  m_EditorHideFlags: 0
+  m_Script: {fileID: 11500000, guid: b968d44235acb2243b6e223e69fbae33, type: 3}
+  m_Name: 
+  m_EditorClassIdentifier: Assembly-CSharp::MainGame.P2.P2BreakableWindowGlass
+  targetRenderer: {fileID: 825946165254208457}
+  audioSource: {fileID: 0}
+  glassBreakClip: {fileID: 8300000, guid: 3220b092906c8e9409cdcabbb57bc668, type: 3}
+  shardMaterial: {fileID: 2100000, guid: dbb331028a61b2d4cab80478150ee615, type: 2}
+  breakOnCollision: 0
+  breakOnTriggerEnter: 0
+  disableCollidersAfterBreak: 1
+  shardCount: 18
+  shardLifetime: 6
+  shardImpulse: 2.4
+  upwardImpulse: 0.65
+  shardTorque: 7
+  shardSizeRange: {x: 0.055, y: 0.18}
 --- !u!1 &854014958598421758
 GameObject:
   m_ObjectHideFlags: 0
@@ -72793,6 +72970,7 @@ GameObject:
   - component: {fileID: 881030797244090447}
   - component: {fileID: 881030797243246013}
   - component: {fileID: 881030797242057689}
+  - component: {fileID: 881030797244244320}
   m_Layer: 0
   m_Name: Villa2_Deco_WindowGlass_A (32)
   m_TagString: Untagged
@@ -72800,6 +72978,31 @@ GameObject:
   m_NavMeshLayer: 0
   m_StaticEditorFlags: 0
   m_IsActive: 1
+--- !u!114 &881030797244244320
+MonoBehaviour:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 881030797244244319}
+  m_Enabled: 1
+  m_EditorHideFlags: 0
+  m_Script: {fileID: 11500000, guid: b968d44235acb2243b6e223e69fbae33, type: 3}
+  m_Name: 
+  m_EditorClassIdentifier: Assembly-CSharp::MainGame.P2.P2BreakableWindowGlass
+  targetRenderer: {fileID: 881030797242057689}
+  audioSource: {fileID: 0}
+  glassBreakClip: {fileID: 8300000, guid: 3220b092906c8e9409cdcabbb57bc668, type: 3}
+  shardMaterial: {fileID: 2100000, guid: dbb331028a61b2d4cab80478150ee615, type: 2}
+  breakOnCollision: 0
+  breakOnTriggerEnter: 0
+  disableCollidersAfterBreak: 1
+  shardCount: 18
+  shardLifetime: 6
+  shardImpulse: 2.4
+  upwardImpulse: 0.65
+  shardTorque: 7
+  shardSizeRange: {x: 0.055, y: 0.18}
 --- !u!65 &888892534506105726
 BoxCollider:
   m_ObjectHideFlags: 0
@@ -73590,37 +73793,6 @@ GameObject:
   m_NavMeshLayer: 0
   m_StaticEditorFlags: 0
   m_IsActive: 1
---- !u!4 &1000000000750630404
-Transform:
-  m_ObjectHideFlags: 0
-  m_CorrespondingSourceObject: {fileID: 0}
-  m_PrefabInstance: {fileID: 0}
-  m_PrefabAsset: {fileID: 0}
-  m_GameObject: {fileID: 1000000000750630405}
-  serializedVersion: 2
-  m_LocalRotation: {x: 0, y: 0, z: 0, w: 1}
-  m_LocalPosition: {x: 0, y: 0, z: 0}
-  m_LocalScale: {x: 1, y: 1, z: 1}
-  m_ConstrainProportionsScale: 0
-  m_Children: []
-  m_Father: {fileID: 1000000000750630414}
-  m_LocalEulerAnglesHint: {x: 0, y: 0, z: 0}
---- !u!1 &1000000000750630405
-GameObject:
-  m_ObjectHideFlags: 0
-  m_CorrespondingSourceObject: {fileID: 0}
-  m_PrefabInstance: {fileID: 0}
-  m_PrefabAsset: {fileID: 0}
-  serializedVersion: 6
-  m_Component:
-  - component: {fileID: 1000000000750630404}
-  m_Layer: 0
-  m_Name: MirrorFrame
-  m_TagString: Untagged
-  m_Icon: {fileID: 0}
-  m_NavMeshLayer: 0
-  m_StaticEditorFlags: 0
-  m_IsActive: 1
 --- !u!114 &1000000000750630411
 MonoBehaviour:
   m_ObjectHideFlags: 0
@@ -73640,6 +73812,7 @@ MonoBehaviour:
   textureSize: 1024
   mirrorLayer: 31
   renderEveryFrame: 0
+  createRuntimeFrame: 0
   keepReflectionCameraFixed: 1
   fixedCameraOffsetFromMirror: 0.08
   fixedCheckFieldOfView: 80
@@ -73713,7 +73886,6 @@ Transform:
   m_LocalScale: {x: 1, y: 1, z: 1}
   m_ConstrainProportionsScale: 0
   m_Children:
-  - {fileID: 1000000000750630404}
   - {fileID: 1000000000750630437}
   - {fileID: 1000000000750630402}
   - {fileID: 604486577}
@@ -73760,6 +73932,7 @@ MonoBehaviour:
   requiredPlayerDistance: 5
   requirePlayerInsideTrigger: 0
   requirePlayerInFront: 1
+  invertMirrorFrontDirection: 1
   requireMirrorRaycast: 1
   mirrorRaycastDistance: 8
   mirrorRaycastRadius: 0.08
@@ -73848,13 +74021,13 @@ Transform:
   m_PrefabAsset: {fileID: 0}
   m_GameObject: {fileID: 1000000000750630438}
   serializedVersion: 2
-  m_LocalRotation: {x: 0, y: 0, z: 0, w: 1}
+  m_LocalRotation: {x: 0, y: 1, z: 0, w: 0}
   m_LocalPosition: {x: 0, y: 1.86, z: 0}
   m_LocalScale: {x: 1, y: 1, z: 1}
   m_ConstrainProportionsScale: 0
   m_Children: []
   m_Father: {fileID: 1000000000750630414}
-  m_LocalEulerAnglesHint: {x: 0, y: 0, z: 0}
+  m_LocalEulerAnglesHint: {x: 0, y: 180, z: 0}
 --- !u!1 &1000000000750630438
 GameObject:
   m_ObjectHideFlags: 0
@@ -74007,6 +74180,7 @@ GameObject:
   - component: {fileID: 1009110550340512660}
   - component: {fileID: 1009110550339126886}
   - component: {fileID: 1009110550338478082}
+  - component: {fileID: 1009110550340512661}
   m_Layer: 0
   m_Name: Villa2_Deco_WindowGlass_A (14)
   m_TagString: Untagged
@@ -74029,6 +74203,31 @@ Transform:
   m_Children: []
   m_Father: {fileID: 1958832439}
   m_LocalEulerAnglesHint: {x: 0, y: 0, z: 0}
+--- !u!114 &1009110550340512661
+MonoBehaviour:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 1009110550340223620}
+  m_Enabled: 1
+  m_EditorHideFlags: 0
+  m_Script: {fileID: 11500000, guid: b968d44235acb2243b6e223e69fbae33, type: 3}
+  m_Name: 
+  m_EditorClassIdentifier: Assembly-CSharp::MainGame.P2.P2BreakableWindowGlass
+  targetRenderer: {fileID: 1009110550338478082}
+  audioSource: {fileID: 0}
+  glassBreakClip: {fileID: 8300000, guid: 3220b092906c8e9409cdcabbb57bc668, type: 3}
+  shardMaterial: {fileID: 2100000, guid: dbb331028a61b2d4cab80478150ee615, type: 2}
+  breakOnCollision: 0
+  breakOnTriggerEnter: 0
+  disableCollidersAfterBreak: 1
+  shardCount: 18
+  shardLifetime: 6
+  shardImpulse: 2.4
+  upwardImpulse: 0.65
+  shardTorque: 7
+  shardSizeRange: {x: 0.055, y: 0.18}
 --- !u!4 &1009352804877330530
 Transform:
   m_ObjectHideFlags: 0
@@ -75638,6 +75837,7 @@ GameObject:
   - component: {fileID: 1100828186166491972}
   - component: {fileID: 1100828186163664566}
   - component: {fileID: 1100828186164588754}
+  - component: {fileID: 1100828186166760021}
   m_Layer: 0
   m_Name: Villa2_Deco_WindowGlass_A (5)
   m_TagString: Untagged
@@ -75645,6 +75845,31 @@ GameObject:
   m_NavMeshLayer: 0
   m_StaticEditorFlags: 0
   m_IsActive: 1
+--- !u!114 &1100828186166760021
+MonoBehaviour:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 1100828186166760020}
+  m_Enabled: 1
+  m_EditorHideFlags: 0
+  m_Script: {fileID: 11500000, guid: b968d44235acb2243b6e223e69fbae33, type: 3}
+  m_Name: 
+  m_EditorClassIdentifier: Assembly-CSharp::MainGame.P2.P2BreakableWindowGlass
+  targetRenderer: {fileID: 1100828186164588754}
+  audioSource: {fileID: 0}
+  glassBreakClip: {fileID: 8300000, guid: 3220b092906c8e9409cdcabbb57bc668, type: 3}
+  shardMaterial: {fileID: 2100000, guid: dbb331028a61b2d4cab80478150ee615, type: 2}
+  breakOnCollision: 0
+  breakOnTriggerEnter: 0
+  disableCollidersAfterBreak: 1
+  shardCount: 18
+  shardLifetime: 6
+  shardImpulse: 2.4
+  upwardImpulse: 0.65
+  shardTorque: 7
+  shardSizeRange: {x: 0.055, y: 0.18}
 --- !u!33 &1102514495660054291
 MeshFilter:
   m_ObjectHideFlags: 0
@@ -79377,13 +79602,13 @@ Transform:
   m_PrefabAsset: {fileID: 0}
   m_GameObject: {fileID: 8521034513529026281}
   serializedVersion: 2
-  m_LocalRotation: {x: 0, y: 0, z: 0, w: 1}
+  m_LocalRotation: {x: 0, y: 1, z: 0, w: 0}
   m_LocalPosition: {x: 0, y: 0, z: 0.05}
   m_LocalScale: {x: 1, y: 1, z: 0.05}
   m_ConstrainProportionsScale: 0
   m_Children: []
   m_Father: {fileID: 1000000000750630402}
-  m_LocalEulerAnglesHint: {x: 0, y: 0, z: 0}
+  m_LocalEulerAnglesHint: {x: 0, y: 180, z: 0}
 --- !u!23 &1315725558022955810
 MeshRenderer:
   m_ObjectHideFlags: 0
@@ -79645,6 +79870,7 @@ GameObject:
   - component: {fileID: 1350812364271519500}
   - component: {fileID: 1350812364272380670}
   - component: {fileID: 1350812364273814682}
+  - component: {fileID: 1350812364273814683}
   m_Layer: 0
   m_Name: Villa2_Deco_WindowGlass_A (26)
   m_TagString: Untagged
@@ -79724,6 +79950,31 @@ MeshRenderer:
   m_SortingOrder: 0
   m_MaskInteraction: 0
   m_AdditionalVertexStreams: {fileID: 0}
+--- !u!114 &1350812364273814683
+MonoBehaviour:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 1350812364271382044}
+  m_Enabled: 1
+  m_EditorHideFlags: 0
+  m_Script: {fileID: 11500000, guid: b968d44235acb2243b6e223e69fbae33, type: 3}
+  m_Name: 
+  m_EditorClassIdentifier: Assembly-CSharp::MainGame.P2.P2BreakableWindowGlass
+  targetRenderer: {fileID: 1350812364273814682}
+  audioSource: {fileID: 0}
+  glassBreakClip: {fileID: 8300000, guid: 3220b092906c8e9409cdcabbb57bc668, type: 3}
+  shardMaterial: {fileID: 2100000, guid: dbb331028a61b2d4cab80478150ee615, type: 2}
+  breakOnCollision: 0
+  breakOnTriggerEnter: 0
+  disableCollidersAfterBreak: 1
+  shardCount: 18
+  shardLifetime: 6
+  shardImpulse: 2.4
+  upwardImpulse: 0.65
+  shardTorque: 7
+  shardSizeRange: {x: 0.055, y: 0.18}
 --- !u!33 &1357736315303023326
 MeshFilter:
   m_ObjectHideFlags: 0
@@ -83662,8 +83913,8 @@ Transform:
   m_PrefabAsset: {fileID: 0}
   m_GameObject: {fileID: 7590908442061814866}
   serializedVersion: 2
-  m_LocalRotation: {x: -0.63312054, y: -0.19765182, z: -0.17179577, w: 0.7284081}
-  m_LocalPosition: {x: -34.942932, y: 2.7941422, z: -5.1005287}
+  m_LocalRotation: {x: 0.032603245, y: -0.7063548, z: 0.032603245, w: 0.70635474}
+  m_LocalPosition: {x: -35.6, y: 2.8400002, z: 0}
   m_LocalScale: {x: 1, y: 1, z: 1}
   m_ConstrainProportionsScale: 0
   m_Children:
@@ -84205,6 +84456,7 @@ GameObject:
   - component: {fileID: 1615818947952526460}
   - component: {fileID: 1615818947955485070}
   - component: {fileID: 1615818947954561002}
+  - component: {fileID: 1615818947955485071}
   m_Layer: 0
   m_Name: Villa2_Deco_WindowGlass_A (10)
   m_TagString: Untagged
@@ -84284,6 +84536,31 @@ MeshFilter:
   m_PrefabAsset: {fileID: 0}
   m_GameObject: {fileID: 1615818947952356716}
   m_Mesh: {fileID: 4300000, guid: b4107ce16c2641447bb94ba8e62edb98, type: 3}
+--- !u!114 &1615818947955485071
+MonoBehaviour:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 1615818947952356716}
+  m_Enabled: 1
+  m_EditorHideFlags: 0
+  m_Script: {fileID: 11500000, guid: b968d44235acb2243b6e223e69fbae33, type: 3}
+  m_Name: 
+  m_EditorClassIdentifier: Assembly-CSharp::MainGame.P2.P2BreakableWindowGlass
+  targetRenderer: {fileID: 1615818947954561002}
+  audioSource: {fileID: 0}
+  glassBreakClip: {fileID: 8300000, guid: 3220b092906c8e9409cdcabbb57bc668, type: 3}
+  shardMaterial: {fileID: 2100000, guid: dbb331028a61b2d4cab80478150ee615, type: 2}
+  breakOnCollision: 0
+  breakOnTriggerEnter: 0
+  disableCollidersAfterBreak: 1
+  shardCount: 18
+  shardLifetime: 6
+  shardImpulse: 2.4
+  upwardImpulse: 0.65
+  shardTorque: 7
+  shardSizeRange: {x: 0.055, y: 0.18}
 --- !u!4 &1622320231103121258
 Transform:
   m_ObjectHideFlags: 0
@@ -91418,6 +91695,7 @@ GameObject:
   - component: {fileID: 2070501983458064906}
   - component: {fileID: 2070501983461529592}
   - component: {fileID: 2070501983460094364}
+  - component: {fileID: 2070501983461529593}
   m_Layer: 0
   m_Name: Villa2_Deco_WindowGlass_A (28)
   m_TagString: Untagged
@@ -91482,6 +91760,31 @@ MeshFilter:
   m_PrefabAsset: {fileID: 0}
   m_GameObject: {fileID: 2070501983458399002}
   m_Mesh: {fileID: 4300000, guid: b4107ce16c2641447bb94ba8e62edb98, type: 3}
+--- !u!114 &2070501983461529593
+MonoBehaviour:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 2070501983458399002}
+  m_Enabled: 1
+  m_EditorHideFlags: 0
+  m_Script: {fileID: 11500000, guid: b968d44235acb2243b6e223e69fbae33, type: 3}
+  m_Name: 
+  m_EditorClassIdentifier: Assembly-CSharp::MainGame.P2.P2BreakableWindowGlass
+  targetRenderer: {fileID: 2070501983460094364}
+  audioSource: {fileID: 0}
+  glassBreakClip: {fileID: 8300000, guid: 3220b092906c8e9409cdcabbb57bc668, type: 3}
+  shardMaterial: {fileID: 2100000, guid: dbb331028a61b2d4cab80478150ee615, type: 2}
+  breakOnCollision: 0
+  breakOnTriggerEnter: 0
+  disableCollidersAfterBreak: 1
+  shardCount: 18
+  shardLifetime: 6
+  shardImpulse: 2.4
+  upwardImpulse: 0.65
+  shardTorque: 7
+  shardSizeRange: {x: 0.055, y: 0.18}
 --- !u!65 &2072942455663238992
 BoxCollider:
   m_ObjectHideFlags: 0
@@ -92477,6 +92780,7 @@ GameObject:
   - component: {fileID: 2149286522109661285}
   - component: {fileID: 2149286522108820887}
   - component: {fileID: 2149286522107632627}
+  - component: {fileID: 2149286522109852022}
   m_Layer: 0
   m_Name: Villa2_Deco_WindowGlass_A (33)
   m_TagString: Untagged
@@ -92484,6 +92788,31 @@ GameObject:
   m_NavMeshLayer: 0
   m_StaticEditorFlags: 0
   m_IsActive: 1
+--- !u!114 &2149286522109852022
+MonoBehaviour:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 2149286522109852021}
+  m_Enabled: 1
+  m_EditorHideFlags: 0
+  m_Script: {fileID: 11500000, guid: b968d44235acb2243b6e223e69fbae33, type: 3}
+  m_Name: 
+  m_EditorClassIdentifier: Assembly-CSharp::MainGame.P2.P2BreakableWindowGlass
+  targetRenderer: {fileID: 2149286522107632627}
+  audioSource: {fileID: 0}
+  glassBreakClip: {fileID: 8300000, guid: 3220b092906c8e9409cdcabbb57bc668, type: 3}
+  shardMaterial: {fileID: 2100000, guid: dbb331028a61b2d4cab80478150ee615, type: 2}
+  breakOnCollision: 0
+  breakOnTriggerEnter: 0
+  disableCollidersAfterBreak: 1
+  shardCount: 18
+  shardLifetime: 6
+  shardImpulse: 2.4
+  upwardImpulse: 0.65
+  shardTorque: 7
+  shardSizeRange: {x: 0.055, y: 0.18}
 --- !u!23 &2155600210515769783
 MeshRenderer:
   m_ObjectHideFlags: 0
@@ -93173,6 +93502,7 @@ GameObject:
   - component: {fileID: 2201142786671714357}
   - component: {fileID: 2201142786668760519}
   - component: {fileID: 2201142786669423523}
+  - component: {fileID: 2201142786671954214}
   m_Layer: 0
   m_Name: Villa2_Deco_WindowGlass_A (42)
   m_TagString: Untagged
@@ -93180,6 +93510,31 @@ GameObject:
   m_NavMeshLayer: 0
   m_StaticEditorFlags: 0
   m_IsActive: 1
+--- !u!114 &2201142786671954214
+MonoBehaviour:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 2201142786671954213}
+  m_Enabled: 1
+  m_EditorHideFlags: 0
+  m_Script: {fileID: 11500000, guid: b968d44235acb2243b6e223e69fbae33, type: 3}
+  m_Name: 
+  m_EditorClassIdentifier: Assembly-CSharp::MainGame.P2.P2BreakableWindowGlass
+  targetRenderer: {fileID: 2201142786669423523}
+  audioSource: {fileID: 0}
+  glassBreakClip: {fileID: 8300000, guid: 3220b092906c8e9409cdcabbb57bc668, type: 3}
+  shardMaterial: {fileID: 2100000, guid: dbb331028a61b2d4cab80478150ee615, type: 2}
+  breakOnCollision: 0
+  breakOnTriggerEnter: 0
+  disableCollidersAfterBreak: 1
+  shardCount: 18
+  shardLifetime: 6
+  shardImpulse: 2.4
+  upwardImpulse: 0.65
+  shardTorque: 7
+  shardSizeRange: {x: 0.055, y: 0.18}
 --- !u!4 &2204806121256452326
 Transform:
   m_ObjectHideFlags: 0
@@ -93630,6 +93985,7 @@ GameObject:
   - component: {fileID: 2226737001727276569}
   - component: {fileID: 2226737001726024683}
   - component: {fileID: 2226737001725377935}
+  - component: {fileID: 2226737001727276570}
   m_Layer: 0
   m_Name: Villa2_Deco_WindowGlass_A (31)
   m_TagString: Untagged
@@ -93652,6 +94008,31 @@ Transform:
   m_Children: []
   m_Father: {fileID: 1958832439}
   m_LocalEulerAnglesHint: {x: 0, y: 0, z: 0}
+--- !u!114 &2226737001727276570
+MonoBehaviour:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 2226737001727123209}
+  m_Enabled: 1
+  m_EditorHideFlags: 0
+  m_Script: {fileID: 11500000, guid: b968d44235acb2243b6e223e69fbae33, type: 3}
+  m_Name: 
+  m_EditorClassIdentifier: Assembly-CSharp::MainGame.P2.P2BreakableWindowGlass
+  targetRenderer: {fileID: 2226737001725377935}
+  audioSource: {fileID: 0}
+  glassBreakClip: {fileID: 8300000, guid: 3220b092906c8e9409cdcabbb57bc668, type: 3}
+  shardMaterial: {fileID: 2100000, guid: dbb331028a61b2d4cab80478150ee615, type: 2}
+  breakOnCollision: 0
+  breakOnTriggerEnter: 0
+  disableCollidersAfterBreak: 1
+  shardCount: 18
+  shardLifetime: 6
+  shardImpulse: 2.4
+  upwardImpulse: 0.65
+  shardTorque: 7
+  shardSizeRange: {x: 0.055, y: 0.18}
 --- !u!33 &2229297943208948777
 MeshFilter:
   m_ObjectHideFlags: 0
@@ -96727,6 +97108,7 @@ GameObject:
   - component: {fileID: 2465690072548134173}
   - component: {fileID: 2465690072545321199}
   - component: {fileID: 2465690072546231947}
+  - component: {fileID: 2465690072548484110}
   m_Layer: 0
   m_Name: Villa2_Deco_WindowGlass_A (4)
   m_TagString: Untagged
@@ -96734,6 +97116,31 @@ GameObject:
   m_NavMeshLayer: 0
   m_StaticEditorFlags: 0
   m_IsActive: 1
+--- !u!114 &2465690072548484110
+MonoBehaviour:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 2465690072548484109}
+  m_Enabled: 1
+  m_EditorHideFlags: 0
+  m_Script: {fileID: 11500000, guid: b968d44235acb2243b6e223e69fbae33, type: 3}
+  m_Name: 
+  m_EditorClassIdentifier: Assembly-CSharp::MainGame.P2.P2BreakableWindowGlass
+  targetRenderer: {fileID: 2465690072546231947}
+  audioSource: {fileID: 0}
+  glassBreakClip: {fileID: 8300000, guid: 3220b092906c8e9409cdcabbb57bc668, type: 3}
+  shardMaterial: {fileID: 2100000, guid: dbb331028a61b2d4cab80478150ee615, type: 2}
+  breakOnCollision: 0
+  breakOnTriggerEnter: 0
+  disableCollidersAfterBreak: 1
+  shardCount: 18
+  shardLifetime: 6
+  shardImpulse: 2.4
+  upwardImpulse: 0.65
+  shardTorque: 7
+  shardSizeRange: {x: 0.055, y: 0.18}
 --- !u!33 &2468735231435286673
 MeshFilter:
   m_ObjectHideFlags: 0
@@ -97326,13 +97733,46 @@ PrefabInstance:
     m_RemovedComponents: []
     m_RemovedGameObjects: []
     m_AddedGameObjects: []
-    m_AddedComponents: []
+    m_AddedComponents:
+    - targetCorrespondingSourceObject: {fileID: 117844, guid: 02a0e42f36bf76d4c946b93fc70c3cee, type: 3}
+      insertIndex: -1
+      addedObject: {fileID: 2516188103186512720}
   m_SourcePrefab: {fileID: 100100000, guid: 02a0e42f36bf76d4c946b93fc70c3cee, type: 3}
 --- !u!4 &2516188103186512717 stripped
 Transform:
   m_CorrespondingSourceObject: {fileID: 452970, guid: 02a0e42f36bf76d4c946b93fc70c3cee, type: 3}
   m_PrefabInstance: {fileID: 2516188103186512716}
   m_PrefabAsset: {fileID: 0}
+--- !u!23 &2516188103186512718 stripped
+MeshRenderer:
+  m_CorrespondingSourceObject: {fileID: 2349834, guid: 02a0e42f36bf76d4c946b93fc70c3cee, type: 3}
+  m_PrefabInstance: {fileID: 2516188103186512716}
+  m_PrefabAsset: {fileID: 0}
+--- !u!114 &2516188103186512720
+MonoBehaviour:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 488801028}
+  m_Enabled: 1
+  m_EditorHideFlags: 0
+  m_Script: {fileID: 11500000, guid: b968d44235acb2243b6e223e69fbae33, type: 3}
+  m_Name: 
+  m_EditorClassIdentifier: Assembly-CSharp::MainGame.P2.P2BreakableWindowGlass
+  targetRenderer: {fileID: 2516188103186512718}
+  audioSource: {fileID: 0}
+  glassBreakClip: {fileID: 8300000, guid: 3220b092906c8e9409cdcabbb57bc668, type: 3}
+  shardMaterial: {fileID: 2100000, guid: dbb331028a61b2d4cab80478150ee615, type: 2}
+  breakOnCollision: 0
+  breakOnTriggerEnter: 0
+  disableCollidersAfterBreak: 1
+  shardCount: 18
+  shardLifetime: 6
+  shardImpulse: 2.4
+  upwardImpulse: 0.65
+  shardTorque: 7
+  shardSizeRange: {x: 0.055, y: 0.18}
 --- !u!23 &2517896684181426100
 MeshRenderer:
   m_ObjectHideFlags: 0
@@ -97616,6 +98056,7 @@ GameObject:
   - component: {fileID: 2544599884948514997}
   - component: {fileID: 2544599884949751111}
   - component: {fileID: 2544599884950414115}
+  - component: {fileID: 2544599884950414116}
   m_Layer: 0
   m_Name: Villa2_Deco_WindowGlass_A (3)
   m_TagString: Untagged
@@ -97680,6 +98121,31 @@ MeshRenderer:
   m_SortingOrder: 0
   m_MaskInteraction: 0
   m_AdditionalVertexStreams: {fileID: 0}
+--- !u!114 &2544599884950414116
+MonoBehaviour:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 2544599884948750757}
+  m_Enabled: 1
+  m_EditorHideFlags: 0
+  m_Script: {fileID: 11500000, guid: b968d44235acb2243b6e223e69fbae33, type: 3}
+  m_Name: 
+  m_EditorClassIdentifier: Assembly-CSharp::MainGame.P2.P2BreakableWindowGlass
+  targetRenderer: {fileID: 2544599884950414115}
+  audioSource: {fileID: 0}
+  glassBreakClip: {fileID: 8300000, guid: 3220b092906c8e9409cdcabbb57bc668, type: 3}
+  shardMaterial: {fileID: 2100000, guid: dbb331028a61b2d4cab80478150ee615, type: 2}
+  breakOnCollision: 0
+  breakOnTriggerEnter: 0
+  disableCollidersAfterBreak: 1
+  shardCount: 18
+  shardLifetime: 6
+  shardImpulse: 2.4
+  upwardImpulse: 0.65
+  shardTorque: 7
+  shardSizeRange: {x: 0.055, y: 0.18}
 --- !u!4 &2550590607948447632
 Transform:
   m_ObjectHideFlags: 0
@@ -99124,6 +99590,7 @@ GameObject:
   - component: {fileID: 2671477395156447066}
   - component: {fileID: 2671477395159777960}
   - component: {fileID: 2671477395158607052}
+  - component: {fileID: 2671477395159777961}
   m_Layer: 0
   m_Name: Villa2_Deco_WindowGlass_A (23)
   m_TagString: Untagged
@@ -99188,6 +99655,31 @@ MeshFilter:
   m_PrefabAsset: {fileID: 0}
   m_GameObject: {fileID: 2671477395156682314}
   m_Mesh: {fileID: 4300000, guid: b4107ce16c2641447bb94ba8e62edb98, type: 3}
+--- !u!114 &2671477395159777961
+MonoBehaviour:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 2671477395156682314}
+  m_Enabled: 1
+  m_EditorHideFlags: 0
+  m_Script: {fileID: 11500000, guid: b968d44235acb2243b6e223e69fbae33, type: 3}
+  m_Name: 
+  m_EditorClassIdentifier: Assembly-CSharp::MainGame.P2.P2BreakableWindowGlass
+  targetRenderer: {fileID: 2671477395158607052}
+  audioSource: {fileID: 0}
+  glassBreakClip: {fileID: 8300000, guid: 3220b092906c8e9409cdcabbb57bc668, type: 3}
+  shardMaterial: {fileID: 2100000, guid: dbb331028a61b2d4cab80478150ee615, type: 2}
+  breakOnCollision: 0
+  breakOnTriggerEnter: 0
+  disableCollidersAfterBreak: 1
+  shardCount: 18
+  shardLifetime: 6
+  shardImpulse: 2.4
+  upwardImpulse: 0.65
+  shardTorque: 7
+  shardSizeRange: {x: 0.055, y: 0.18}
 --- !u!1 &2679093850968611720
 GameObject:
   m_ObjectHideFlags: 0
@@ -99289,6 +99781,7 @@ GameObject:
   - component: {fileID: 2682973551244915751}
   - component: {fileID: 2682973551242090965}
   - component: {fileID: 2682973551243018161}
+  - component: {fileID: 2682973551245221176}
   m_Layer: 0
   m_Name: Villa2_Deco_WindowGlass_A (8)
   m_TagString: Untagged
@@ -99296,6 +99789,31 @@ GameObject:
   m_NavMeshLayer: 0
   m_StaticEditorFlags: 0
   m_IsActive: 1
+--- !u!114 &2682973551245221176
+MonoBehaviour:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 2682973551245221175}
+  m_Enabled: 1
+  m_EditorHideFlags: 0
+  m_Script: {fileID: 11500000, guid: b968d44235acb2243b6e223e69fbae33, type: 3}
+  m_Name: 
+  m_EditorClassIdentifier: Assembly-CSharp::MainGame.P2.P2BreakableWindowGlass
+  targetRenderer: {fileID: 2682973551243018161}
+  audioSource: {fileID: 0}
+  glassBreakClip: {fileID: 8300000, guid: 3220b092906c8e9409cdcabbb57bc668, type: 3}
+  shardMaterial: {fileID: 2100000, guid: dbb331028a61b2d4cab80478150ee615, type: 2}
+  breakOnCollision: 0
+  breakOnTriggerEnter: 0
+  disableCollidersAfterBreak: 1
+  shardCount: 18
+  shardLifetime: 6
+  shardImpulse: 2.4
+  upwardImpulse: 0.65
+  shardTorque: 7
+  shardSizeRange: {x: 0.055, y: 0.18}
 --- !u!65 &2703201212922418913
 BoxCollider:
   m_ObjectHideFlags: 0
@@ -103615,6 +104133,7 @@ GameObject:
   - component: {fileID: 2995328718869742943}
   - component: {fileID: 2995328718873094317}
   - component: {fileID: 2995328718871908041}
+  - component: {fileID: 2995328718873094318}
   m_Layer: 0
   m_Name: Villa2_Deco_WindowGlass_A (18)
   m_TagString: Untagged
@@ -103679,6 +104198,31 @@ MeshFilter:
   m_PrefabAsset: {fileID: 0}
   m_GameObject: {fileID: 2995328718869900367}
   m_Mesh: {fileID: 4300000, guid: b4107ce16c2641447bb94ba8e62edb98, type: 3}
+--- !u!114 &2995328718873094318
+MonoBehaviour:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 2995328718869900367}
+  m_Enabled: 1
+  m_EditorHideFlags: 0
+  m_Script: {fileID: 11500000, guid: b968d44235acb2243b6e223e69fbae33, type: 3}
+  m_Name: 
+  m_EditorClassIdentifier: Assembly-CSharp::MainGame.P2.P2BreakableWindowGlass
+  targetRenderer: {fileID: 2995328718871908041}
+  audioSource: {fileID: 0}
+  glassBreakClip: {fileID: 8300000, guid: 3220b092906c8e9409cdcabbb57bc668, type: 3}
+  shardMaterial: {fileID: 2100000, guid: dbb331028a61b2d4cab80478150ee615, type: 2}
+  breakOnCollision: 0
+  breakOnTriggerEnter: 0
+  disableCollidersAfterBreak: 1
+  shardCount: 18
+  shardLifetime: 6
+  shardImpulse: 2.4
+  upwardImpulse: 0.65
+  shardTorque: 7
+  shardSizeRange: {x: 0.055, y: 0.18}
 --- !u!4 &2996423800109757008
 Transform:
   m_ObjectHideFlags: 0
@@ -105093,6 +105637,7 @@ GameObject:
   - component: {fileID: 3065144191211003188}
   - component: {fileID: 3065144191208059078}
   - component: {fileID: 3065144191208707746}
+  - component: {fileID: 3065144191211156517}
   m_Layer: 0
   m_Name: Villa2_Deco_WindowGlass_A (37)
   m_TagString: Untagged
@@ -105100,6 +105645,31 @@ GameObject:
   m_NavMeshLayer: 0
   m_StaticEditorFlags: 0
   m_IsActive: 1
+--- !u!114 &3065144191211156517
+MonoBehaviour:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 3065144191211156516}
+  m_Enabled: 1
+  m_EditorHideFlags: 0
+  m_Script: {fileID: 11500000, guid: b968d44235acb2243b6e223e69fbae33, type: 3}
+  m_Name: 
+  m_EditorClassIdentifier: Assembly-CSharp::MainGame.P2.P2BreakableWindowGlass
+  targetRenderer: {fileID: 3065144191208707746}
+  audioSource: {fileID: 0}
+  glassBreakClip: {fileID: 8300000, guid: 3220b092906c8e9409cdcabbb57bc668, type: 3}
+  shardMaterial: {fileID: 2100000, guid: dbb331028a61b2d4cab80478150ee615, type: 2}
+  breakOnCollision: 0
+  breakOnTriggerEnter: 0
+  disableCollidersAfterBreak: 1
+  shardCount: 18
+  shardLifetime: 6
+  shardImpulse: 2.4
+  upwardImpulse: 0.65
+  shardTorque: 7
+  shardSizeRange: {x: 0.055, y: 0.18}
 --- !u!33 &3073059330237806964
 MeshFilter:
   m_ObjectHideFlags: 0
@@ -105627,6 +106197,7 @@ GameObject:
   - component: {fileID: 3094718193969052445}
   - component: {fileID: 3094718193965700847}
   - component: {fileID: 3094718193966887051}
+  - component: {fileID: 3094718193969052446}
   m_Layer: 0
   m_Name: Villa2_Deco_WindowGlass_A (25)
   m_TagString: Untagged
@@ -105649,6 +106220,31 @@ Transform:
   m_Children: []
   m_Father: {fileID: 1958832439}
   m_LocalEulerAnglesHint: {x: 0, y: 0, z: 0}
+--- !u!114 &3094718193969052446
+MonoBehaviour:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 3094718193968828941}
+  m_Enabled: 1
+  m_EditorHideFlags: 0
+  m_Script: {fileID: 11500000, guid: b968d44235acb2243b6e223e69fbae33, type: 3}
+  m_Name: 
+  m_EditorClassIdentifier: Assembly-CSharp::MainGame.P2.P2BreakableWindowGlass
+  targetRenderer: {fileID: 3094718193966887051}
+  audioSource: {fileID: 0}
+  glassBreakClip: {fileID: 8300000, guid: 3220b092906c8e9409cdcabbb57bc668, type: 3}
+  shardMaterial: {fileID: 2100000, guid: dbb331028a61b2d4cab80478150ee615, type: 2}
+  breakOnCollision: 0
+  breakOnTriggerEnter: 0
+  disableCollidersAfterBreak: 1
+  shardCount: 18
+  shardLifetime: 6
+  shardImpulse: 2.4
+  upwardImpulse: 0.65
+  shardTorque: 7
+  shardSizeRange: {x: 0.055, y: 0.18}
 --- !u!4 &3095364945723870966
 Transform:
   m_ObjectHideFlags: 0
@@ -106522,6 +107118,7 @@ GameObject:
   - component: {fileID: 3142004640360047004}
   - component: {fileID: 3142004640363514990}
   - component: {fileID: 3142004640362080778}
+  - component: {fileID: 3142004640363514991}
   m_Layer: 0
   m_Name: Villa2_Deco_WindowGlass_A (9)
   m_TagString: Untagged
@@ -106586,6 +107183,31 @@ MeshFilter:
   m_PrefabAsset: {fileID: 0}
   m_GameObject: {fileID: 3142004640360417420}
   m_Mesh: {fileID: 4300000, guid: b4107ce16c2641447bb94ba8e62edb98, type: 3}
+--- !u!114 &3142004640363514991
+MonoBehaviour:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 3142004640360417420}
+  m_Enabled: 1
+  m_EditorHideFlags: 0
+  m_Script: {fileID: 11500000, guid: b968d44235acb2243b6e223e69fbae33, type: 3}
+  m_Name: 
+  m_EditorClassIdentifier: Assembly-CSharp::MainGame.P2.P2BreakableWindowGlass
+  targetRenderer: {fileID: 3142004640362080778}
+  audioSource: {fileID: 0}
+  glassBreakClip: {fileID: 8300000, guid: 3220b092906c8e9409cdcabbb57bc668, type: 3}
+  shardMaterial: {fileID: 2100000, guid: dbb331028a61b2d4cab80478150ee615, type: 2}
+  breakOnCollision: 0
+  breakOnTriggerEnter: 0
+  disableCollidersAfterBreak: 1
+  shardCount: 18
+  shardLifetime: 6
+  shardImpulse: 2.4
+  upwardImpulse: 0.65
+  shardTorque: 7
+  shardSizeRange: {x: 0.055, y: 0.18}
 --- !u!1 &3144534460533969343
 GameObject:
   m_ObjectHideFlags: 0
@@ -107113,6 +107735,7 @@ GameObject:
   - component: {fileID: 3162234477971668114}
   - component: {fileID: 3162234477968314720}
   - component: {fileID: 3162234477969504004}
+  - component: {fileID: 3162234477971668115}
   m_Layer: 0
   m_Name: Villa2_Deco_WindowGlass_A (1)
   m_TagString: Untagged
@@ -107135,6 +107758,31 @@ Transform:
   m_Children: []
   m_Father: {fileID: 1958832439}
   m_LocalEulerAnglesHint: {x: 0, y: 0, z: 0}
+--- !u!114 &3162234477971668115
+MonoBehaviour:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 3162234477971477890}
+  m_Enabled: 1
+  m_EditorHideFlags: 0
+  m_Script: {fileID: 11500000, guid: b968d44235acb2243b6e223e69fbae33, type: 3}
+  m_Name: 
+  m_EditorClassIdentifier: Assembly-CSharp::MainGame.P2.P2BreakableWindowGlass
+  targetRenderer: {fileID: 3162234477969504004}
+  audioSource: {fileID: 0}
+  glassBreakClip: {fileID: 8300000, guid: 3220b092906c8e9409cdcabbb57bc668, type: 3}
+  shardMaterial: {fileID: 2100000, guid: dbb331028a61b2d4cab80478150ee615, type: 2}
+  breakOnCollision: 0
+  breakOnTriggerEnter: 0
+  disableCollidersAfterBreak: 1
+  shardCount: 18
+  shardLifetime: 6
+  shardImpulse: 2.4
+  upwardImpulse: 0.65
+  shardTorque: 7
+  shardSizeRange: {x: 0.055, y: 0.18}
 --- !u!65 &3165576633451483192
 BoxCollider:
   m_ObjectHideFlags: 0
@@ -111119,6 +111767,7 @@ GameObject:
   - component: {fileID: 3433015201669654314}
   - component: {fileID: 3433015201672989400}
   - component: {fileID: 3433015201671818428}
+  - component: {fileID: 3433015201672989401}
   m_Layer: 0
   m_Name: Villa2_Deco_WindowGlass_A (39)
   m_TagString: Untagged
@@ -111183,6 +111832,31 @@ MeshFilter:
   m_PrefabAsset: {fileID: 0}
   m_GameObject: {fileID: 3433015201669893690}
   m_Mesh: {fileID: 4300000, guid: b4107ce16c2641447bb94ba8e62edb98, type: 3}
+--- !u!114 &3433015201672989401
+MonoBehaviour:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 3433015201669893690}
+  m_Enabled: 1
+  m_EditorHideFlags: 0
+  m_Script: {fileID: 11500000, guid: b968d44235acb2243b6e223e69fbae33, type: 3}
+  m_Name: 
+  m_EditorClassIdentifier: Assembly-CSharp::MainGame.P2.P2BreakableWindowGlass
+  targetRenderer: {fileID: 3433015201671818428}
+  audioSource: {fileID: 0}
+  glassBreakClip: {fileID: 8300000, guid: 3220b092906c8e9409cdcabbb57bc668, type: 3}
+  shardMaterial: {fileID: 2100000, guid: dbb331028a61b2d4cab80478150ee615, type: 2}
+  breakOnCollision: 0
+  breakOnTriggerEnter: 0
+  disableCollidersAfterBreak: 1
+  shardCount: 18
+  shardLifetime: 6
+  shardImpulse: 2.4
+  upwardImpulse: 0.65
+  shardTorque: 7
+  shardSizeRange: {x: 0.055, y: 0.18}
 --- !u!23 &3438590609035334072
 MeshRenderer:
   m_ObjectHideFlags: 0
@@ -122097,6 +122771,7 @@ GameObject:
   - component: {fileID: 3842316490639135452}
   - component: {fileID: 3842316490638294830}
   - component: {fileID: 3842316490636843338}
+  - component: {fileID: 3842316490639293389}
   m_Layer: 0
   m_Name: Villa2_Deco_WindowGlass_A (40)
   m_TagString: Untagged
@@ -122104,6 +122779,31 @@ GameObject:
   m_NavMeshLayer: 0
   m_StaticEditorFlags: 0
   m_IsActive: 1
+--- !u!114 &3842316490639293389
+MonoBehaviour:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 3842316490639293388}
+  m_Enabled: 1
+  m_EditorHideFlags: 0
+  m_Script: {fileID: 11500000, guid: b968d44235acb2243b6e223e69fbae33, type: 3}
+  m_Name: 
+  m_EditorClassIdentifier: Assembly-CSharp::MainGame.P2.P2BreakableWindowGlass
+  targetRenderer: {fileID: 3842316490636843338}
+  audioSource: {fileID: 0}
+  glassBreakClip: {fileID: 8300000, guid: 3220b092906c8e9409cdcabbb57bc668, type: 3}
+  shardMaterial: {fileID: 2100000, guid: dbb331028a61b2d4cab80478150ee615, type: 2}
+  breakOnCollision: 0
+  breakOnTriggerEnter: 0
+  disableCollidersAfterBreak: 1
+  shardCount: 18
+  shardLifetime: 6
+  shardImpulse: 2.4
+  upwardImpulse: 0.65
+  shardTorque: 7
+  shardSizeRange: {x: 0.055, y: 0.18}
 --- !u!33 &3863352103364673773
 MeshFilter:
   m_ObjectHideFlags: 0
@@ -124032,6 +124732,7 @@ GameObject:
   - component: {fileID: 4001356607235110952}
   - component: {fileID: 4001356607234250202}
   - component: {fileID: 4001356607233078206}
+  - component: {fileID: 4001356607235346745}
   m_Layer: 0
   m_Name: Villa2_Deco_WindowGlass_A (38)
   m_TagString: Untagged
@@ -124039,6 +124740,31 @@ GameObject:
   m_NavMeshLayer: 0
   m_StaticEditorFlags: 0
   m_IsActive: 1
+--- !u!114 &4001356607235346745
+MonoBehaviour:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 4001356607235346744}
+  m_Enabled: 1
+  m_EditorHideFlags: 0
+  m_Script: {fileID: 11500000, guid: b968d44235acb2243b6e223e69fbae33, type: 3}
+  m_Name: 
+  m_EditorClassIdentifier: Assembly-CSharp::MainGame.P2.P2BreakableWindowGlass
+  targetRenderer: {fileID: 4001356607233078206}
+  audioSource: {fileID: 0}
+  glassBreakClip: {fileID: 8300000, guid: 3220b092906c8e9409cdcabbb57bc668, type: 3}
+  shardMaterial: {fileID: 2100000, guid: dbb331028a61b2d4cab80478150ee615, type: 2}
+  breakOnCollision: 0
+  breakOnTriggerEnter: 0
+  disableCollidersAfterBreak: 1
+  shardCount: 18
+  shardLifetime: 6
+  shardImpulse: 2.4
+  upwardImpulse: 0.65
+  shardTorque: 7
+  shardSizeRange: {x: 0.055, y: 0.18}
 --- !u!4 &4005061085185443668
 Transform:
   m_ObjectHideFlags: 0
@@ -125237,6 +125963,7 @@ GameObject:
   - component: {fileID: 4116112698724070017}
   - component: {fileID: 4116112698722819955}
   - component: {fileID: 4116112698722171159}
+  - component: {fileID: 4116112698724070018}
   m_Layer: 0
   m_Name: Villa2_Deco_WindowGlass_A (46)
   m_TagString: Untagged
@@ -125259,6 +125986,31 @@ Transform:
   m_Children: []
   m_Father: {fileID: 1958832439}
   m_LocalEulerAnglesHint: {x: 0, y: 0, z: 0}
+--- !u!114 &4116112698724070018
+MonoBehaviour:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 4116112698723916689}
+  m_Enabled: 1
+  m_EditorHideFlags: 0
+  m_Script: {fileID: 11500000, guid: b968d44235acb2243b6e223e69fbae33, type: 3}
+  m_Name: 
+  m_EditorClassIdentifier: Assembly-CSharp::MainGame.P2.P2BreakableWindowGlass
+  targetRenderer: {fileID: 4116112698722171159}
+  audioSource: {fileID: 0}
+  glassBreakClip: {fileID: 8300000, guid: 3220b092906c8e9409cdcabbb57bc668, type: 3}
+  shardMaterial: {fileID: 2100000, guid: dbb331028a61b2d4cab80478150ee615, type: 2}
+  breakOnCollision: 0
+  breakOnTriggerEnter: 0
+  disableCollidersAfterBreak: 1
+  shardCount: 18
+  shardLifetime: 6
+  shardImpulse: 2.4
+  upwardImpulse: 0.65
+  shardTorque: 7
+  shardSizeRange: {x: 0.055, y: 0.18}
 --- !u!23 &4117922140295386531
 MeshRenderer:
   m_ObjectHideFlags: 0
@@ -133663,6 +134415,7 @@ GameObject:
   - component: {fileID: 4859948873439720230}
   - component: {fileID: 4859948873438338772}
   - component: {fileID: 4859948873437427888}
+  - component: {fileID: 4859948873439720231}
   m_Layer: 0
   m_Name: Villa2_Deco_WindowGlass_A (21)
   m_TagString: Untagged
@@ -133685,6 +134438,31 @@ Transform:
   m_Children: []
   m_Father: {fileID: 1958832439}
   m_LocalEulerAnglesHint: {x: 0, y: 0, z: 0}
+--- !u!114 &4859948873439720231
+MonoBehaviour:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 4859948873439435318}
+  m_Enabled: 1
+  m_EditorHideFlags: 0
+  m_Script: {fileID: 11500000, guid: b968d44235acb2243b6e223e69fbae33, type: 3}
+  m_Name: 
+  m_EditorClassIdentifier: Assembly-CSharp::MainGame.P2.P2BreakableWindowGlass
+  targetRenderer: {fileID: 4859948873437427888}
+  audioSource: {fileID: 0}
+  glassBreakClip: {fileID: 8300000, guid: 3220b092906c8e9409cdcabbb57bc668, type: 3}
+  shardMaterial: {fileID: 2100000, guid: dbb331028a61b2d4cab80478150ee615, type: 2}
+  breakOnCollision: 0
+  breakOnTriggerEnter: 0
+  disableCollidersAfterBreak: 1
+  shardCount: 18
+  shardLifetime: 6
+  shardImpulse: 2.4
+  upwardImpulse: 0.65
+  shardTorque: 7
+  shardSizeRange: {x: 0.055, y: 0.18}
 --- !u!65 &4867929123853555192
 BoxCollider:
   m_ObjectHideFlags: 0
@@ -134087,6 +134865,7 @@ GameObject:
   - component: {fileID: 4891291152618318285}
   - component: {fileID: 4891291152619553855}
   - component: {fileID: 4891291152620216923}
+  - component: {fileID: 4891291152620216924}
   m_Layer: 0
   m_Name: Villa2_Deco_WindowGlass_A (45)
   m_TagString: Untagged
@@ -134151,6 +134930,31 @@ MeshRenderer:
   m_SortingOrder: 0
   m_MaskInteraction: 0
   m_AdditionalVertexStreams: {fileID: 0}
+--- !u!114 &4891291152620216924
+MonoBehaviour:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 4891291152618520797}
+  m_Enabled: 1
+  m_EditorHideFlags: 0
+  m_Script: {fileID: 11500000, guid: b968d44235acb2243b6e223e69fbae33, type: 3}
+  m_Name: 
+  m_EditorClassIdentifier: Assembly-CSharp::MainGame.P2.P2BreakableWindowGlass
+  targetRenderer: {fileID: 4891291152620216923}
+  audioSource: {fileID: 0}
+  glassBreakClip: {fileID: 8300000, guid: 3220b092906c8e9409cdcabbb57bc668, type: 3}
+  shardMaterial: {fileID: 2100000, guid: dbb331028a61b2d4cab80478150ee615, type: 2}
+  breakOnCollision: 0
+  breakOnTriggerEnter: 0
+  disableCollidersAfterBreak: 1
+  shardCount: 18
+  shardLifetime: 6
+  shardImpulse: 2.4
+  upwardImpulse: 0.65
+  shardTorque: 7
+  shardSizeRange: {x: 0.055, y: 0.18}
 --- !u!205 &4894625628018247887
 LODGroup:
   m_ObjectHideFlags: 0
@@ -138364,6 +139168,7 @@ GameObject:
   - component: {fileID: 5162068517235725328}
   - component: {fileID: 5162068517237111266}
   - component: {fileID: 5162068517238022022}
+  - component: {fileID: 5162068517238022023}
   m_Layer: 0
   m_Name: Villa2_Deco_WindowGlass_A (44)
   m_TagString: Untagged
@@ -138428,6 +139233,31 @@ MeshRenderer:
   m_SortingOrder: 0
   m_MaskInteraction: 0
   m_AdditionalVertexStreams: {fileID: 0}
+--- !u!114 &5162068517238022023
+MonoBehaviour:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 5162068517236112640}
+  m_Enabled: 1
+  m_EditorHideFlags: 0
+  m_Script: {fileID: 11500000, guid: b968d44235acb2243b6e223e69fbae33, type: 3}
+  m_Name: 
+  m_EditorClassIdentifier: Assembly-CSharp::MainGame.P2.P2BreakableWindowGlass
+  targetRenderer: {fileID: 5162068517238022022}
+  audioSource: {fileID: 0}
+  glassBreakClip: {fileID: 8300000, guid: 3220b092906c8e9409cdcabbb57bc668, type: 3}
+  shardMaterial: {fileID: 2100000, guid: dbb331028a61b2d4cab80478150ee615, type: 2}
+  breakOnCollision: 0
+  breakOnTriggerEnter: 0
+  disableCollidersAfterBreak: 1
+  shardCount: 18
+  shardLifetime: 6
+  shardImpulse: 2.4
+  upwardImpulse: 0.65
+  shardTorque: 7
+  shardSizeRange: {x: 0.055, y: 0.18}
 --- !u!4 &5167022052180104896
 Transform:
   m_ObjectHideFlags: 0
@@ -139026,6 +139856,7 @@ GameObject:
   - component: {fileID: 5206226946831714698}
   - component: {fileID: 5206226946828903544}
   - component: {fileID: 5206226946829812252}
+  - component: {fileID: 5206226946832031899}
   m_Layer: 0
   m_Name: Villa2_Deco_WindowGlass_A (27)
   m_TagString: Untagged
@@ -139033,6 +139864,31 @@ GameObject:
   m_NavMeshLayer: 0
   m_StaticEditorFlags: 0
   m_IsActive: 1
+--- !u!114 &5206226946832031899
+MonoBehaviour:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 5206226946832031898}
+  m_Enabled: 1
+  m_EditorHideFlags: 0
+  m_Script: {fileID: 11500000, guid: b968d44235acb2243b6e223e69fbae33, type: 3}
+  m_Name: 
+  m_EditorClassIdentifier: Assembly-CSharp::MainGame.P2.P2BreakableWindowGlass
+  targetRenderer: {fileID: 5206226946829812252}
+  audioSource: {fileID: 0}
+  glassBreakClip: {fileID: 8300000, guid: 3220b092906c8e9409cdcabbb57bc668, type: 3}
+  shardMaterial: {fileID: 2100000, guid: dbb331028a61b2d4cab80478150ee615, type: 2}
+  breakOnCollision: 0
+  breakOnTriggerEnter: 0
+  disableCollidersAfterBreak: 1
+  shardCount: 18
+  shardLifetime: 6
+  shardImpulse: 2.4
+  upwardImpulse: 0.65
+  shardTorque: 7
+  shardSizeRange: {x: 0.055, y: 0.18}
 --- !u!4 &5212055491552890525
 Transform:
   m_ObjectHideFlags: 0
@@ -139407,6 +140263,7 @@ GameObject:
   - component: {fileID: 5238735583062475904}
   - component: {fileID: 5238735583061633394}
   - component: {fileID: 5238735583060184854}
+  - component: {fileID: 5238735583062699409}
   m_Layer: 0
   m_Name: Villa2_Deco_WindowGlass_A (15)
   m_TagString: Untagged
@@ -139414,6 +140271,31 @@ GameObject:
   m_NavMeshLayer: 0
   m_StaticEditorFlags: 0
   m_IsActive: 1
+--- !u!114 &5238735583062699409
+MonoBehaviour:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 5238735583062699408}
+  m_Enabled: 1
+  m_EditorHideFlags: 0
+  m_Script: {fileID: 11500000, guid: b968d44235acb2243b6e223e69fbae33, type: 3}
+  m_Name: 
+  m_EditorClassIdentifier: Assembly-CSharp::MainGame.P2.P2BreakableWindowGlass
+  targetRenderer: {fileID: 5238735583060184854}
+  audioSource: {fileID: 0}
+  glassBreakClip: {fileID: 8300000, guid: 3220b092906c8e9409cdcabbb57bc668, type: 3}
+  shardMaterial: {fileID: 2100000, guid: dbb331028a61b2d4cab80478150ee615, type: 2}
+  breakOnCollision: 0
+  breakOnTriggerEnter: 0
+  disableCollidersAfterBreak: 1
+  shardCount: 18
+  shardLifetime: 6
+  shardImpulse: 2.4
+  upwardImpulse: 0.65
+  shardTorque: 7
+  shardSizeRange: {x: 0.055, y: 0.18}
 --- !u!23 &5245218550329428433
 MeshRenderer:
   m_ObjectHideFlags: 0
@@ -141391,6 +142273,7 @@ GameObject:
   - component: {fileID: 5409540146643355975}
   - component: {fileID: 5409540146642117813}
   - component: {fileID: 5409540146641453777}
+  - component: {fileID: 5409540146643355976}
   m_Layer: 0
   m_Name: Villa2_Deco_WindowGlass_A (48)
   m_TagString: Untagged
@@ -141413,6 +142296,31 @@ Transform:
   m_Children: []
   m_Father: {fileID: 1958832439}
   m_LocalEulerAnglesHint: {x: 0, y: 0, z: 0}
+--- !u!114 &5409540146643355976
+MonoBehaviour:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 5409540146643181655}
+  m_Enabled: 1
+  m_EditorHideFlags: 0
+  m_Script: {fileID: 11500000, guid: b968d44235acb2243b6e223e69fbae33, type: 3}
+  m_Name: 
+  m_EditorClassIdentifier: Assembly-CSharp::MainGame.P2.P2BreakableWindowGlass
+  targetRenderer: {fileID: 5409540146641453777}
+  audioSource: {fileID: 0}
+  glassBreakClip: {fileID: 8300000, guid: 3220b092906c8e9409cdcabbb57bc668, type: 3}
+  shardMaterial: {fileID: 2100000, guid: dbb331028a61b2d4cab80478150ee615, type: 2}
+  breakOnCollision: 0
+  breakOnTriggerEnter: 0
+  disableCollidersAfterBreak: 1
+  shardCount: 18
+  shardLifetime: 6
+  shardImpulse: 2.4
+  upwardImpulse: 0.65
+  shardTorque: 7
+  shardSizeRange: {x: 0.055, y: 0.18}
 --- !u!33 &5413224176813465818
 MeshFilter:
   m_ObjectHideFlags: 0
@@ -144852,6 +145760,7 @@ GameObject:
   - component: {fileID: 5659340407197463397}
   - component: {fileID: 5659340407200407191}
   - component: {fileID: 5659340407199758579}
+  - component: {fileID: 5659340407200407192}
   m_Layer: 0
   m_Name: Villa2_Deco_WindowGlass_A (12)
   m_TagString: Untagged
@@ -144931,6 +145840,31 @@ MeshFilter:
   m_PrefabAsset: {fileID: 0}
   m_GameObject: {fileID: 5659340407197211253}
   m_Mesh: {fileID: 4300000, guid: b4107ce16c2641447bb94ba8e62edb98, type: 3}
+--- !u!114 &5659340407200407192
+MonoBehaviour:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 5659340407197211253}
+  m_Enabled: 1
+  m_EditorHideFlags: 0
+  m_Script: {fileID: 11500000, guid: b968d44235acb2243b6e223e69fbae33, type: 3}
+  m_Name: 
+  m_EditorClassIdentifier: Assembly-CSharp::MainGame.P2.P2BreakableWindowGlass
+  targetRenderer: {fileID: 5659340407199758579}
+  audioSource: {fileID: 0}
+  glassBreakClip: {fileID: 8300000, guid: 3220b092906c8e9409cdcabbb57bc668, type: 3}
+  shardMaterial: {fileID: 2100000, guid: dbb331028a61b2d4cab80478150ee615, type: 2}
+  breakOnCollision: 0
+  breakOnTriggerEnter: 0
+  disableCollidersAfterBreak: 1
+  shardCount: 18
+  shardLifetime: 6
+  shardImpulse: 2.4
+  upwardImpulse: 0.65
+  shardTorque: 7
+  shardSizeRange: {x: 0.055, y: 0.18}
 --- !u!4 &5661049824861441392
 Transform:
   m_ObjectHideFlags: 0
@@ -146445,6 +147379,7 @@ GameObject:
   - component: {fileID: 5771067245929281078}
   - component: {fileID: 5771067245932616644}
   - component: {fileID: 5771067245931445664}
+  - component: {fileID: 5771067245932616645}
   m_Layer: 0
   m_Name: Villa2_Deco_WindowGlass_A (16)
   m_TagString: Untagged
@@ -146509,6 +147444,31 @@ MeshFilter:
   m_PrefabAsset: {fileID: 0}
   m_GameObject: {fileID: 5771067245929455398}
   m_Mesh: {fileID: 4300000, guid: b4107ce16c2641447bb94ba8e62edb98, type: 3}
+--- !u!114 &5771067245932616645
+MonoBehaviour:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 5771067245929455398}
+  m_Enabled: 1
+  m_EditorHideFlags: 0
+  m_Script: {fileID: 11500000, guid: b968d44235acb2243b6e223e69fbae33, type: 3}
+  m_Name: 
+  m_EditorClassIdentifier: Assembly-CSharp::MainGame.P2.P2BreakableWindowGlass
+  targetRenderer: {fileID: 5771067245931445664}
+  audioSource: {fileID: 0}
+  glassBreakClip: {fileID: 8300000, guid: 3220b092906c8e9409cdcabbb57bc668, type: 3}
+  shardMaterial: {fileID: 2100000, guid: dbb331028a61b2d4cab80478150ee615, type: 2}
+  breakOnCollision: 0
+  breakOnTriggerEnter: 0
+  disableCollidersAfterBreak: 1
+  shardCount: 18
+  shardLifetime: 6
+  shardImpulse: 2.4
+  upwardImpulse: 0.65
+  shardTorque: 7
+  shardSizeRange: {x: 0.055, y: 0.18}
 --- !u!64 &5774093366742054047
 MeshCollider:
   m_ObjectHideFlags: 0
@@ -148850,6 +149810,7 @@ GameObject:
   - component: {fileID: 5924551170439870672}
   - component: {fileID: 5924551170436912418}
   - component: {fileID: 5924551170437837638}
+  - component: {fileID: 5924551170440073665}
   m_Layer: 0
   m_Name: Villa2_Deco_WindowGlass_A (36)
   m_TagString: Untagged
@@ -148857,6 +149818,31 @@ GameObject:
   m_NavMeshLayer: 0
   m_StaticEditorFlags: 0
   m_IsActive: 1
+--- !u!114 &5924551170440073665
+MonoBehaviour:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 5924551170440073664}
+  m_Enabled: 1
+  m_EditorHideFlags: 0
+  m_Script: {fileID: 11500000, guid: b968d44235acb2243b6e223e69fbae33, type: 3}
+  m_Name: 
+  m_EditorClassIdentifier: Assembly-CSharp::MainGame.P2.P2BreakableWindowGlass
+  targetRenderer: {fileID: 5924551170437837638}
+  audioSource: {fileID: 0}
+  glassBreakClip: {fileID: 8300000, guid: 3220b092906c8e9409cdcabbb57bc668, type: 3}
+  shardMaterial: {fileID: 2100000, guid: dbb331028a61b2d4cab80478150ee615, type: 2}
+  breakOnCollision: 0
+  breakOnTriggerEnter: 0
+  disableCollidersAfterBreak: 1
+  shardCount: 18
+  shardLifetime: 6
+  shardImpulse: 2.4
+  upwardImpulse: 0.65
+  shardTorque: 7
+  shardSizeRange: {x: 0.055, y: 0.18}
 --- !u!23 &5929369982671580414
 MeshRenderer:
   m_ObjectHideFlags: 0
@@ -152420,6 +153406,7 @@ GameObject:
   - component: {fileID: 6153862216477335008}
   - component: {fileID: 6153862216478191634}
   - component: {fileID: 6153862216479626870}
+  - component: {fileID: 6153862216479626871}
   m_Layer: 0
   m_Name: Villa2_Deco_WindowGlass_A (34)
   m_TagString: Untagged
@@ -152499,6 +153486,31 @@ MeshRenderer:
   m_SortingOrder: 0
   m_MaskInteraction: 0
   m_AdditionalVertexStreams: {fileID: 0}
+--- !u!114 &6153862216479626871
+MonoBehaviour:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 6153862216477160688}
+  m_Enabled: 1
+  m_EditorHideFlags: 0
+  m_Script: {fileID: 11500000, guid: b968d44235acb2243b6e223e69fbae33, type: 3}
+  m_Name: 
+  m_EditorClassIdentifier: Assembly-CSharp::MainGame.P2.P2BreakableWindowGlass
+  targetRenderer: {fileID: 6153862216479626870}
+  audioSource: {fileID: 0}
+  glassBreakClip: {fileID: 8300000, guid: 3220b092906c8e9409cdcabbb57bc668, type: 3}
+  shardMaterial: {fileID: 2100000, guid: dbb331028a61b2d4cab80478150ee615, type: 2}
+  breakOnCollision: 0
+  breakOnTriggerEnter: 0
+  disableCollidersAfterBreak: 1
+  shardCount: 18
+  shardLifetime: 6
+  shardImpulse: 2.4
+  upwardImpulse: 0.65
+  shardTorque: 7
+  shardSizeRange: {x: 0.055, y: 0.18}
 --- !u!1 &6157163396199897396
 GameObject:
   m_ObjectHideFlags: 0
@@ -160371,6 +161383,7 @@ GameObject:
   - component: {fileID: 6817915377860020670}
   - component: {fileID: 6817915377862845516}
   - component: {fileID: 6817915377862181416}
+  - component: {fileID: 6817915377862845517}
   m_Layer: 0
   m_Name: Villa2_Deco_WindowGlass_A (29)
   m_TagString: Untagged
@@ -160450,6 +161463,31 @@ MeshFilter:
   m_PrefabAsset: {fileID: 0}
   m_GameObject: {fileID: 6817915377859748014}
   m_Mesh: {fileID: 4300000, guid: b4107ce16c2641447bb94ba8e62edb98, type: 3}
+--- !u!114 &6817915377862845517
+MonoBehaviour:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 6817915377859748014}
+  m_Enabled: 1
+  m_EditorHideFlags: 0
+  m_Script: {fileID: 11500000, guid: b968d44235acb2243b6e223e69fbae33, type: 3}
+  m_Name: 
+  m_EditorClassIdentifier: Assembly-CSharp::MainGame.P2.P2BreakableWindowGlass
+  targetRenderer: {fileID: 6817915377862181416}
+  audioSource: {fileID: 0}
+  glassBreakClip: {fileID: 8300000, guid: 3220b092906c8e9409cdcabbb57bc668, type: 3}
+  shardMaterial: {fileID: 2100000, guid: dbb331028a61b2d4cab80478150ee615, type: 2}
+  breakOnCollision: 0
+  breakOnTriggerEnter: 0
+  disableCollidersAfterBreak: 1
+  shardCount: 18
+  shardLifetime: 6
+  shardImpulse: 2.4
+  upwardImpulse: 0.65
+  shardTorque: 7
+  shardSizeRange: {x: 0.055, y: 0.18}
 --- !u!65 &6820030840690391129
 BoxCollider:
   m_ObjectHideFlags: 0
@@ -161478,6 +162516,7 @@ GameObject:
   - component: {fileID: 6916052563576208314}
   - component: {fileID: 6916052563575346760}
   - component: {fileID: 6916052563573911596}
+  - component: {fileID: 6916052563576378027}
   m_Layer: 0
   m_Name: Villa2_Deco_WindowGlass_A (47)
   m_TagString: Untagged
@@ -161485,6 +162524,31 @@ GameObject:
   m_NavMeshLayer: 0
   m_StaticEditorFlags: 0
   m_IsActive: 1
+--- !u!114 &6916052563576378027
+MonoBehaviour:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 6916052563576378026}
+  m_Enabled: 1
+  m_EditorHideFlags: 0
+  m_Script: {fileID: 11500000, guid: b968d44235acb2243b6e223e69fbae33, type: 3}
+  m_Name: 
+  m_EditorClassIdentifier: Assembly-CSharp::MainGame.P2.P2BreakableWindowGlass
+  targetRenderer: {fileID: 6916052563573911596}
+  audioSource: {fileID: 0}
+  glassBreakClip: {fileID: 8300000, guid: 3220b092906c8e9409cdcabbb57bc668, type: 3}
+  shardMaterial: {fileID: 2100000, guid: dbb331028a61b2d4cab80478150ee615, type: 2}
+  breakOnCollision: 0
+  breakOnTriggerEnter: 0
+  disableCollidersAfterBreak: 1
+  shardCount: 18
+  shardLifetime: 6
+  shardImpulse: 2.4
+  upwardImpulse: 0.65
+  shardTorque: 7
+  shardSizeRange: {x: 0.055, y: 0.18}
 --- !u!1 &6918204360156124540
 GameObject:
   m_ObjectHideFlags: 0
@@ -162614,13 +163678,46 @@ PrefabInstance:
     m_RemovedComponents: []
     m_RemovedGameObjects: []
     m_AddedGameObjects: []
-    m_AddedComponents: []
+    m_AddedComponents:
+    - targetCorrespondingSourceObject: {fileID: 117844, guid: 02a0e42f36bf76d4c946b93fc70c3cee, type: 3}
+      insertIndex: -1
+      addedObject: {fileID: 6968481884361703193}
   m_SourcePrefab: {fileID: 100100000, guid: 02a0e42f36bf76d4c946b93fc70c3cee, type: 3}
 --- !u!4 &6968481884361703190 stripped
 Transform:
   m_CorrespondingSourceObject: {fileID: 452970, guid: 02a0e42f36bf76d4c946b93fc70c3cee, type: 3}
   m_PrefabInstance: {fileID: 6968481884361703189}
   m_PrefabAsset: {fileID: 0}
+--- !u!23 &6968481884361703191 stripped
+MeshRenderer:
+  m_CorrespondingSourceObject: {fileID: 2349834, guid: 02a0e42f36bf76d4c946b93fc70c3cee, type: 3}
+  m_PrefabInstance: {fileID: 6968481884361703189}
+  m_PrefabAsset: {fileID: 0}
+--- !u!114 &6968481884361703193
+MonoBehaviour:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 932242363}
+  m_Enabled: 1
+  m_EditorHideFlags: 0
+  m_Script: {fileID: 11500000, guid: b968d44235acb2243b6e223e69fbae33, type: 3}
+  m_Name: 
+  m_EditorClassIdentifier: Assembly-CSharp::MainGame.P2.P2BreakableWindowGlass
+  targetRenderer: {fileID: 6968481884361703191}
+  audioSource: {fileID: 0}
+  glassBreakClip: {fileID: 8300000, guid: 3220b092906c8e9409cdcabbb57bc668, type: 3}
+  shardMaterial: {fileID: 2100000, guid: dbb331028a61b2d4cab80478150ee615, type: 2}
+  breakOnCollision: 0
+  breakOnTriggerEnter: 0
+  disableCollidersAfterBreak: 1
+  shardCount: 18
+  shardLifetime: 6
+  shardImpulse: 2.4
+  upwardImpulse: 0.65
+  shardTorque: 7
+  shardSizeRange: {x: 0.055, y: 0.18}
 --- !u!65 &6977342997981030768
 BoxCollider:
   m_ObjectHideFlags: 0
@@ -162831,6 +163928,7 @@ GameObject:
   - component: {fileID: 6980036375205776444}
   - component: {fileID: 6980036375202963918}
   - component: {fileID: 6980036375203612586}
+  - component: {fileID: 6980036375206159661}
   m_Layer: 0
   m_Name: Villa2_Deco_WindowGlass_A (24)
   m_TagString: Untagged
@@ -162838,6 +163936,31 @@ GameObject:
   m_NavMeshLayer: 0
   m_StaticEditorFlags: 0
   m_IsActive: 0
+--- !u!114 &6980036375206159661
+MonoBehaviour:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 6980036375206159660}
+  m_Enabled: 1
+  m_EditorHideFlags: 0
+  m_Script: {fileID: 11500000, guid: b968d44235acb2243b6e223e69fbae33, type: 3}
+  m_Name: 
+  m_EditorClassIdentifier: Assembly-CSharp::MainGame.P2.P2BreakableWindowGlass
+  targetRenderer: {fileID: 6980036375203612586}
+  audioSource: {fileID: 0}
+  glassBreakClip: {fileID: 8300000, guid: 3220b092906c8e9409cdcabbb57bc668, type: 3}
+  shardMaterial: {fileID: 2100000, guid: dbb331028a61b2d4cab80478150ee615, type: 2}
+  breakOnCollision: 0
+  breakOnTriggerEnter: 0
+  disableCollidersAfterBreak: 1
+  shardCount: 18
+  shardLifetime: 6
+  shardImpulse: 2.4
+  upwardImpulse: 0.65
+  shardTorque: 7
+  shardSizeRange: {x: 0.055, y: 0.18}
 --- !u!137 &6984622870386613398
 SkinnedMeshRenderer:
   m_ObjectHideFlags: 0
@@ -166369,6 +167492,7 @@ GameObject:
   - component: {fileID: 7226761220892969752}
   - component: {fileID: 7226761220891731690}
   - component: {fileID: 7226761220891066510}
+  - component: {fileID: 7226761220892969753}
   m_Layer: 0
   m_Name: Villa2_Deco_WindowGlass_A (19)
   m_TagString: Untagged
@@ -166391,6 +167515,31 @@ Transform:
   m_Children: []
   m_Father: {fileID: 1958832439}
   m_LocalEulerAnglesHint: {x: 0, y: 0, z: 0}
+--- !u!114 &7226761220892969753
+MonoBehaviour:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 7226761220892729864}
+  m_Enabled: 1
+  m_EditorHideFlags: 0
+  m_Script: {fileID: 11500000, guid: b968d44235acb2243b6e223e69fbae33, type: 3}
+  m_Name: 
+  m_EditorClassIdentifier: Assembly-CSharp::MainGame.P2.P2BreakableWindowGlass
+  targetRenderer: {fileID: 7226761220891066510}
+  audioSource: {fileID: 0}
+  glassBreakClip: {fileID: 8300000, guid: 3220b092906c8e9409cdcabbb57bc668, type: 3}
+  shardMaterial: {fileID: 2100000, guid: dbb331028a61b2d4cab80478150ee615, type: 2}
+  breakOnCollision: 0
+  breakOnTriggerEnter: 0
+  disableCollidersAfterBreak: 1
+  shardCount: 18
+  shardLifetime: 6
+  shardImpulse: 2.4
+  upwardImpulse: 0.65
+  shardTorque: 7
+  shardSizeRange: {x: 0.055, y: 0.18}
 --- !u!65 &7245312337217103182
 BoxCollider:
   m_ObjectHideFlags: 0
@@ -173018,6 +174167,7 @@ GameObject:
   - component: {fileID: 7706032218499952600}
   - component: {fileID: 7706032218498564650}
   - component: {fileID: 7706032218497655886}
+  - component: {fileID: 7706032218499952601}
   m_Layer: 0
   m_Name: Villa2_Deco_WindowGlass_A (30)
   m_TagString: Untagged
@@ -173040,6 +174190,31 @@ Transform:
   m_Children: []
   m_Father: {fileID: 1958832439}
   m_LocalEulerAnglesHint: {x: 0, y: 0, z: 0}
+--- !u!114 &7706032218499952601
+MonoBehaviour:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 7706032218499598024}
+  m_Enabled: 1
+  m_EditorHideFlags: 0
+  m_Script: {fileID: 11500000, guid: b968d44235acb2243b6e223e69fbae33, type: 3}
+  m_Name: 
+  m_EditorClassIdentifier: Assembly-CSharp::MainGame.P2.P2BreakableWindowGlass
+  targetRenderer: {fileID: 7706032218497655886}
+  audioSource: {fileID: 0}
+  glassBreakClip: {fileID: 8300000, guid: 3220b092906c8e9409cdcabbb57bc668, type: 3}
+  shardMaterial: {fileID: 2100000, guid: dbb331028a61b2d4cab80478150ee615, type: 2}
+  breakOnCollision: 0
+  breakOnTriggerEnter: 0
+  disableCollidersAfterBreak: 1
+  shardCount: 18
+  shardLifetime: 6
+  shardImpulse: 2.4
+  upwardImpulse: 0.65
+  shardTorque: 7
+  shardSizeRange: {x: 0.055, y: 0.18}
 --- !u!65 &7715196988011821773
 BoxCollider:
   m_ObjectHideFlags: 0
@@ -175360,6 +176535,7 @@ GameObject:
   - component: {fileID: 7910189082005800873}
   - component: {fileID: 7910189082004957787}
   - component: {fileID: 7910189082003770431}
+  - component: {fileID: 7910189082006056634}
   m_Layer: 0
   m_Name: Villa2_Deco_WindowGlass_A (22)
   m_TagString: Untagged
@@ -175367,6 +176543,31 @@ GameObject:
   m_NavMeshLayer: 0
   m_StaticEditorFlags: 0
   m_IsActive: 1
+--- !u!114 &7910189082006056634
+MonoBehaviour:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 7910189082006056633}
+  m_Enabled: 1
+  m_EditorHideFlags: 0
+  m_Script: {fileID: 11500000, guid: b968d44235acb2243b6e223e69fbae33, type: 3}
+  m_Name: 
+  m_EditorClassIdentifier: Assembly-CSharp::MainGame.P2.P2BreakableWindowGlass
+  targetRenderer: {fileID: 7910189082003770431}
+  audioSource: {fileID: 0}
+  glassBreakClip: {fileID: 8300000, guid: 3220b092906c8e9409cdcabbb57bc668, type: 3}
+  shardMaterial: {fileID: 2100000, guid: dbb331028a61b2d4cab80478150ee615, type: 2}
+  breakOnCollision: 0
+  breakOnTriggerEnter: 0
+  disableCollidersAfterBreak: 1
+  shardCount: 18
+  shardLifetime: 6
+  shardImpulse: 2.4
+  upwardImpulse: 0.65
+  shardTorque: 7
+  shardSizeRange: {x: 0.055, y: 0.18}
 --- !u!65 &7917018672780817378
 BoxCollider:
   m_ObjectHideFlags: 0
@@ -177474,6 +178675,7 @@ GameObject:
   - component: {fileID: 8068392680082654517}
   - component: {fileID: 8068392680079845575}
   - component: {fileID: 8068392680080756387}
+  - component: {fileID: 8068392680083008550}
   m_Layer: 0
   m_Name: Villa2_Deco_WindowGlass_A (6)
   m_TagString: Untagged
@@ -177481,6 +178683,31 @@ GameObject:
   m_NavMeshLayer: 0
   m_StaticEditorFlags: 0
   m_IsActive: 1
+--- !u!114 &8068392680083008550
+MonoBehaviour:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 8068392680083008549}
+  m_Enabled: 1
+  m_EditorHideFlags: 0
+  m_Script: {fileID: 11500000, guid: b968d44235acb2243b6e223e69fbae33, type: 3}
+  m_Name: 
+  m_EditorClassIdentifier: Assembly-CSharp::MainGame.P2.P2BreakableWindowGlass
+  targetRenderer: {fileID: 8068392680080756387}
+  audioSource: {fileID: 0}
+  glassBreakClip: {fileID: 8300000, guid: 3220b092906c8e9409cdcabbb57bc668, type: 3}
+  shardMaterial: {fileID: 2100000, guid: dbb331028a61b2d4cab80478150ee615, type: 2}
+  breakOnCollision: 0
+  breakOnTriggerEnter: 0
+  disableCollidersAfterBreak: 1
+  shardCount: 18
+  shardLifetime: 6
+  shardImpulse: 2.4
+  upwardImpulse: 0.65
+  shardTorque: 7
+  shardSizeRange: {x: 0.055, y: 0.18}
 --- !u!1 &8069860023359317742
 GameObject:
   m_ObjectHideFlags: 0
@@ -180544,6 +181771,7 @@ GameObject:
   - component: {fileID: 8292622418425591007}
   - component: {fileID: 8292622418422765869}
   - component: {fileID: 8292622418423430985}
+  - component: {fileID: 8292622418425896400}
   m_Layer: 0
   m_Name: Villa2_Deco_WindowGlass_A (20)
   m_TagString: Untagged
@@ -180551,6 +181779,31 @@ GameObject:
   m_NavMeshLayer: 0
   m_StaticEditorFlags: 0
   m_IsActive: 1
+--- !u!114 &8292622418425896400
+MonoBehaviour:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 8292622418425896399}
+  m_Enabled: 1
+  m_EditorHideFlags: 0
+  m_Script: {fileID: 11500000, guid: b968d44235acb2243b6e223e69fbae33, type: 3}
+  m_Name: 
+  m_EditorClassIdentifier: Assembly-CSharp::MainGame.P2.P2BreakableWindowGlass
+  targetRenderer: {fileID: 8292622418423430985}
+  audioSource: {fileID: 0}
+  glassBreakClip: {fileID: 8300000, guid: 3220b092906c8e9409cdcabbb57bc668, type: 3}
+  shardMaterial: {fileID: 2100000, guid: dbb331028a61b2d4cab80478150ee615, type: 2}
+  breakOnCollision: 0
+  breakOnTriggerEnter: 0
+  disableCollidersAfterBreak: 1
+  shardCount: 18
+  shardLifetime: 6
+  shardImpulse: 2.4
+  upwardImpulse: 0.65
+  shardTorque: 7
+  shardSizeRange: {x: 0.055, y: 0.18}
 --- !u!1 &8297752524108650601
 GameObject:
   m_ObjectHideFlags: 0
@@ -182726,6 +183979,7 @@ GameObject:
   - component: {fileID: 8432793049591763084}
   - component: {fileID: 8432793049594723710}
   - component: {fileID: 8432793049594059546}
+  - component: {fileID: 8432793049594723711}
   m_Layer: 0
   m_Name: Villa2_Deco_WindowGlass_A
   m_TagString: Untagged
@@ -182805,6 +184059,31 @@ MeshFilter:
   m_PrefabAsset: {fileID: 0}
   m_GameObject: {fileID: 8432793049591527836}
   m_Mesh: {fileID: 4300000, guid: b4107ce16c2641447bb94ba8e62edb98, type: 3}
+--- !u!114 &8432793049594723711
+MonoBehaviour:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 8432793049591527836}
+  m_Enabled: 1
+  m_EditorHideFlags: 0
+  m_Script: {fileID: 11500000, guid: b968d44235acb2243b6e223e69fbae33, type: 3}
+  m_Name: 
+  m_EditorClassIdentifier: Assembly-CSharp::MainGame.P2.P2BreakableWindowGlass
+  targetRenderer: {fileID: 8432793049594059546}
+  audioSource: {fileID: 0}
+  glassBreakClip: {fileID: 8300000, guid: 3220b092906c8e9409cdcabbb57bc668, type: 3}
+  shardMaterial: {fileID: 2100000, guid: dbb331028a61b2d4cab80478150ee615, type: 2}
+  breakOnCollision: 0
+  breakOnTriggerEnter: 0
+  disableCollidersAfterBreak: 1
+  shardCount: 18
+  shardLifetime: 6
+  shardImpulse: 2.4
+  upwardImpulse: 0.65
+  shardTorque: 7
+  shardSizeRange: {x: 0.055, y: 0.18}
 --- !u!1 &8433409700112152930
 GameObject:
   m_ObjectHideFlags: 0
@@ -186290,6 +187569,7 @@ GameObject:
   - component: {fileID: 8751774350519653290}
   - component: {fileID: 8751774350520909400}
   - component: {fileID: 8751774350521817148}
+  - component: {fileID: 8751774350521817149}
   m_Layer: 0
   m_Name: Villa2_Deco_WindowGlass_A (11)
   m_TagString: Untagged
@@ -186354,6 +187634,31 @@ MeshRenderer:
   m_SortingOrder: 0
   m_MaskInteraction: 0
   m_AdditionalVertexStreams: {fileID: 0}
+--- !u!114 &8751774350521817149
+MonoBehaviour:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 8751774350519876282}
+  m_Enabled: 1
+  m_EditorHideFlags: 0
+  m_Script: {fileID: 11500000, guid: b968d44235acb2243b6e223e69fbae33, type: 3}
+  m_Name: 
+  m_EditorClassIdentifier: Assembly-CSharp::MainGame.P2.P2BreakableWindowGlass
+  targetRenderer: {fileID: 8751774350521817148}
+  audioSource: {fileID: 0}
+  glassBreakClip: {fileID: 8300000, guid: 3220b092906c8e9409cdcabbb57bc668, type: 3}
+  shardMaterial: {fileID: 2100000, guid: dbb331028a61b2d4cab80478150ee615, type: 2}
+  breakOnCollision: 0
+  breakOnTriggerEnter: 0
+  disableCollidersAfterBreak: 1
+  shardCount: 18
+  shardLifetime: 6
+  shardImpulse: 2.4
+  upwardImpulse: 0.65
+  shardTorque: 7
+  shardSizeRange: {x: 0.055, y: 0.18}
 --- !u!1 &8752265067606847250
 GameObject:
   m_ObjectHideFlags: 0
@@ -186381,6 +187686,7 @@ GameObject:
   - component: {fileID: 8756409347657384052}
   - component: {fileID: 8756409347660213638}
   - component: {fileID: 8756409347659287522}
+  - component: {fileID: 8756409347660213639}
   m_Layer: 0
   m_Name: Villa2_Deco_WindowGlass_A (35)
   m_TagString: Untagged
@@ -186460,6 +187766,31 @@ MeshFilter:
   m_PrefabAsset: {fileID: 0}
   m_GameObject: {fileID: 8756409347657083236}
   m_Mesh: {fileID: 4300000, guid: b4107ce16c2641447bb94ba8e62edb98, type: 3}
+--- !u!114 &8756409347660213639
+MonoBehaviour:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 8756409347657083236}
+  m_Enabled: 1
+  m_EditorHideFlags: 0
+  m_Script: {fileID: 11500000, guid: b968d44235acb2243b6e223e69fbae33, type: 3}
+  m_Name: 
+  m_EditorClassIdentifier: Assembly-CSharp::MainGame.P2.P2BreakableWindowGlass
+  targetRenderer: {fileID: 8756409347659287522}
+  audioSource: {fileID: 0}
+  glassBreakClip: {fileID: 8300000, guid: 3220b092906c8e9409cdcabbb57bc668, type: 3}
+  shardMaterial: {fileID: 2100000, guid: dbb331028a61b2d4cab80478150ee615, type: 2}
+  breakOnCollision: 0
+  breakOnTriggerEnter: 0
+  disableCollidersAfterBreak: 1
+  shardCount: 18
+  shardLifetime: 6
+  shardImpulse: 2.4
+  upwardImpulse: 0.65
+  shardTorque: 7
+  shardSizeRange: {x: 0.055, y: 0.18}
 --- !u!1 &8757736536090832568
 GameObject:
   m_ObjectHideFlags: 0
@@ -187917,6 +189248,7 @@ GameObject:
   - component: {fileID: 8852000030029580764}
   - component: {fileID: 8852000030028735534}
   - component: {fileID: 8852000030027547210}
+  - component: {fileID: 8852000030029832397}
   m_Layer: 0
   m_Name: Villa2_Deco_WindowGlass_A (43)
   m_TagString: Untagged
@@ -187924,6 +189256,31 @@ GameObject:
   m_NavMeshLayer: 0
   m_StaticEditorFlags: 0
   m_IsActive: 1
+--- !u!114 &8852000030029832397
+MonoBehaviour:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 8852000030029832396}
+  m_Enabled: 1
+  m_EditorHideFlags: 0
+  m_Script: {fileID: 11500000, guid: b968d44235acb2243b6e223e69fbae33, type: 3}
+  m_Name: 
+  m_EditorClassIdentifier: Assembly-CSharp::MainGame.P2.P2BreakableWindowGlass
+  targetRenderer: {fileID: 8852000030027547210}
+  audioSource: {fileID: 0}
+  glassBreakClip: {fileID: 8300000, guid: 3220b092906c8e9409cdcabbb57bc668, type: 3}
+  shardMaterial: {fileID: 2100000, guid: dbb331028a61b2d4cab80478150ee615, type: 2}
+  breakOnCollision: 0
+  breakOnTriggerEnter: 0
+  disableCollidersAfterBreak: 1
+  shardCount: 18
+  shardLifetime: 6
+  shardImpulse: 2.4
+  upwardImpulse: 0.65
+  shardTorque: 7
+  shardSizeRange: {x: 0.055, y: 0.18}
 --- !u!4 &8853835764021891991
 Transform:
   m_ObjectHideFlags: 0
@@ -187950,6 +189307,7 @@ GameObject:
   - component: {fileID: 8862832765671292802}
   - component: {fileID: 8862832765674099312}
   - component: {fileID: 8862832765673190420}
+  - component: {fileID: 8862832765674099313}
   m_Layer: 0
   m_Name: Villa2_Deco_WindowGlass_A (41)
   m_TagString: Untagged
@@ -188029,6 +189387,31 @@ MeshFilter:
   m_PrefabAsset: {fileID: 0}
   m_GameObject: {fileID: 8862832765670938258}
   m_Mesh: {fileID: 4300000, guid: b4107ce16c2641447bb94ba8e62edb98, type: 3}
+--- !u!114 &8862832765674099313
+MonoBehaviour:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 8862832765670938258}
+  m_Enabled: 1
+  m_EditorHideFlags: 0
+  m_Script: {fileID: 11500000, guid: b968d44235acb2243b6e223e69fbae33, type: 3}
+  m_Name: 
+  m_EditorClassIdentifier: Assembly-CSharp::MainGame.P2.P2BreakableWindowGlass
+  targetRenderer: {fileID: 8862832765673190420}
+  audioSource: {fileID: 0}
+  glassBreakClip: {fileID: 8300000, guid: 3220b092906c8e9409cdcabbb57bc668, type: 3}
+  shardMaterial: {fileID: 2100000, guid: dbb331028a61b2d4cab80478150ee615, type: 2}
+  breakOnCollision: 0
+  breakOnTriggerEnter: 0
+  disableCollidersAfterBreak: 1
+  shardCount: 18
+  shardLifetime: 6
+  shardImpulse: 2.4
+  upwardImpulse: 0.65
+  shardTorque: 7
+  shardSizeRange: {x: 0.055, y: 0.18}
 --- !u!4 &8863493503589922065
 Transform:
   m_ObjectHideFlags: 0

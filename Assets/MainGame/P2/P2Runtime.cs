@@ -383,6 +383,7 @@ namespace MainGame.P2
 
             MirrorEventTriggered = true;
             PlaySfx(glassBreakClip);
+            P2BreakableWindowGlass.BreakAllHouseGlass(false);
             P2MirrorBreakable.BreakAll();
             ghost?.Awaken();
             FindFirstObjectByType<P2GhostDoorApparitionDirector>(FindObjectsInactive.Include)?.Awaken();
@@ -390,6 +391,18 @@ namespace MainGame.P2
                 ambienceSource.pitch = 0.82f;
 
             StartCoroutine(MirrorBreakBeat());
+        }
+
+        public void RegisterSilverMirrorHeld()
+        {
+            if (!HasSilverMirror)
+            {
+                HasSilverMirror = true;
+                PlayVoice(ngocMirrorFound, "Đây rồi... tấm gương bạc bà dặn.", 3f);
+                SetStage(P2Stage.MirrorTaken);
+            }
+
+            TriggerMirrorBreakEvent();
         }
 
         public float DistanceToPlayer(Vector3 worldPosition)

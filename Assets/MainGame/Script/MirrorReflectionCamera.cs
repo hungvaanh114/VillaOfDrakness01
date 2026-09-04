@@ -13,6 +13,7 @@ public sealed class MirrorReflectionCamera : MonoBehaviour
     [SerializeField] private int textureSize = 1024;
     [SerializeField] private int mirrorLayer = 31;
     [SerializeField] private bool renderEveryFrame = true;
+    [SerializeField] private bool createRuntimeFrame = true;
     [SerializeField] private bool keepReflectionCameraFixed = true;
     [SerializeField, Min(0f)] private float fixedCameraOffsetFromMirror = 0.08f;
     [SerializeField, Min(1f)] private float fixedCheckFieldOfView = 80f;
@@ -69,7 +70,10 @@ public sealed class MirrorReflectionCamera : MonoBehaviour
     {
         EnsureSurface();
         EnsureBloodOverlay();
-        EnsureFrame();
+        if (createRuntimeFrame)
+            EnsureFrame();
+        else
+            RemoveRuntimeFrame();
         ResolveSourceCamera();
         EnsureCamera();
     }
@@ -432,6 +436,26 @@ public sealed class MirrorReflectionCamera : MonoBehaviour
         var collider = piece.GetComponent<Collider>();
         if (collider != null)
             Destroy(collider);
+    }
+
+    private void RemoveRuntimeFrame()
+    {
+        RemoveRuntimeFramePiece("FrameTop");
+        RemoveRuntimeFramePiece("FrameBottom");
+        RemoveRuntimeFramePiece("FrameLeft");
+        RemoveRuntimeFramePiece("FrameRight");
+    }
+
+    private void RemoveRuntimeFramePiece(string objectName)
+    {
+        var child = transform.Find(objectName);
+        if (child == null)
+            return;
+
+        if (Application.isPlaying)
+            Destroy(child.gameObject);
+        else
+            DestroyImmediate(child.gameObject);
     }
 
     private void UpdateReflectionCamera(Camera sourceCamera)

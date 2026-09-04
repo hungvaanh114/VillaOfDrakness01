@@ -544,7 +544,7 @@ public static class GameP2SceneBuilder
 
         SetObject(controller, "knockSolidClip", Clip("Assets/MainGame/Audio/SFX/SFX_Interact_Generic_01.wav"));
         SetObject(controller, "knockHollowClip", Clip("Assets/MainGame/Audio/SFX/SFX_Door_Unlock.mp3"));
-        SetObject(controller, "glassBreakClip", Clip("Assets/MainGame/Audio/SFX/SFX_Ghost_Jumpscare_Scream_01.wav"));
+        SetObject(controller, "glassBreakClip", Clip("Assets/MainGame/Audio/SFX/SFX_WindowGlass_Shatter.wav"));
         SetObject(controller, "glassStepClip", Clip("Assets/MainGame/Audio/FootSteps/Footstep_Wood_01.wav"));
         SetObject(controller, "cabinetUnlockClip", Clip("Assets/MainGame/Audio/SFX/SFX_ItemLock_Unlock.wav"));
         SetObject(controller, "pickupClip", Clip("Assets/MainGame/Audio/SFX/SFX_KeyPickup.mp3"));
@@ -646,11 +646,6 @@ public static class GameP2SceneBuilder
     private static GameObject CreateMirror(string name, Vector3 position, Vector3 scale, Transform parent, bool covered)
     {
         var mirror = CreatePrimitive(name, PrimitiveType.Cube, parent, position, scale, covered ? redClothMaterial : mirrorMaterial);
-        if (!covered)
-        {
-            var frame = CreatePrimitive(name + "_Frame", PrimitiveType.Cube, parent, position + Vector3.down * 0.02f, scale + new Vector3(0.12f, 0.12f, 0.05f), darkWoodMaterial);
-            frame.transform.SetSiblingIndex(mirror.transform.GetSiblingIndex());
-        }
         return mirror;
     }
 

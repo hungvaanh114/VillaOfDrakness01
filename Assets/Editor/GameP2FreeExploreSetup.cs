@@ -1,4 +1,5 @@
 using FpsHorrorKit;
+using MainGame.P2;
 using UnityEditor;
 using UnityEditor.SceneManagement;
 using UnityEngine;
@@ -21,6 +22,7 @@ public static class GameP2FreeExploreSetup
         RemovePianoDoorLocksOnly();
         ConfigurePianoFreePlay();
         HideMusicSheetSystems();
+        GameP2WindowGlassSetup.Apply();
 
         EditorSceneManager.MarkSceneDirty(EditorSceneManager.GetActiveScene());
         EditorSceneManager.SaveScene(EditorSceneManager.GetActiveScene());
@@ -58,12 +60,12 @@ public static class GameP2FreeExploreSetup
             var obj = GameObject.CreatePrimitive(PrimitiveType.Cube);
             obj.name = "P2_SilverMirror_Item";
             pickup = obj.transform;
+            pickup.SetParent(root, true);
             pickup.position = new Vector3(1.15f, 4.05f, -4.6f);
             pickup.rotation = Quaternion.Euler(0f, 90f, 0f);
             pickup.localScale = new Vector3(0.08f, 0.7f, 0.45f);
         }
 
-        pickup.SetParent(root, true);
         var renderer = pickup.GetComponent<Renderer>();
         if (renderer != null)
         {
@@ -77,14 +79,30 @@ public static class GameP2FreeExploreSetup
         collider.isTrigger = false;
         EditorUtility.SetDirty(collider);
 
-        var pickupComponent = pickup.GetComponent<ItemPickup>();
-        if (pickupComponent == null)
-            pickupComponent = pickup.gameObject.AddComponent<ItemPickup>();
+        var inventoryPickup = pickup.GetComponent<ItemPickup>();
+        if (inventoryPickup != null)
+            Object.DestroyImmediate(inventoryPickup, true);
 
-        Set(pickupComponent, "itemData", item);
-        Set(pickupComponent, "amount", 1);
-        Set(pickupComponent, "interactText", "[E] Nhặt gương bạc");
-        EditorUtility.SetDirty(pickupComponent);
+        var heldPickup = pickup.GetComponent<P2HeldSilverMirrorPickup>();
+        if (heldPickup == null)
+            heldPickup = pickup.gameObject.AddComponent<P2HeldSilverMirrorPickup>();
+
+        Set(heldPickup, "heldRoot", pickup);
+        Set(heldPickup, "targetCamera", Camera.main);
+        Set(heldPickup, "handRootName", "LeftHandProp");
+        Set(heldPickup, "fallbackHandRootName", "LeftHand");
+        Set(heldPickup, "pickupClip", AssetDatabase.LoadAssetAtPath<AudioClip>("Assets/MainGame/Audio/SFX/SFX_KeyPickup.mp3"));
+        Set(heldPickup, "interactText", "[E] Cầm gương bạc");
+        Set(heldPickup, "heldLocalPosition", new Vector3(0.02f, 0.04f, 0.02f));
+        Set(heldPickup, "heldLocalEulerAngles", new Vector3(0f, 90f, 0f));
+        Set(heldPickup, "overrideHeldScale", false);
+        Set(heldPickup, "breakHouseGlassWhenPickedUp", true);
+        Set(heldPickup, "lockPlayerWhileHeld", false);
+        Set(heldPickup, "allowPutDown", false);
+        Set(heldPickup, "allowMouseRotation", false);
+        Set(heldPickup, "matchHandLayerWhileHeld", true);
+        EditorUtility.SetDirty(heldPickup);
+        EditorUtility.SetDirty(pickup.gameObject);
     }
 
     private static void RemovePianoDoorLocksOnly()
@@ -243,6 +261,13 @@ public static class GameP2FreeExploreSetup
         serialized.ApplyModifiedPropertiesWithoutUndo();
     }
 
+    private static void Set(Object target, string propertyName, Vector3 value)
+    {
+        var serialized = new SerializedObject(target);
+        Set(serialized, propertyName, value);
+        serialized.ApplyModifiedPropertiesWithoutUndo();
+    }
+
     private static void Set(SerializedObject serialized, string propertyName, Object value)
     {
         var property = serialized.FindProperty(propertyName);
@@ -269,5 +294,12 @@ public static class GameP2FreeExploreSetup
         var property = serialized.FindProperty(propertyName);
         if (property != null)
             property.boolValue = value;
+    }
+
+    private static void Set(SerializedObject serialized, string propertyName, Vector3 value)
+    {
+        var property = serialized.FindProperty(propertyName);
+        if (property != null)
+            property.vector3Value = value;
     }
 }
