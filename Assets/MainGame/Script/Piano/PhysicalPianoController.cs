@@ -43,6 +43,7 @@ namespace FpsHorrorKit
         [Header("Interaction")]
         [SerializeField] private bool installRuntimeInteractable = true;
         [SerializeField] private bool disableInteractionAfterCompleted = true;
+        [SerializeField] private bool freePlayOnly;
         [SerializeField] private string startMessage = "A/D \u0111\u1ed5i ph\u00edm, E \u0111\u00e1nh, ESC tho\u00e1t.";
         [SerializeField] private string missingKeyMessage = "Kh\u00f4ng t\u00ecm th\u1ea5y \u0111\u1ee7 ph\u00edm piano.";
 
@@ -98,7 +99,7 @@ namespace FpsHorrorKit
         public static bool IsAnyActive => ActiveInstance != null && ActiveInstance.active;
         private static PhysicalPianoController ActiveInstance { get; set; }
         public bool IsActive => active;
-        public bool IsCompleted => completed || IsProgressCompleted();
+        public bool IsCompleted => !freePlayOnly && (completed || IsProgressCompleted());
 
         private void Awake()
         {
@@ -120,7 +121,7 @@ namespace FpsHorrorKit
         private void Start()
         {
             SubscribeToPuzzle();
-            if (IsProgressCompleted())
+            if (!freePlayOnly && IsProgressCompleted())
             {
                 completed = true;
                 DisableCompletedInteractionTargets();
@@ -207,12 +208,14 @@ namespace FpsHorrorKit
 
             active = true;
             ActiveInstance = this;
-            SubscribeToPuzzle();
+            if (!freePlayOnly)
+                SubscribeToPuzzle();
             AudioManager.Instance?.DisableGameplayAmbienceAfterPiano();
             activatedFrame = Time.frameCount;
             cameraReachedTarget = false;
             selectedIndex = 0;
-            PianoPuzzle.Instance?.ResetPuzzle();
+            if (!freePlayOnly)
+                PianoPuzzle.Instance?.ResetPuzzle();
             SetLabelsVisible(false);
             SelectKey(selectedIndex);
             BlockGameplayForPiano(true);
@@ -236,6 +239,9 @@ namespace FpsHorrorKit
 
         private void SubscribeToPuzzle()
         {
+            if (freePlayOnly)
+                return;
+
             if (subscribedToPuzzle || PianoPuzzle.Instance == null)
                 return;
 
@@ -270,7 +276,8 @@ namespace FpsHorrorKit
             var key = keys[selectedIndex];
             StartKeyPress(key);
             PlayNoteAudio(key.Note);
-            PianoPuzzle.Instance?.PlayNote(key.Note);
+            if (!freePlayOnly)
+                PianoPuzzle.Instance?.PlayNote(key.Note);
         }
 
         private void SelectKey(int index)
@@ -426,7 +433,7 @@ namespace FpsHorrorKit
             if (ActiveInstance == this)
                 ActiveInstance = null;
 
-            if (resetPuzzle)
+            if (resetPuzzle && !freePlayOnly)
                 PianoPuzzle.Instance?.ResetPuzzle();
 
             foreach (var key in keys)

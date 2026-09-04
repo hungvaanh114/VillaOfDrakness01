@@ -10,10 +10,13 @@ namespace FpsHorrorKit
         [Header("Scene References")]
         [SerializeField] private GameObject playerModelRoot;
         [SerializeField] private GameObject firstPersonFlashlightViewModel;
+        [SerializeField] private GameObject gameplayLanternObject;
+        [SerializeField] private GameObject cutsceneHeldLantern;
 
         [Header("State Rules")]
         [SerializeField] private bool hidePlayerRenderersInFirstPerson = true;
         [SerializeField] private bool showFlashlightViewModelInFirstPerson = true;
+        [SerializeField] private bool switchLanternObjectsByCutscene = true;
 
         private Renderer[] playerModelRenderers;
         private GameController.GameState lastAppliedState;
@@ -45,7 +48,12 @@ namespace FpsHorrorKit
             foreach (var collider in firstPersonFlashlightViewModel.GetComponentsInChildren<Collider>(true))
                 collider.enabled = false;
             foreach (var light in firstPersonFlashlightViewModel.GetComponentsInChildren<Light>(true))
+            {
+                if (light.GetComponentInParent<MainGame.P2.P2OilLamp>(true) != null)
+                    continue;
+
                 light.enabled = false;
+            }
         }
 
         private void Start()
@@ -77,6 +85,22 @@ namespace FpsHorrorKit
                 if (viewModel != null)
                     firstPersonFlashlightViewModel = viewModel.gameObject;
             }
+
+            if (gameplayLanternObject == null)
+            {
+                var gameplayLantern = FindGameplayLantern();
+                if (gameplayLantern != null)
+                    gameplayLanternObject = gameplayLantern.gameObject;
+            }
+
+            if (switchLanternObjectsByCutscene && cutsceneHeldLantern == null)
+            {
+                var heldLantern = FindSceneTransform("Lantern_01_2kCutscene");
+                if (heldLantern == null)
+                    heldLantern = FindSceneTransform("P2_CutsceneHeldLantern");
+                if (heldLantern != null)
+                    cutsceneHeldLantern = heldLantern.gameObject;
+            }
         }
 
         private void CachePlayerRenderers()
@@ -95,6 +119,7 @@ namespace FpsHorrorKit
             AssignPlayerModelRenderLayer();
             AssignFlashlightViewModelLayer();
             ApplyCameraMasks(cutscenePresentation);
+            ApplyLanternObjectSwitch(cutscenePresentation);
 
             if (!force && hasAppliedState && state == lastAppliedState)
                 return;
@@ -106,6 +131,17 @@ namespace FpsHorrorKit
 
             lastAppliedState = state;
             hasAppliedState = true;
+        }
+
+        private void ApplyLanternObjectSwitch(bool cutscenePresentation)
+        {
+            if (!switchLanternObjectsByCutscene)
+                return;
+
+            if (gameplayLanternObject != null)
+                gameplayLanternObject.SetActive(!cutscenePresentation);
+            if (cutsceneHeldLantern != null)
+                cutsceneHeldLantern.SetActive(cutscenePresentation);
         }
 
         private void KeepPlayerModelRenderersEnabled()
@@ -246,6 +282,26 @@ namespace FpsHorrorKit
             }
 
             return null;
+        }
+
+        private static Transform FindGameplayLantern()
+        {
+            foreach (var candidate in Resources.FindObjectsOfTypeAll<Transform>())
+            {
+                if (candidate.name != "Lantern_01_2k" || !candidate.gameObject.scene.IsValid())
+                    continue;
+
+                var parent = candidate.parent;
+                while (parent != null)
+                {
+                    if (parent.name == "FollowCamera")
+                        return candidate;
+
+                    parent = parent.parent;
+                }
+            }
+
+            return FindSceneTransform("Lantern_01_2k");
         }
 
         private readonly struct CameraMaskState

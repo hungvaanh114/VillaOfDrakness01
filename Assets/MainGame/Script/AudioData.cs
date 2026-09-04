@@ -65,4 +65,24 @@ public sealed class AudioData : ScriptableObject
     public AudioClip mkDeath01;
     public AudioClip mkDeath02;
     public AudioClip mkDeath03;
+
+    [Header("Chapter 2 Voice")]
+    public AudioClip p2Ngoc01;
+    public AudioClip p2Ngoc02;
+    public AudioClip p2Ngoc03;
+    public AudioClip p2Ngoc04;
+    public AudioClip p2Ngoc05;
+    public AudioClip p2Ngoc06;
+    public AudioClip p2Ngoc07;
+    public AudioClip p2Ngoc08;
+    public AudioClip p2Ngoc09;
+    public AudioClip p2Ngoc10;
+    public AudioClip p2Linh01;
+    public AudioClip p2Linh02;
+    public AudioClip p2Ma01;
+    public AudioClip p2Ma02;
+    public AudioClip p2MaDa02;
+    public AudioClip p2MaDa03;
+    public AudioClip p2AudioLogBL02;
+    public AudioClip p2AudioLogBL03;
 }

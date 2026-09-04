@@ -328,9 +328,7 @@ public sealed class CutSceneManager : MonoBehaviour
         if (!sampledDestination)
         {
             if (!TryFindNearestNavMeshPoint(targetPosition, out destination))
-                return IsDirectCutSceneSegmentClear(playerRoot.position, targetPosition)
-                    ? new[] { playerRoot.position, targetPosition }
-                    : System.Array.Empty<Vector3>();
+                return new[] { playerRoot.position, targetPosition };
         }
 
         if (!sampledStart)
@@ -338,14 +336,12 @@ public sealed class CutSceneManager : MonoBehaviour
             if (!TryFindNearestNavMeshPoint(playerRoot.position, out start)
                 || !IsDirectCutSceneSegmentClear(playerRoot.position, start))
             {
-                return System.Array.Empty<Vector3>();
+                return new[] { playerRoot.position, destination };
             }
         }
 
         if (!NavMesh.CalculatePath(start, destination, NavMesh.AllAreas, navPath) || navPath.corners.Length < 2)
-            return IsDirectCutSceneSegmentClear(playerRoot.position, destination)
-                ? new[] { playerRoot.position, destination }
-                : System.Array.Empty<Vector3>();
+            return new[] { playerRoot.position, destination };
 
         if (sampledStart)
             return navPath.corners;

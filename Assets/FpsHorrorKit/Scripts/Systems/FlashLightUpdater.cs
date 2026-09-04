@@ -14,6 +14,7 @@ namespace FpsHorrorKit
 
         private void Start()
         {
+            ResolveBatteryImage();
             ResolveBatteryPercentText();
             SetBatteryPercent(itemFlashLight != null ? itemFlashLight.energyLevel : 0f);
         }
@@ -43,6 +44,9 @@ namespace FpsHorrorKit
         private void LateUpdate()
         {
             if (itemFlashLight == null)
+                return;
+
+            if (IsUsingP2OilLamp())
                 return;
 
             if (ItemUsageSystem.Instance != null && ItemUsageSystem.Instance.IsCutsceneFlashlightForced)
@@ -76,6 +80,11 @@ namespace FpsHorrorKit
                 && usageSystem.IsFlashlightLightActive();
         }
 
+        private static bool IsUsingP2OilLamp()
+        {
+            return FindFirstObjectByType<MainGame.P2.P2OilLamp>(FindObjectsInactive.Include) != null;
+        }
+
         private void SetBatteryPercent(float percent)
         {
             if (itemFlashLight == null)
@@ -89,6 +98,16 @@ namespace FpsHorrorKit
 
             if (batteryPercentText != null)
                 batteryPercentText.text = $"{Mathf.CeilToInt(itemFlashLight.energyLevel)}%";
+        }
+
+        private void ResolveBatteryImage()
+        {
+            if (flashLightBatteryImage != null)
+                return;
+
+            var fillObject = GameObject.Find("LanternFuelFill");
+            if (fillObject != null)
+                flashLightBatteryImage = fillObject.GetComponent<Image>();
         }
 
         private void ResolveBatteryPercentText()

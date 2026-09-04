@@ -9,10 +9,14 @@ namespace FpsHorrorKit
         [SerializeField] private string blockedMessage = "Chua kham pha xong tang tret.";
         [SerializeField, Min(0.1f)] private float messageDuration = 2.4f;
         [SerializeField] private bool showMessageOnlyOnce = true;
+        [SerializeField] private bool triggerOnlyMode;
+        [SerializeField] private AudioClip triggerVoiceClip;
+        [SerializeField, TextArea(2, 5)] private string triggerSubtitle = "Má ơi... con thấy nó lại rồi. Trong cái gương ở phòng tắm...";
 
         private BoxCollider blockerCollider;
         private BoxCollider messageTriggerCollider;
         private bool hasShownMessage;
+        private bool hasTriggeredVoice;
         private FpsController player;
         private bool blockerTemporarilyOpenForPlayerExit;
 
@@ -24,10 +28,15 @@ namespace FpsHorrorKit
 
         private void Update()
         {
+            if (triggerOnlyMode)
+            {
+                DisableBlockingCollider();
+                return;
+            }
+
             if (CanPass())
             {
-                if (blockerCollider != null && blockerCollider.enabled)
-                    blockerCollider.enabled = false;
+                DisableBlockingCollider();
 
                 if (messageTriggerCollider != null && messageTriggerCollider.enabled)
                     messageTriggerCollider.enabled = false;
@@ -50,11 +59,20 @@ namespace FpsHorrorKit
 
         private void TryShowBlockedMessageFromTrigger(Collider other)
         {
-            if (other == null || CanPass())
+            if (other == null)
                 return;
 
             var triggerPlayer = other.GetComponentInParent<FpsController>();
             if (triggerPlayer == null)
+                return;
+
+            if (triggerOnlyMode)
+            {
+                PlayTriggerVoiceOnce();
+                return;
+            }
+
+            if (CanPass())
                 return;
 
             ShowBlockedMessageOnce();
@@ -71,6 +89,9 @@ namespace FpsHorrorKit
 
         private bool CanPass()
         {
+            if (triggerOnlyMode)
+                return true;
+
             var progress = GameProgressManager.Instance;
             return progress != null && progress.CurrentProgress >= requiredProgressToPass;
         }
@@ -147,6 +168,41 @@ namespace FpsHorrorKit
                 blockerCollider = boxColliders[0];
                 blockerCollider.isTrigger = false;
             }
+
+            if (triggerOnlyMode)
+            {
+                for (int i = 0; i < boxColliders.Length; i++)
+                {
+                    if (boxColliders[i] == null)
+                        continue;
+
+                    boxColliders[i].isTrigger = true;
+                    boxColliders[i].enabled = true;
+                    messageTriggerCollider ??= boxColliders[i];
+                }
+
+                blockerCollider = null;
+            }
+        }
+
+        private void DisableBlockingCollider()
+        {
+            if (blockerCollider != null && !blockerCollider.isTrigger && blockerCollider.enabled)
+                blockerCollider.enabled = false;
+        }
+
+        private void PlayTriggerVoiceOnce()
+        {
+            if (hasTriggeredVoice && showMessageOnlyOnce)
+                return;
+
+            hasTriggeredVoice = true;
+            float duration = triggerVoiceClip != null && AudioManager.Instance != null
+                ? AudioManager.Instance.PlayVoice(triggerVoiceClip)
+                : messageDuration;
+
+            if (!triggerOnlyMode && !string.IsNullOrWhiteSpace(triggerSubtitle))
+                InteractMessageScript.Instance?.ShowMessage($"\"{triggerSubtitle}\"", Mathf.Max(messageDuration, duration));
         }
 
         private void IgnoreMonsterColliders()

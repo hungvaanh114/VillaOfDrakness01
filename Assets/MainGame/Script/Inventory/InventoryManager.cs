@@ -21,7 +21,9 @@ namespace FpsHorrorKit
         private readonly Image[] fallbackBatteryCells = new Image[6];
 
         private GameObject fallbackFlashlightObject;
+        private Image fallbackLanternFuelFill;
         private TextMeshProUGUI fallbackBatteryPercentText;
+        private MainGame.P2.P2OilLamp p2OilLamp;
         private bool fallbackFlashlightOn;
         private bool hasSyncedFallbackFlashlight;
         private bool cutsceneFallbackFlashlightForced;
@@ -265,6 +267,16 @@ namespace FpsHorrorKit
             InitializeFallbackFlashlight();
             SyncFallbackFlashlightStateFromScene();
 
+            if (TryResolveP2OilLamp())
+            {
+                if (cutsceneFallbackFlashlightForced)
+                    SetFallbackFlashlightActive(true);
+                else if (!GameController.IsGameplayInputLocked() && Keyboard.current != null && Keyboard.current.fKey.wasPressedThisFrame)
+                    ToggleFallbackFlashlight();
+
+                return;
+            }
+
             if (cutsceneFallbackFlashlightForced)
             {
                 SetFallbackFlashlightActive(true);
@@ -377,6 +389,13 @@ namespace FpsHorrorKit
                     fallbackBatteryPercentText = textObject.GetComponent<TextMeshProUGUI>();
             }
 
+            if (fallbackLanternFuelFill == null)
+            {
+                var fillObject = GameObject.Find("LanternFuelFill");
+                if (fillObject != null)
+                    fallbackLanternFuelFill = fillObject.GetComponent<Image>();
+            }
+
             for (int i = 0; i < fallbackBatteryCells.Length; i++)
             {
                 if (fallbackBatteryCells[i] != null)
@@ -393,6 +412,15 @@ namespace FpsHorrorKit
             InitializeFallbackFlashlight();
 
             bool wasActive = IsFallbackFlashlightLightActive();
+            if (TryResolveP2OilLamp())
+            {
+                p2OilLamp.SetLit(active);
+                fallbackFlashlightOn = p2OilLamp.IsLit;
+                if (wasActive != fallbackFlashlightOn)
+                    FallbackFlashlightChanged?.Invoke(fallbackFlashlightOn);
+                return;
+            }
+
             if (fallbackFlashlightObject != null && fallbackFlashlightObject.name != "Spot Light_1")
                 fallbackFlashlightObject.SetActive(active);
 
@@ -408,9 +436,36 @@ namespace FpsHorrorKit
         {
             InitializeFallbackFlashlight();
 
+            if (TryResolveP2OilLamp())
+                return p2OilLamp.IsLit;
+
             return fallbackFlashlightObject != null
                 ? fallbackFlashlightObject.activeInHierarchy
                 : fallbackFlashlightOn;
+        }
+
+        private bool TryResolveP2OilLamp()
+        {
+            if (p2OilLamp == null || !p2OilLamp.ControlsGameplaySystems)
+                p2OilLamp = FindGameplayP2OilLamp();
+
+            return p2OilLamp != null;
+        }
+
+        private static MainGame.P2.P2OilLamp FindGameplayP2OilLamp()
+        {
+            MainGame.P2.P2OilLamp fallback = null;
+            foreach (var lamp in FindObjectsByType<MainGame.P2.P2OilLamp>(FindObjectsInactive.Include, FindObjectsSortMode.None))
+            {
+                if (lamp == null)
+                    continue;
+
+                fallback ??= lamp;
+                if (lamp.ControlsGameplaySystems)
+                    return lamp;
+            }
+
+            return fallback;
         }
 
         private void SyncFallbackFlashlightStateFromScene()
@@ -428,6 +483,9 @@ namespace FpsHorrorKit
 
             if (fallbackBatteryPercentText != null)
                 fallbackBatteryPercentText.text = $"{Mathf.CeilToInt(flashlightBatteryPercent)}%";
+
+            if (fallbackLanternFuelFill != null)
+                fallbackLanternFuelFill.fillAmount = flashlightBatteryPercent / 100f;
 
             int activeCells = Mathf.CeilToInt(flashlightBatteryPercent / 100f * fallbackBatteryCells.Length);
             for (int i = 0; i < fallbackBatteryCells.Length; i++)

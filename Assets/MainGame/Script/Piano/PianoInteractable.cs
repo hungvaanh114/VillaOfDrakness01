@@ -6,6 +6,9 @@ namespace FpsHorrorKit
     {
         [Header("Testing")]
         [SerializeField] private bool testTreatMusicSheetCompleted;
+        [SerializeField] private bool requireMusicSheets = true;
+        [SerializeField] private bool blockWhenCompleted = true;
+        [SerializeField] private bool markCheckpointOnInteract = true;
 
         [SerializeField] private PhysicalPianoController physicalPiano;
         [SerializeField] private string interactText = "[E] Ch\u01a1i piano";
@@ -13,10 +16,10 @@ namespace FpsHorrorKit
 
         public void Interact()
         {
-            if (IsCompleted())
+            if (blockWhenCompleted && IsCompleted())
                 return;
 
-            if (!HasRequiredMusicSheets())
+            if (requireMusicSheets && !HasRequiredMusicSheets())
             {
                 AudioManager.Instance?.PlayDoorLocked();
                 InteractMessageScript.Instance?.ShowMessage(GetMissingMusicSheetMessage());
@@ -24,7 +27,8 @@ namespace FpsHorrorKit
             }
 
             AudioManager.Instance?.PlayButtonClick();
-            ChapterOneCheckpointManager.Instance?.MarkPianoCheckpoint();
+            if (markCheckpointOnInteract)
+                ChapterOneCheckpointManager.Instance?.MarkPianoCheckpoint();
             if (GetPhysicalPiano() != null)
             {
                 physicalPiano.ActivateFromPianoInteract();
@@ -36,7 +40,7 @@ namespace FpsHorrorKit
 
         public void Highlight()
         {
-            if (IsCompleted())
+            if (blockWhenCompleted && IsCompleted())
                 return;
 
             PlayerInteract.Instance?.ChangeInteractText(interactText);

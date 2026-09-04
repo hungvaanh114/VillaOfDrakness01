@@ -64,7 +64,7 @@ namespace FpsHorrorKit
         }
         public void OnJump(InputValue value)
         {
-            if (IsGameplayInputLocked())
+            if (IsGameplayInputLocked() || global::MainGame.P2.P2AudioLogItem.ShouldBlockSpaceJump)
             {
                 jump = false;
                 return;
