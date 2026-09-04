@@ -5,18 +5,6 @@ using UnityEngine.UI;
 
 public static class MainGameCanvasFixer
 {
-    private const string AutoFixSessionKey = "MainGameCanvasFixer.AutoFixComplete.v3";
-
-    [InitializeOnLoadMethod]
-    private static void AutoFixOnce()
-    {
-        if (SessionState.GetBool(AutoFixSessionKey, false))
-            return;
-
-        SessionState.SetBool(AutoFixSessionKey, true);
-        EditorApplication.delayCall += FixActiveScene;
-    }
-
     [MenuItem("Tools/MainGame/Fix Misplaced UI Canvas")]
     [MenuItem("Assets/MainGame/Fix Misplaced UI Canvas")]
     public static void FixActiveScene()

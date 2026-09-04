@@ -10,21 +10,6 @@ public static class ChapterOneAudioBinder
     private const string GameScenePath = "Assets/MainGame/Game.unity";
     private const string AudioDataPath = "Assets/MainGame/Resources/Audio/AudioData.asset";
     private const string IntroDialogueDataPath = "Assets/MainGame/Data/IntroCutSceneDialogueData.asset";
-    private const string AutoBindSessionKey = "ChapterOneAudioBinder.AutoBindComplete";
-
-    [InitializeOnLoadMethod]
-    private static void AutoBindOnceIfNeeded()
-    {
-        if (SessionState.GetBool(AutoBindSessionKey, false))
-            return;
-
-        var data = AssetDatabase.LoadAssetAtPath<AudioData>(AudioDataPath);
-        if (data != null && data.menuMusic != null && data.introAmbience != null && HasGameplayAmbienceSequence(data) && data.doorOpenSlow != null)
-            return;
-
-        SessionState.SetBool(AutoBindSessionKey, true);
-        EditorApplication.delayCall += Bind;
-    }
 
     [MenuItem("Tools/MainGame/Bind Chapter 1 Story Audio")]
     [MenuItem("Assets/MainGame/Bind Chapter 1 Story Audio")]
