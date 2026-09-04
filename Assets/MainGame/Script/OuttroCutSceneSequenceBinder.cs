@@ -9,8 +9,10 @@ public sealed class OuttroCutSceneSequenceBinder : MonoBehaviour
     private const string DeathVoice02AssetPath = "Assets/MainGame/Audio/Voice/Chapter1/VO_Ch1_MK-DEATH-02.wav";
     private const string DeathVoice01Subtitle = "\"Cái gì vậy... ánh sáng trong giếng? Không lẽ... có người bị kẹt dưới đó?\"";
     private const string DeathVoice02Subtitle = "\"Ơ... cái gì-\"";
+    private const string ChapterTwoLine09Subtitle = "\"Gương bạc... bà nói soi vào trăng thì có thể... nhưng bà không nói phải làm gì tiếp theo. Con còn thiếu gì đó.\"";
 
     [SerializeField] private bool rebuildSequence;
+    [SerializeField] private bool useChapterTwoEnding;
     [SerializeField] private Transform playerPoint01;
     [SerializeField] private Transform playerPoint02;
     [SerializeField] private Transform playerLookWellPoint;
@@ -19,13 +21,14 @@ public sealed class OuttroCutSceneSequenceBinder : MonoBehaviour
     [SerializeField] private Transform cameraLookAtPoint;
     [SerializeField] private AudioClip deathVoice01;
     [SerializeField] private AudioClip deathVoice02;
+    [SerializeField] private AudioClip chapterTwoLine09;
 
     private CutSceneSequence sequence;
 
     private void Awake()
     {
         ResolveReferences();
-        if (rebuildSequence || IsSequenceEmpty())
+        if (UseChapterTwoEnding() || rebuildSequence || IsSequenceEmpty())
         {
             rebuildSequence = false;
             Configure();
@@ -39,7 +42,7 @@ public sealed class OuttroCutSceneSequenceBinder : MonoBehaviour
         deathVoice01 ??= UnityEditor.AssetDatabase.LoadAssetAtPath<AudioClip>(DeathVoice01AssetPath);
         deathVoice02 ??= UnityEditor.AssetDatabase.LoadAssetAtPath<AudioClip>(DeathVoice02AssetPath);
 #endif
-        if (!rebuildSequence && !IsSequenceEmpty())
+        if (!UseChapterTwoEnding() && !rebuildSequence && !IsSequenceEmpty())
             return;
 
         rebuildSequence = false;
@@ -49,7 +52,16 @@ public sealed class OuttroCutSceneSequenceBinder : MonoBehaviour
     public void Configure()
     {
         ResolveReferences();
-        if (sequence == null || playerPoint01 == null || playerPoint02 == null || playerLookWellPoint == null)
+        if (sequence == null || playerPoint01 == null)
+            return;
+
+        if (UseChapterTwoEnding())
+        {
+            ConfigureChapterTwo();
+            return;
+        }
+
+        if (playerPoint02 == null || playerLookWellPoint == null)
             return;
 
         var points = new List<CutScenePoint>
@@ -130,6 +142,47 @@ public sealed class OuttroCutSceneSequenceBinder : MonoBehaviour
         sequence.Configure("outtro", false, null, false, points);
     }
 
+    private void ConfigureChapterTwo()
+    {
+        var points = new List<CutScenePoint>
+        {
+            new()
+            {
+                name = "Chạy ra sân sau",
+                point = playerPoint01,
+                moveToPoint = true,
+                moveSpeedOverride = 1.5f,
+                turnSpeedOverride = 720f,
+                overrideText = string.Empty,
+                overrideFallbackDuration = 2f,
+                waitAfter = 0f,
+                cameraShot = CutSceneCameraShot.BehindShoulder,
+                cameraPositionOverride = cameraBackHighPoint,
+                cameraLookAtPlayer = true,
+                cameraLookHeight = 1.25f,
+                cameraSmoothTimeOverride = 0.18f
+            },
+            new()
+            {
+                name = "Ngọc nói trước sân",
+                point = playerPoint01,
+                moveToPoint = false,
+                dialogueId = "p2_ngoc_09",
+                overrideText = ChapterTwoLine09Subtitle,
+                overrideAudioClip = chapterTwoLine09,
+                overrideFallbackDuration = 7f,
+                waitAfter = 0.05f,
+                cameraShot = CutSceneCameraShot.BehindShoulder,
+                cameraPositionOverride = cameraBackHighPoint,
+                cameraLookAtPlayer = true,
+                cameraLookHeight = 1.25f,
+                cameraSmoothTimeOverride = 0.16f
+            }
+        };
+
+        sequence.Configure("outtro", false, null, false, points);
+    }
+
     private void ResolveReferences()
     {
         if (sequence == null)
@@ -145,12 +198,24 @@ public sealed class OuttroCutSceneSequenceBinder : MonoBehaviour
             }
         }
 
+        if (chapterTwoLine09 == null)
+        {
+            var audioData = Resources.Load<AudioData>("Audio/AudioData");
+            if (audioData != null)
+                chapterTwoLine09 ??= audioData.p2Ngoc09;
+        }
+
         playerPoint01 ??= FindChild("OuttroPlayerPoint_01");
         playerPoint02 ??= FindChild("OuttroPlayerPoint_02");
         playerLookWellPoint ??= FindChild("OuttroPlayerLookWell");
         cameraBackHighPoint ??= FindChild("OuttroCameraBackHigh");
         cameraWellMouthPoint ??= FindChild("OuttroCameraWellMouth");
         cameraLookAtPoint ??= FindChild("OuttroCameraLookAt");
+    }
+
+    private bool UseChapterTwoEnding()
+    {
+        return useChapterTwoEnding || gameObject.scene.name == "GameP2";
     }
 
     private bool IsSequenceEmpty()

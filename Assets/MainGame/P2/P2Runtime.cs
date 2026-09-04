@@ -66,8 +66,7 @@ namespace MainGame.P2
         [SerializeField] private P2FirstPersonController player;
         [SerializeField] private P2OilLamp oilLamp;
         [SerializeField] private P2GhostController ghost;
-        [SerializeField] private Transform deathPullTarget;
-        [SerializeField] private Transform silverMirrorProp;
+        [SerializeField] private WellEndingTrigger ending;
         [SerializeField] private GameObject hiddenWallCavity;
 
         [Header("UI")]
@@ -76,8 +75,6 @@ namespace MainGame.P2
         [SerializeField] private TMP_Text promptText;
         [SerializeField] private TMP_Text subtitleText;
         [SerializeField] private TMP_Text stageText;
-        [SerializeField] private GameObject deathCard;
-        [SerializeField] private TMP_Text deathCardText;
 
         [Header("Runtime Rules")]
         [SerializeField] private bool runOpeningWhenNoChapterCutscene;
@@ -103,9 +100,6 @@ namespace MainGame.P2
         [SerializeField] private AudioClip ngocMirrorBreak;
         [SerializeField] private AudioClip maVuDaiLine01;
         [SerializeField] private AudioClip maVuDaiLine02;
-        [SerializeField] private AudioClip maDaMirror01;
-        [SerializeField] private AudioClip maDaMirror02;
-        [SerializeField] private AudioClip ngocFinalLine;
         [SerializeField] private AudioClip audioLogBL02;
         [SerializeField] private AudioClip audioLogBL03;
 
@@ -147,11 +141,11 @@ namespace MainGame.P2
                 oilLamp = FindGameplayOilLamp();
             if (ghost == null)
                 ghost = FindFirstObjectByType<P2GhostController>();
+            if (ending == null)
+                ending = FindFirstObjectByType<WellEndingTrigger>(FindObjectsInactive.Include);
 
             ApplyAudioDataFallbacks();
 
-            if (deathCard != null)
-                deathCard.SetActive(false);
             if (hiddenWallCavity != null)
                 hiddenWallCavity.SetActive(false);
 
@@ -387,6 +381,7 @@ namespace MainGame.P2
             P2MirrorBreakable.BreakAll();
             ghost?.Awaken();
             FindFirstObjectByType<P2GhostDoorApparitionDirector>(FindObjectsInactive.Include)?.Awaken();
+            ArmEndingTriggers();
             if (ambienceSource != null)
                 ambienceSource.pitch = 0.82f;
 
@@ -453,19 +448,52 @@ namespace MainGame.P2
             ngocMirrorBreak ??= data.p2Ngoc09;
             maVuDaiLine01 ??= data.p2Ma01;
             maVuDaiLine02 ??= data.p2Ma02;
-            maDaMirror01 ??= data.p2MaDa02;
-            maDaMirror02 ??= data.p2MaDa03;
-            ngocFinalLine ??= data.p2Ngoc10;
             audioLogBL02 ??= data.p2AudioLogBL02;
             audioLogBL03 ??= data.p2AudioLogBL03;
         }
 
-        public void StartEndingSequence()
+        public void StartEndingSequence(bool force = false)
         {
             if (CurrentStage == P2Stage.Ending)
                 return;
 
-            StartCoroutine(EndingRoutine());
+            if (!force && !MirrorEventTriggered)
+                return;
+
+            var chapterEnding = ResolveEnding();
+            if (chapterEnding == null)
+            {
+                Debug.LogWarning("P2 ending cannot start because WellEndingTrigger is missing.");
+                return;
+            }
+
+            SetStage(P2Stage.Ending);
+            LockInput(true);
+            SetHudVisible(false);
+            ClearPrompt();
+            FpsAssetsInputs.Instance?.ClearGameplayInput();
+
+            var ghostDirector = FindFirstObjectByType<P2GhostDoorApparitionDirector>(FindObjectsInactive.Include);
+            if (ghostDirector != null)
+                ghostDirector.gameObject.SetActive(false);
+
+            chapterEnding.enabled = true;
+            chapterEnding.ActivateEndingSetup();
+            chapterEnding.BeginExitDoorEnding(null);
+        }
+
+        private WellEndingTrigger ResolveEnding()
+        {
+            if (ending == null)
+                ending = FindFirstObjectByType<WellEndingTrigger>(FindObjectsInactive.Include);
+            return ending;
+        }
+
+        private static void ArmEndingTriggers()
+        {
+            var triggers = FindObjectsByType<EndingCutsceneTrigger>(FindObjectsInactive.Include, FindObjectsSortMode.None);
+            for (int i = 0; i < triggers.Length; i++)
+                triggers[i]?.Arm();
         }
 
         private IEnumerator PlayOpening()
@@ -492,41 +520,6 @@ namespace MainGame.P2
             LockInput(false);
             SetHudVisible(true);
             SetStage(P2Stage.MirrorBroken);
-        }
-
-        private IEnumerator EndingRoutine()
-        {
-            SetStage(P2Stage.Ending);
-            LockInput(true);
-            SetHudVisible(false);
-            if (ghost != null)
-                ghost.gameObject.SetActive(false);
-
-            PlayVoice(ngocFinalLine, "Gương bạc... bà nói soi vào trăng thì có thể... nhưng bà không nói phải làm gì tiếp theo. Con còn thiếu gì đó.", 6f);
-            yield return new WaitForSeconds(4.5f);
-            PlayVoice(maDaMirror01, "...Bà ơi.", 3f);
-            yield return new WaitForSeconds(1.2f);
-            PlayVoice(maDaMirror02, string.Empty, 2f);
-
-            var start = player != null ? player.transform.position : transform.position;
-            var end = deathPullTarget != null ? deathPullTarget.position : start + Vector3.forward * 2f;
-            var timer = 0f;
-            const float duration = 2.2f;
-            while (timer < duration)
-            {
-                timer += Time.deltaTime;
-                var t = Mathf.SmoothStep(0f, 1f, timer / duration);
-                if (player != null)
-                    player.Teleport(Vector3.Lerp(start, end, t));
-                if (silverMirrorProp != null)
-                    silverMirrorProp.localRotation = Quaternion.Euler(70f + 50f * t, 0f, 35f * t);
-                yield return null;
-            }
-
-            if (deathCardText != null)
-                deathCardText.text = "NGUYỄN THỊ BÍCH NGỌC · 1951 - 1970";
-            if (deathCard != null)
-                deathCard.SetActive(true);
         }
 
         private void SetStage(P2Stage stage)
@@ -625,9 +618,7 @@ namespace MainGame.P2
                     || clip == audioLogBL02
                     || clip == audioLogBL03
                     || clip == maVuDaiLine01
-                    || clip == maVuDaiLine02
-                    || clip == maDaMirror01
-                    || clip == maDaMirror02);
+                    || clip == maVuDaiLine02);
         }
 
         private float PlayVoiceNoSubtitle(AudioClip clip)
@@ -1214,7 +1205,7 @@ namespace MainGame.P2
             {
                 MoveTowards(player.position, chaseSpeed, catchDistance);
                 if (Vector3.Distance(transform.position, player.position) <= catchDistance)
-                    P2GameController.Instance?.StartEndingSequence();
+                    GameController.Instance?.TriggerJumpscareCheckpointRespawn(false);
                 return;
             }
 
@@ -1482,29 +1473,18 @@ namespace MainGame.P2
         }
     }
 
-    public enum P2StorySequenceTriggerKind
-    {
-        StairAfterGlass,
-        Endgame
-    }
-
     public sealed class P2StorySequenceController : MonoBehaviour
     {
-        private const string StairTriggerName = "P2_StairAfterGlassTrigger";
-        private const string EndgameTriggerName = "TriggerEnding";
         private const string RuntimeControllerName = "P2_StorySequenceController";
 
         private static P2StorySequenceController instance;
         private static bool wallMirrorRevealed;
         private static bool houseGlassBroken;
         private static bool stairAfterGlassTriggered;
-        private static bool endgameTriggered;
 
         private AudioSource monsterVoiceSource;
-        private Transform lastEndgameTrigger;
         private Coroutine houseGlassLineRoutine;
         private Coroutine stairGhostLineRoutine;
-        private Coroutine endgameRoutine;
 
         public static bool HasHouseGlassBroken => houseGlassBroken;
 
@@ -1515,7 +1495,6 @@ namespace MainGame.P2
             wallMirrorRevealed = false;
             houseGlassBroken = false;
             stairAfterGlassTriggered = false;
-            endgameTriggered = false;
         }
 
         public static void NotifyWallMirrorRevealed()
@@ -1528,12 +1507,9 @@ namespace MainGame.P2
             EnsureInstance().HandleHouseGlassBroken();
         }
 
-        public static void NotifyTriggerEntered(
-            P2StorySequenceTriggerKind triggerKind,
-            bool debugAllowBeforeGlassBroken = false,
-            Transform triggerTransform = null)
+        public static void NotifyStairAfterGlassRequested(bool debugAllowBeforeGlassBroken = false)
         {
-            EnsureInstance().HandleTriggerEntered(triggerKind, debugAllowBeforeGlassBroken, triggerTransform);
+            EnsureInstance().HandleStairAfterGlassRequested(debugAllowBeforeGlassBroken);
         }
 
         private static P2StorySequenceController EnsureInstance()
@@ -1579,28 +1555,14 @@ namespace MainGame.P2
             if (houseGlassLineRoutine != null)
                 StopCoroutine(houseGlassLineRoutine);
             houseGlassLineRoutine = StartCoroutine(PlayHouseGlassLinesRoutine());
-            EnablePostGlassTriggers();
         }
 
-        private void HandleTriggerEntered(
-            P2StorySequenceTriggerKind triggerKind,
-            bool debugAllowBeforeGlassBroken,
-            Transform triggerTransform)
+        private void HandleStairAfterGlassRequested(bool debugAllowBeforeGlassBroken)
         {
             if (!houseGlassBroken && !debugAllowBeforeGlassBroken)
                 return;
 
-            switch (triggerKind)
-            {
-                case P2StorySequenceTriggerKind.StairAfterGlass:
-                    HandleStairAfterGlass();
-                    break;
-                case P2StorySequenceTriggerKind.Endgame:
-                    if (triggerTransform != null)
-                        lastEndgameTrigger = triggerTransform;
-                    StartEndgameCutscene();
-                    break;
-            }
+            HandleStairAfterGlass();
         }
 
         private void HandleStairAfterGlass()
@@ -1629,80 +1591,6 @@ namespace MainGame.P2
             houseGlassLineRoutine = null;
         }
 
-        private void StartEndgameCutscene()
-        {
-            if (endgameTriggered)
-                return;
-
-            endgameTriggered = true;
-            if (endgameRoutine != null)
-                StopCoroutine(endgameRoutine);
-            endgameRoutine = StartCoroutine(EndgameCutsceneRoutine());
-        }
-
-        private void EnablePostGlassTriggers()
-        {
-            var stairAnchor = FindSceneTransform(StairTriggerName) ?? FindSceneTransform("Villa2_IntStairs_A") ?? FindSceneTransform("Villa2_Base_Stairs_A");
-            EnsureTrigger(
-                StairTriggerName,
-                P2StorySequenceTriggerKind.StairAfterGlass,
-                stairAnchor,
-                new Vector3(0f, 1.2f, 0f),
-                new Vector3(4.5f, 2.8f, 4.5f));
-
-            var endgameAnchor = FindSceneTransform(EndgameTriggerName);
-            EnsureTrigger(
-                EndgameTriggerName,
-                P2StorySequenceTriggerKind.Endgame,
-                endgameAnchor,
-                new Vector3(0f, 0.8f, 13f),
-                new Vector3(9f, 2f, 5f));
-        }
-
-        private static void EnsureTrigger(
-            string objectName,
-            P2StorySequenceTriggerKind triggerKind,
-            Transform anchor,
-            Vector3 fallbackPosition,
-            Vector3 defaultSize)
-        {
-            GameObject target;
-            if (anchor != null && anchor.name == objectName)
-            {
-                target = anchor.gameObject;
-            }
-            else
-            {
-                var existing = FindSceneTransform(objectName);
-                if (existing != null)
-                {
-                    target = existing.gameObject;
-                }
-                else
-                {
-                    target = new GameObject(objectName);
-                    target.transform.position = anchor != null ? anchor.position : fallbackPosition;
-                }
-            }
-
-            var collider = target.GetComponent<BoxCollider>();
-            if (collider == null)
-            {
-                collider = target.AddComponent<BoxCollider>();
-                collider.size = defaultSize;
-            }
-
-            collider.isTrigger = true;
-            collider.enabled = true;
-
-            var trigger = target.GetComponent<P2StorySequenceTrigger>();
-            if (trigger == null)
-                trigger = target.AddComponent<P2StorySequenceTrigger>();
-
-            trigger.Configure(triggerKind);
-            trigger.enabled = true;
-        }
-
         private IEnumerator PlayStairGhostLinesRoutine(P2GhostDoorApparitionDirector ghost)
         {
             float firstDuration = PlayMonsterLine("p2_ma_01", ghost);
@@ -1711,48 +1599,6 @@ namespace MainGame.P2
 
             PlayMonsterLine("p2_ma_02", ghost);
             stairGhostLineRoutine = null;
-        }
-
-        private IEnumerator EndgameCutsceneRoutine()
-        {
-            var controller = GameController.Instance;
-            var player = ResolvePlayerController();
-            var ghost = FindFirstObjectByType<P2GhostDoorApparitionDirector>(FindObjectsInactive.Include);
-
-            if (controller != null)
-                controller.SetGameState(GameController.GameState.Cutscene);
-
-            if (player != null)
-            {
-                player.isCutScene = true;
-                player.isInteracting = true;
-                player.ForceIdleState();
-            }
-
-            FpsAssetsInputs.Instance?.ClearGameplayInput();
-            ghost?.SetAudioLogSuspended(true);
-
-            yield return RunPlayerToBackyard(player);
-            SetHeldMirrorRenderersVisible(true);
-            yield return AimPlayerAtEndgameMoon(player);
-
-            yield return PlayPlayerLineAndWait(
-                "p2_ngoc_09",
-                "Gương bạc... bà nói soi vào trăng thì có thể... nhưng bà không nói phải làm gì tiếp theo. Con còn thiếu gì đó.",
-                7f);
-
-            yield return new WaitForSeconds(0.35f);
-
-            yield return PlayPlayerLineAndWait("p2_ngoc_10", "...Bà ơi.", 2.5f);
-
-            SpawnDroppedMirrorShard(player);
-            SetPlayerRenderersVisible(player, false);
-            SetHeldMirrorRenderersVisible(false);
-
-            yield return FadeToBlack(1.1f);
-
-            if (controller != null)
-                controller.ShowEndingDeathScreenPresentation();
         }
 
         private void PlayPlayerLine(string audioId, string subtitle, float fallbackSeconds)
@@ -1772,93 +1618,6 @@ namespace MainGame.P2
             InteractMessageScript.Instance?.ShowMessage($"\"{subtitle}\"", waitSeconds);
             if (waitSeconds > 0f)
                 yield return new WaitForSeconds(waitSeconds);
-        }
-
-        private IEnumerator RunPlayerToBackyard(FpsController player)
-        {
-            if (player == null)
-                yield break;
-
-            Vector3 target = ResolveEndgameRunTarget(player);
-            float distance = HorizontalDistance(player.transform.position, target);
-            if (distance < 1.25f)
-                target = player.transform.position + player.transform.forward * 5.5f;
-            target = SampleNavMeshPosition(target);
-
-            const float runSpeed = 4.4f;
-            const float arriveDistance = 0.45f;
-            const float turnSpeed = 620f;
-            const float maxRunSeconds = 8f;
-
-            float timer = 0f;
-            while (timer < maxRunSeconds && HorizontalDistance(player.transform.position, target) > arriveDistance)
-            {
-                timer += Time.deltaTime;
-                Vector3 direction = target - player.transform.position;
-                direction.y = 0f;
-                if (direction.sqrMagnitude <= 0.01f)
-                    break;
-
-                player.MoveCutScene(direction.normalized, runSpeed, true, turnSpeed);
-                yield return null;
-            }
-
-            player.StopCutSceneMovement();
-        }
-
-        private IEnumerator AimPlayerAtEndgameMoon(FpsController player)
-        {
-            if (player == null)
-                yield break;
-
-            Transform lookTarget = FindSceneTransform("P2_Endgame_MoonLookTarget")
-                ?? FindSceneTransform("P2_Endgame_LookTarget");
-
-            Vector3 lookDirection = lookTarget != null
-                ? lookTarget.position - player.transform.position
-                : player.transform.forward + Vector3.up * 0.55f;
-
-            lookDirection.y = 0f;
-            const float turnSpeed = 420f;
-            float timer = 0f;
-            while (timer < 1.15f)
-            {
-                timer += Time.deltaTime;
-                if (lookDirection.sqrMagnitude > 0.001f)
-                    player.RotateCutSceneTowards(lookDirection.normalized, turnSpeed);
-                player.SetCutSceneCameraPitch(-12f);
-                player.StopCutSceneMovement();
-                yield return null;
-            }
-        }
-
-        private Vector3 ResolveEndgameRunTarget(FpsController player)
-        {
-            Transform target = FindSceneTransform("P2_Endgame_RunTarget")
-                ?? FindSceneTransform("P2_Endgame_BackyardPoint")
-                ?? lastEndgameTrigger
-                ?? FindSceneTransform(EndgameTriggerName);
-
-            if (target != null)
-                return target.position;
-
-            return player != null
-                ? player.transform.position + player.transform.forward * 5.5f
-                : transform.position;
-        }
-
-        private static Vector3 SampleNavMeshPosition(Vector3 position)
-        {
-            return NavMesh.SamplePosition(position, out var hit, 2.5f, NavMesh.AllAreas)
-                ? hit.position
-                : position;
-        }
-
-        private static float HorizontalDistance(Vector3 a, Vector3 b)
-        {
-            a.y = 0f;
-            b.y = 0f;
-            return Vector3.Distance(a, b);
         }
 
         private float PlayMonsterLine(string audioId, P2GhostDoorApparitionDirector ghost)
@@ -1894,114 +1653,6 @@ namespace MainGame.P2
             monsterVoiceSource.volume = 1f;
         }
 
-        private static FpsController ResolvePlayerController()
-        {
-            if (GameController.Instance != null && GameController.Instance.playerController != null)
-                return GameController.Instance.playerController;
-
-            return FindFirstObjectByType<FpsController>(FindObjectsInactive.Include);
-        }
-
-        private static void SetPlayerRenderersVisible(FpsController player, bool visible)
-        {
-            if (player == null)
-                return;
-
-            var renderers = player.GetComponentsInChildren<Renderer>(true);
-            for (int i = 0; i < renderers.Length; i++)
-            {
-                if (renderers[i] != null)
-                    renderers[i].enabled = visible;
-            }
-        }
-
-        private static void SetHeldMirrorRenderersVisible(bool visible)
-        {
-            var mirror = FindFirstObjectByType<P2HeldSilverMirrorPickup>(FindObjectsInactive.Include);
-            if (mirror == null)
-                return;
-
-            var renderers = mirror.GetComponentsInChildren<Renderer>(true);
-            for (int i = 0; i < renderers.Length; i++)
-            {
-                if (renderers[i] != null)
-                    renderers[i].enabled = visible;
-            }
-        }
-
-        private static void SpawnDroppedMirrorShard(FpsController player)
-        {
-            if (player == null)
-                return;
-
-            Vector3 position = player.transform.position + player.transform.forward * 0.85f + Vector3.up * 0.08f;
-            if (Physics.Raycast(position + Vector3.up, Vector3.down, out var hit, 4f, Physics.DefaultRaycastLayers, QueryTriggerInteraction.Ignore))
-                position = hit.point + Vector3.up * 0.04f;
-
-            var mirror = GameObject.CreatePrimitive(PrimitiveType.Cube);
-            mirror.name = "P2_Endgame_DroppedSilverMirror";
-            mirror.transform.position = position;
-            mirror.transform.rotation = Quaternion.Euler(76f, player.transform.eulerAngles.y + 18f, -7f);
-            mirror.transform.localScale = new Vector3(0.04f, 0.42f, 0.28f);
-
-            var material = FindFirstObjectByType<P2HeldSilverMirrorPickup>(FindObjectsInactive.Include)
-                ?.GetComponentInChildren<Renderer>(true)
-                ?.sharedMaterial;
-            if (material != null && mirror.TryGetComponent<Renderer>(out var renderer))
-                renderer.sharedMaterial = material;
-
-            var shard = GameObject.CreatePrimitive(PrimitiveType.Cube);
-            shard.name = "P2_Endgame_DroppedSilverMirror_BrokenCorner";
-            shard.transform.position = position + player.transform.right * 0.24f + Vector3.up * 0.02f;
-            shard.transform.rotation = Quaternion.Euler(80f, player.transform.eulerAngles.y - 34f, 24f);
-            shard.transform.localScale = new Vector3(0.035f, 0.12f, 0.1f);
-            if (material != null && shard.TryGetComponent<Renderer>(out var shardRenderer))
-                shardRenderer.sharedMaterial = material;
-        }
-
-        private static IEnumerator FadeToBlack(float seconds)
-        {
-            var group = CreateBlackOverlay();
-            float elapsed = 0f;
-            while (elapsed < seconds)
-            {
-                elapsed += Time.deltaTime;
-                group.alpha = Mathf.Clamp01(elapsed / Mathf.Max(0.01f, seconds));
-                yield return null;
-            }
-
-            group.alpha = 1f;
-        }
-
-        private static CanvasGroup CreateBlackOverlay()
-        {
-            var canvasObject = new GameObject("P2_EndgameBlackOverlay", typeof(RectTransform), typeof(Canvas), typeof(CanvasScaler), typeof(GraphicRaycaster), typeof(CanvasGroup));
-            var canvas = canvasObject.GetComponent<Canvas>();
-            canvas.renderMode = RenderMode.ScreenSpaceOverlay;
-            canvas.sortingOrder = 12000;
-
-            var scaler = canvasObject.GetComponent<CanvasScaler>();
-            scaler.uiScaleMode = CanvasScaler.ScaleMode.ScaleWithScreenSize;
-            scaler.referenceResolution = new Vector2(1920f, 1080f);
-
-            var group = canvasObject.GetComponent<CanvasGroup>();
-            group.alpha = 0f;
-            group.interactable = false;
-            group.blocksRaycasts = true;
-
-            var image = new GameObject("Black", typeof(RectTransform), typeof(CanvasRenderer), typeof(Image)).GetComponent<Image>();
-            image.transform.SetParent(canvasObject.transform, false);
-            image.color = Color.black;
-            image.raycastTarget = false;
-            var rect = image.rectTransform;
-            rect.anchorMin = Vector2.zero;
-            rect.anchorMax = Vector2.one;
-            rect.offsetMin = Vector2.zero;
-            rect.offsetMax = Vector2.zero;
-
-            return group;
-        }
-
         private static Transform FindSceneTransform(string objectName)
         {
             if (string.IsNullOrWhiteSpace(objectName))
@@ -2014,44 +1665,6 @@ namespace MainGame.P2
             }
 
             return null;
-        }
-    }
-
-    public sealed class P2StorySequenceTrigger : MonoBehaviour
-    {
-        [SerializeField] private P2StorySequenceTriggerKind triggerKind;
-        [SerializeField] private bool oneShot = true;
-        [Header("Debug")]
-        [SerializeField] private bool debugAllowBeforeGlassBroken;
-        [SerializeField] private bool debugStartOnPlay;
-        private bool triggered;
-
-        public void Configure(P2StorySequenceTriggerKind kind, bool singleUse = true)
-        {
-            triggerKind = kind;
-            oneShot = singleUse;
-        }
-
-        private void Start()
-        {
-            if (!debugStartOnPlay)
-                return;
-
-            triggered = true;
-            P2StorySequenceController.NotifyTriggerEntered(triggerKind, debugAllowBeforeGlassBroken, transform);
-        }
-
-        private void OnTriggerEnter(Collider other)
-        {
-            if (triggered && oneShot)
-                return;
-
-            if (other.GetComponentInParent<FpsController>() == null
-                && other.GetComponentInParent<P2FirstPersonController>() == null)
-                return;
-
-            triggered = true;
-            P2StorySequenceController.NotifyTriggerEntered(triggerKind, debugAllowBeforeGlassBroken, transform);
         }
     }
 

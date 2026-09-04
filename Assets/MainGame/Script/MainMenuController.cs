@@ -13,7 +13,7 @@ public sealed class MainMenuController : MonoBehaviour
 
     [Header("Scene")]
     [SerializeField] private string gameSceneName = "Game";
-    [SerializeField] private string partTwoSceneName = "EndingP2Transition";
+    [SerializeField] private string partTwoSceneName = "GameP2";
 
     [Header("Panels")]
     [SerializeField] private GameObject mainPanel;

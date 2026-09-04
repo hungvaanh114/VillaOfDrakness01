@@ -11134,7 +11134,7 @@ MonoBehaviour:
   m_Name: 
   m_EditorClassIdentifier: Assembly-CSharp::MainMenuController
   gameSceneName: Game
-  partTwoSceneName: EndingP2Transition
+  partTwoSceneName: GameP2
   mainPanel: {fileID: 1159841525}
   settingsPanel: {fileID: 1779368287}
   continueButton: {fileID: 1054252018}

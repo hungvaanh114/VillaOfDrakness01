@@ -10,17 +10,16 @@ MonoBehaviour:
   m_Enabled: 1
   m_EditorHideFlags: 0
   m_Script: {fileID: 11500000, guid: 0fef4b99800eba0408a589592dd2d365, type: 3}
-  m_Name: Item_P2_CabinetKey
+  m_Name: Item_P2_Lantern
   m_EditorClassIdentifier: Assembly-CSharp::FpsHorrorKit.ItemData
-  id: Item_P2_CabinetKey
-  itemName: "Ch\xECa kh\xF3a t\u1EE7"
-  description: "M\u1ED9t ch\xECa kh\xF3a nh\u1ECF d\xF9ng \u0111\u1EC3 m\u1EDF chi\u1EBFc
-    t\u1EE7 c\u0169 tr\xEAn t\u1EA7ng hai."
-  icon: {fileID: 21300000, guid: fc25dcd7bb82d3c4799b2d947e8383e2, type: 3}
-  itemType: 2
+  id: Item_P2_Lantern
+  itemName: "\u0110\xE8n d\u1EA7u"
+  description: "M\u1ED9t chi\u1EBFc \u0111\xE8n d\u1EA7u c\u1EA7m tay."
+  icon: {fileID: 21300000, guid: 3f0d223ca6858fe48adecdd90fa5dd6a, type: 3}
+  itemType: 0
   canStack: 0
   maxStack: 1
   canUse: 1
-  keyID: P2_CABINET_KEY
+  keyID: 
   worldPrefab: {fileID: 0}
   heldPrefab: {fileID: 0}

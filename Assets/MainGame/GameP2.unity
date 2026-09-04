@@ -8499,7 +8499,6 @@ GameObject:
   - component: {fileID: 178937644}
   - component: {fileID: 178937645}
   - component: {fileID: 178937646}
-  - component: {fileID: 178937647}
   m_Layer: 6
   m_Name: TriggerEnding
   m_TagString: Untagged
@@ -8550,13 +8549,13 @@ MonoBehaviour:
   m_PrefabInstance: {fileID: 0}
   m_PrefabAsset: {fileID: 0}
   m_GameObject: {fileID: 178937643}
-  m_Enabled: 0
+  m_Enabled: 1
   m_EditorHideFlags: 0
   m_Script: {fileID: 11500000, guid: 4e5d9c77a29d41f4aa0a4cc6d62c38ab, type: 3}
   m_Name: 
   m_EditorClassIdentifier: Assembly-CSharp::EndingCutsceneTrigger
   testTrigger: 0
-  ending: {fileID: 0}
+  ending: {fileID: 3469287836779140707}
   armedOnStart: 0
   allowDuringEscapePhase: 1
   hideMonstersBeforeEnding: 1
@@ -8566,16 +8565,49 @@ MonoBehaviour:
   m_CorrespondingSourceObject: {fileID: 0}
   m_PrefabInstance: {fileID: 0}
   m_PrefabAsset: {fileID: 0}
-  m_GameObject: {fileID: 178937643}
+  m_GameObject: {fileID: 1265122612}
   m_Enabled: 1
   m_EditorHideFlags: 0
   m_Script: {fileID: 11500000, guid: cb64c2b42298218448459f66b29a936c, type: 3}
   m_Name: 
-  m_EditorClassIdentifier: Assembly-CSharp::MainGame.P2.P2StorySequenceTrigger
-  triggerKind: 1
-  oneShot: 1
-  debugAllowBeforeGlassBroken: 0
-  debugStartOnPlay: 0
+  m_EditorClassIdentifier: Assembly-CSharp::MainGame.P2.P2GameController
+  player: {fileID: 0}
+  oilLamp: {fileID: 0}
+  ghost: {fileID: 0}
+  ending: {fileID: 3469287836779140707}
+  hiddenWallCavity: {fileID: 0}
+  hudGroup: {fileID: 0}
+  objectiveText: {fileID: 0}
+  promptText: {fileID: 0}
+  subtitleText: {fileID: 0}
+  stageText: {fileID: 0}
+  runOpeningWhenNoChapterCutscene: 1
+  enableP2VoiceLines: 0
+  showP2DebugStage: 0
+  voiceSource: {fileID: 0}
+  sfxSource: {fileID: 0}
+  ambienceSource: {fileID: 0}
+  ngocIntro01: {fileID: 0}
+  ngocIntro02: {fileID: 0}
+  linhHallAutoLog: {fileID: 0}
+  ngocAfterJournal: {fileID: 0}
+  ngocBathWarning: {fileID: 0}
+  linhDollLog: {fileID: 0}
+  ngocCandleReaction: {fileID: 0}
+  ngocChalkReaction: {fileID: 0}
+  ngocHollowWall: {fileID: 0}
+  ngocMirrorFound: {fileID: 0}
+  ngocMirrorBreak: {fileID: 0}
+  maVuDaiLine01: {fileID: 0}
+  maVuDaiLine02: {fileID: 0}
+  audioLogBL02: {fileID: 0}
+  audioLogBL03: {fileID: 0}
+  knockSolidClip: {fileID: 0}
+  knockHollowClip: {fileID: 0}
+  glassBreakClip: {fileID: 0}
+  glassStepClip: {fileID: 0}
+  cabinetUnlockClip: {fileID: 0}
+  pickupClip: {fileID: 0}
 --- !u!1 &183937090
 GameObject:
   m_ObjectHideFlags: 0
@@ -25750,6 +25782,7 @@ MonoBehaviour:
   m_Name: 
   m_EditorClassIdentifier: Assembly-CSharp::OuttroCutSceneSequenceBinder
   rebuildSequence: 0
+  useChapterTwoEnding: 1
   playerPoint01: {fileID: 1500811487}
   playerPoint02: {fileID: 653846063}
   playerLookWellPoint: {fileID: 1930084308}
@@ -25758,6 +25791,7 @@ MonoBehaviour:
   cameraLookAtPoint: {fileID: 878858433}
   deathVoice01: {fileID: 8300000, guid: 0c90878650bf42f4e83051cf1437d9c0, type: 3}
   deathVoice02: {fileID: 8300000, guid: 3a9825107d5e9bf4b922754a35f95240, type: 3}
+  chapterTwoLine09: {fileID: 8300000, guid: 9ff0a38e8f2c11e4c8618220d52b7207, type: 3}
 --- !u!114 &905777876
 MonoBehaviour:
   m_ObjectHideFlags: 0
@@ -25782,9 +25816,8 @@ MonoBehaviour:
     moveSpeedOverride: 1.5
     turnSpeedOverride: 720
     dialogueId: 
-    overrideText: "\"C\xE1i g\xEC v\u1EADy... \xE1nh s\xE1ng trong gi\u1EBFng? Kh\xF4ng
-      l\u1EBD... c\xF3 ng\u01B0\u1EDDi b\u1ECB k\u1EB9t d\u01B0\u1EDBi \u0111\xF3?\""
-    overrideAudioClip: {fileID: 8300000, guid: 0c90878650bf42f4e83051cf1437d9c0, type: 3}
+    overrideText: ""
+    overrideAudioClip: {fileID: 0}
     overrideFallbackDuration: 2
     waitAfter: 0
     cameraShot: 3
@@ -25795,58 +25828,24 @@ MonoBehaviour:
     cameraSmoothTimeOverride: 0.18
     useCustomCameraOffset: 0
     customCameraOffset: {x: 0.45, y: 2.1, z: -3.2}
-  - name: "\xC1p s\xE1t gi\u1EBFng"
-    point: {fileID: 653846063}
-    moveToPoint: 1
-    moveSpeedOverride: 2
-    turnSpeedOverride: 720
-    dialogueId: 
-    overrideText: 
-    overrideAudioClip: {fileID: 0}
-    overrideFallbackDuration: 1
-    waitAfter: 0
-    cameraShot: 1
+  - name: "Ng\u1ECDc n\xF3i tr\u01B0\u1EDBc s\xE2n"
+    point: {fileID: 1500811487}
+    moveToPoint: 0
+    moveSpeedOverride: -1
+    turnSpeedOverride: -1
+    dialogueId: p2_ngoc_09
+    overrideText: "\"G\u01B0\u01A1ng b\u1EA1c... b\xE0 n\xF3i soi v\xE0o tr\u0103ng
+      th\xEC c\xF3 th\u1EC3... nh\u01B0ng b\xE0 kh\xF4ng n\xF3i ph\u1EA3i l\xE0m
+      g\xEC ti\u1EBFp theo. Con c\xF2n thi\u1EBFu g\xEC \u0111\xF3.\""
+    overrideAudioClip: {fileID: 8300000, guid: 9ff0a38e8f2c11e4c8618220d52b7207, type: 3}
+    overrideFallbackDuration: 7
+    waitAfter: 0.05
+    cameraShot: 3
     cameraPositionOverride: {fileID: 142537135}
     cameraLookAtOverride: {fileID: 0}
     cameraLookAtPlayer: 1
     cameraLookHeight: 1.25
     cameraSmoothTimeOverride: 0.16
-    useCustomCameraOffset: 0
-    customCameraOffset: {x: 0.45, y: 2.1, z: -3.2}
-  - name: "Nh\xECn xu\u1ED1ng gi\u1EBFng"
-    point: {fileID: 1930084308}
-    moveToPoint: 1
-    moveSpeedOverride: 2
-    turnSpeedOverride: 720
-    dialogueId: 
-    overrideText: "\"\u01A0... c\xE1i g\xEC-\""
-    overrideAudioClip: {fileID: 8300000, guid: 3a9825107d5e9bf4b922754a35f95240, type: 3}
-    overrideFallbackDuration: 1
-    waitAfter: 0.05
-    cameraShot: 4
-    cameraPositionOverride: {fileID: 1898221677}
-    cameraLookAtOverride: {fileID: 878858433}
-    cameraLookAtPlayer: 0
-    cameraLookHeight: 0
-    cameraSmoothTimeOverride: 0.2
-    useCustomCameraOffset: 0
-    customCameraOffset: {x: 0.45, y: 2.1, z: -3.2}
-  - name: "M\u1EB7t gi\u1EBFng ph\u1EA3n chi\u1EBFu"
-    point: {fileID: 1930084308}
-    moveToPoint: 0
-    moveSpeedOverride: -1
-    turnSpeedOverride: -1
-    dialogueId: 
-    overrideText: 
-    overrideAudioClip: {fileID: 0}
-    overrideFallbackDuration: 0.425
-    waitAfter: 0.375
-    cameraShot: 4
-    cameraPositionOverride: {fileID: 1898221677}
-    cameraLookAtOverride: {fileID: 878858433}
-    cameraLookAtPlayer: 0
-    cameraLookHeight: 0
-    cameraSmoothTimeOverride: 0.12
     useCustomCameraOffset: 0
     customCameraOffset: {x: 0.45, y: 2.1, z: -3.2}
 --- !u!1 &907458583
@@ -38027,6 +38026,7 @@ GameObject:
   m_Component:
   - component: {fileID: 1265122614}
   - component: {fileID: 1265122613}
+  - component: {fileID: 178937647}
   m_Layer: 0
   m_Name: GameController
   m_TagString: Untagged
@@ -38050,7 +38050,7 @@ MonoBehaviour:
   currentChapterPhase: 0
   playerController: {fileID: 5007748992797593523}
   cutSceneManager: {fileID: 1449414379}
-  playIntroOnStart: 0
+  playIntroOnStart: 1
   useChapterOneCheckpoints: 0
   gameUI: {fileID: 1389903339}
   pauseUI: {fileID: 944257167}
@@ -40127,7 +40127,7 @@ MonoBehaviour:
   m_Name: 
   m_EditorClassIdentifier: Assembly-CSharp::FpsHorrorKit.InventoryManager
   inventorySize: 12
-  startingFlashlight: {fileID: 11400000, guid: 18d30d29836523c43a9df7faabf1fffc, type: 2}
+  startingFlashlight: {fileID: 11400000, guid: 9480369ac4994a5abf8e7f74f27ecf09, type: 2}
   flashlightBatteryPercent: 78
   flashlightBatteryDrainPerSecond: 0.5
 --- !u!4 &1367883175
@@ -42077,7 +42077,7 @@ MonoBehaviour:
   m_EditorClassIdentifier: Assembly-CSharp::CutSceneManager
   introCutSceneId: intro
   introWindowEntryCutSceneId: p2_window_entry_disabled
-  autoResolveSequences: 0
+  autoResolveSequences: 1
   sequences:
   - {fileID: 2029655855}
   playerController: {fileID: 5007748992797593523}
@@ -44161,7 +44161,7 @@ Transform:
   m_GameObject: {fileID: 1500811486}
   serializedVersion: 2
   m_LocalRotation: {x: -0, y: -0, z: -0, w: 1}
-  m_LocalPosition: {x: -3.29, y: 1.96, z: 23.6}
+  m_LocalPosition: {x: -3.29, y: 1.96, z: 22.38}
   m_LocalScale: {x: 1, y: 1, z: 1}
   m_ConstrainProportionsScale: 0
   m_Children: []
@@ -51009,7 +51009,7 @@ MonoBehaviour:
   m_OnCullStateChanged:
     m_PersistentCalls:
       m_Calls: []
-  m_text: "NGUYỄN THỊ BÍCH NGỌC, 1951 - 1970..."
+  m_text: "NGUY\u1EC4N TH\u1ECA B\xCDCH NG\u1ECCC, 1951 - 1970..."
   m_isRightToLeft: 0
   m_fontAsset: {fileID: 11400000, guid: 33f5a2f3ab279f74085aec463c41a70b, type: 2}
   m_sharedMaterial: {fileID: 412220950}
@@ -51105,7 +51105,7 @@ GameObject:
   m_Icon: {fileID: 0}
   m_NavMeshLayer: 0
   m_StaticEditorFlags: 0
-  m_IsActive: 1
+  m_IsActive: 0
 --- !u!114 &1812876104
 MonoBehaviour:
   m_ObjectHideFlags: 0
@@ -59377,7 +59377,8 @@ MonoBehaviour:
   m_OnCullStateChanged:
     m_PersistentCalls:
       m_Calls: []
-  m_text: "CÔ GÁI MẤT TÍCH TẠI BIỆT THỰ ĐỖ GIA"
+  m_text: "C\xD4 G\xC1I M\u1EA4T T\xCDCH T\u1EA0I BI\u1EC6T TH\u1EF0 \u0110\u1ED6
+    GIA"
   m_isRightToLeft: 0
   m_fontAsset: {fileID: 11400000, guid: 33f5a2f3ab279f74085aec463c41a70b, type: 2}
   m_sharedMaterial: {fileID: 1966092635}
@@ -82940,7 +82941,7 @@ Transform:
   m_GameObject: {fileID: 7590908442061814866}
   serializedVersion: 2
   m_LocalRotation: {x: -0.63312054, y: -0.19765182, z: -0.17179577, w: 0.7284081}
-  m_LocalPosition: {x: -12.702932, y: 9.068142, z: -2.7905283}
+  m_LocalPosition: {x: -6.202932, y: 3.8481424, z: 15.9094715}
   m_LocalScale: {x: 1, y: 1, z: 1}
   m_ConstrainProportionsScale: 0
   m_Children:
@@ -111376,13 +111377,14 @@ MonoBehaviour:
   terrainHoleOffset: {x: 0, y: 0, z: 0}
   jumpscareTexture: {fileID: 2800000, guid: 05356174dc46ae7489fe8b64c50587e2, type: 3}
   jumpscarePopDuration: 0.1
-  jumpscareHoldDuration: 1.55
+  jumpscareHoldDuration: 3
   jumpscareStartScale: 0.2
   jumpscareImpactScale: 1.3
   jumpscareOpacity: 1
   jumpscareDarkBackdropOpacity: 0.78
-  playerJumpscareScream: {fileID: 8300000, guid: f219a60240013be4d8b37072716dfa41, type: 3}
-  playerJumpscareSubtitle: "...Ai \u0111\xF3... gi\xFAp..."
+  playPlayerJumpscareScream: 1
+  playerJumpscareScream: {fileID: 8300000, guid: 4844229298ecea145be2ead55fc23e82, type: 3}
+  playerJumpscareSubtitle: "\"...B\xE0 \u01A1i.\""
   fallbackPlayerScreamVoiceIndex: 3
   jumpscareCameraShakeDuration: 0.9
   jumpscareCameraShakePosition: 0.075
@@ -111401,10 +111403,13 @@ MonoBehaviour:
   creditsStartY: -920
   creditsEndY: 1480
   showDeathScreenBeforePartTwo: 1
-  endingDeathScreenHoldDuration: 2.5
+  endingDeathScreenHoldDuration: 6
   showPartTwoContinueButton: 1
   partTwoTransitionSceneName: EndingP2Transition
-  endingLine: "VILLA OF DARKNESS\n\nNguyễn Thị Bích Ngọc biến mất trong sân sau biệt thự Đỗ Gia.\nTấm gương bạc rơi lại dưới ánh trăng,\nvỡ thêm một góc.\n\nTH\xC0NH VI\xCAN\n\nNguy\u1EC5n Tr\u01B0\u1EDDng V\u0169\nThi\u1EBFt
+  endingLine: "VILLA OF DARKNESS\n\nNguy\u1EC5n Th\u1ECB B\xEDch Ng\u1ECDc bi\u1EBFn
+    m\u1EA5t trong s\xE2n sau bi\u1EC7t th\u1EF1 \u0110\u1ED7 Gia.\nT\u1EA5m g\u01B0\u01A1ng
+    b\u1EA1c r\u01A1i l\u1EA1i d\u01B0\u1EDBi \xE1nh tr\u0103ng,\nv\u1EE1 th\xEAm
+    m\u1ED9t g\xF3c.\n\nTH\xC0NH VI\xCAN\n\nNguy\u1EC5n Tr\u01B0\u1EDDng V\u0169\nThi\u1EBFt
     k\u1EBF UI Panels - Thi\u1EBFt k\u1EBF Ambient\n\nV\xF5 V\u0103n Thu\u1EADn\nL\u1EADp
     tr\xECnh Gameplay - H\u1EC7 th\u1ED1ng nh\u1EB7t Item\nC\u01A1 ch\u1EBF Piano
     - C\u01A1 ch\u1EBF Inventory - H\u1EC7 th\u1ED1ng UI\n\nL\xEA Ph\xFA Tu\u1EA5n
@@ -139698,7 +139703,7 @@ Transform:
   m_GameObject: {fileID: 5821903314106324260}
   serializedVersion: 2
   m_LocalRotation: {x: -0.63312054, y: -0.19765182, z: -0.17179577, w: 0.7284081}
-  m_LocalPosition: {x: -12.702932, y: 9.068142, z: -2.7905283}
+  m_LocalPosition: {x: -6.202932, y: 3.8481424, z: 15.9094715}
   m_LocalScale: {x: 1, y: 1, z: 1}
   m_ConstrainProportionsScale: 0
   m_Children:
@@ -179882,7 +179887,7 @@ Transform:
   m_GameObject: {fileID: 2024387981487804514}
   serializedVersion: 2
   m_LocalRotation: {x: -0, y: -0.9887564, z: 0, w: -0.14953515}
-  m_LocalPosition: {x: -12.7, y: 7.92, z: -2.8}
+  m_LocalPosition: {x: -6.2, y: 2.7, z: 15.9}
   m_LocalScale: {x: 1.5, y: 1.5, z: 1.5}
   m_ConstrainProportionsScale: 1
   m_Children:

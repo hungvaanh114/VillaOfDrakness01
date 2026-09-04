@@ -50,6 +50,7 @@ public sealed class WellEndingTrigger : MonoBehaviour
     [SerializeField, Min(0.05f)] private float jumpscareImpactScale = 1.08f;
     [SerializeField, Range(0f, 1f)] private float jumpscareOpacity = 1f;
     [SerializeField, Range(0f, 1f)] private float jumpscareDarkBackdropOpacity = 0.78f;
+    [SerializeField] private bool playPlayerJumpscareScream = true;
     [SerializeField] private AudioClip playerJumpscareScream;
     [SerializeField, TextArea(1, 3)] private string playerJumpscareSubtitle = "...Ai đó... giúp...";
     [SerializeField, Range(1, 3)] private int fallbackPlayerScreamVoiceIndex = 3;
@@ -113,7 +114,7 @@ public sealed class WellEndingTrigger : MonoBehaviour
     {
         if (jumpscareTexture == null || jumpscareTexture.name == "EndingJumpscare")
             jumpscareTexture = UnityEditor.AssetDatabase.LoadAssetAtPath<Texture2D>(DefaultJumpscareAssetPath);
-        if (playerJumpscareScream == null)
+        if (playPlayerJumpscareScream && playerJumpscareScream == null)
             playerJumpscareScream = UnityEditor.AssetDatabase.LoadAssetAtPath<AudioClip>(DefaultPlayerScreamAssetPath);
         ResolveReferences();
     }
@@ -269,8 +270,10 @@ public sealed class WellEndingTrigger : MonoBehaviour
             out Button continuePartTwoButton,
             out Button returnMenuButton);
 
-        PlayWellJumpscareAudio();
-        yield return PlayJumpscareImage(blackGroup, vignetteGroup, vignetteRect, jumpscareImage, jumpscareRect, jumpscareSubtitle);
+        float playerScreamDuration = PlayWellJumpscareAudio();
+        float holdUntilScreamEnds = Mathf.Max(0f, playerScreamDuration - jumpscarePopDuration);
+        float imageHoldDuration = Mathf.Max(jumpscareHoldDuration, holdUntilScreamEnds);
+        yield return PlayJumpscareImage(blackGroup, vignetteGroup, vignetteRect, jumpscareImage, jumpscareRect, jumpscareSubtitle, imageHoldDuration);
 
         if (jumpscareImage != null)
             jumpscareImage.gameObject.SetActive(false);
@@ -306,17 +309,26 @@ public sealed class WellEndingTrigger : MonoBehaviour
         yield return WaitForEndingChoice(choiceRoot, continuePartTwoButton, returnMenuButton);
     }
 
-    private void PlayWellJumpscareAudio()
+    private float PlayWellJumpscareAudio()
     {
         var audio = AudioManager.Instance;
         if (audio == null)
-            return;
+            return 0f;
 
         audio.PlayWellJumpscare();
+        if (!playPlayerJumpscareScream)
+            return 0f;
+
         if (playerJumpscareScream != null)
+        {
             audio.PlayPlayerVoice(playerJumpscareScream);
+            return playerJumpscareScream.length;
+        }
         else
+        {
             audio.PlayDeathVoice(fallbackPlayerScreamVoiceIndex);
+            return jumpscareHoldDuration;
+        }
     }
 
     private IEnumerator PlayJumpscareImage(
@@ -325,7 +337,8 @@ public sealed class WellEndingTrigger : MonoBehaviour
         RectTransform vignetteRect,
         RawImage jumpscareImage,
         RectTransform jumpscareRect,
-        TextMeshProUGUI jumpscareSubtitle)
+        TextMeshProUGUI jumpscareSubtitle,
+        float imageHoldDuration)
     {
         if (jumpscareImage == null || jumpscareRect == null)
             yield break;
@@ -373,10 +386,10 @@ public sealed class WellEndingTrigger : MonoBehaviour
         if (vignetteRect != null)
             vignetteRect.localScale = Vector3.one * circularBackdropEndScale;
 
-        if (jumpscareHoldDuration > 0f)
+        if (imageHoldDuration > 0f)
         {
             float holdElapsed = 0f;
-            while (holdElapsed < jumpscareHoldDuration)
+            while (holdElapsed < imageHoldDuration)
             {
                 ApplyJumpscareShake(
                     shakeCameraTransform,
